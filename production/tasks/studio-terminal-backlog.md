@@ -23,6 +23,6 @@
 | TASK-102 | Thiết kế Protocol Realtime Multiplayer & State Synchronization (Zero-Knowledge) | System Architect | DONE | SPRINT 1 | Room state schema, Zero role leak in client payloads, action dispatch |
 | TASK-103 | Triển khai Room Manager Server & WebSocket/Realtime Relay | Backend Dev | DONE | TASK-102 | Room code 6 ký tự, Host/Player handshake, Reconnection resilience |
 | TASK-104 | Xây dựng UI Online Lobby & Ghép Phòng (Room Join, Player List, Ready status) | Frontend Dev | DONE | TASK-103 | Hỗ trợ QR Code phòng, chia sẻ link mời bạn |
-| TASK-105 | Xây dựng Giao diện Người Chơi Online (Private Role View, Action submit trong đêm) | Frontend Dev | READY | TASK-103 | Màn hình riêng cho từng client, đếm ngược hành động bí mật |
+| TASK-105 | Xây dựng Giao diện Người Chơi Online (Private Role View, Action submit trong đêm) | Frontend Dev | DONE | TASK-103 | Màn hình riêng cho từng client, đếm ngược hành động bí mật |
 | TASK-106 | Tối ưu hóa Native UX trên iOS (Dynamic Island, Haptics) & Android (Back button) | Mobile UX Lead | READY | TASK-101, 105 | @capacitor/haptics, @capacitor/status-bar |
 | TASK-107 | QA Multi-client E2E & Xử lý mất kết nối (Reconnection, Host Migration) | QA Lead | READY | TASK-104..106 | Kiểm thử đa thiết bị đồng thời |

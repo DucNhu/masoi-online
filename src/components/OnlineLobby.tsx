@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { roomManager } from '../logic/roomManager';
 import { ClientGameState } from '../types/multiplayer';
+import { OnlinePlayerGameView } from './OnlinePlayerGameView';
 import { Users, Crown, CheckCircle2, Clock, Copy, Check, ArrowLeft, Play, LogOut, ShieldAlert } from 'lucide-react';
 
 interface Props {
@@ -417,11 +418,17 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
         </form>
       )}
 
-      {/* VIEW 4: Phòng Chờ (Lobby Room) */}
+      {/* VIEW 4: Phòng Chờ (Lobby Room) hoặc Màn Hình Ván Đấu Trực Tuyến */}
       {activeView === 'ROOM' && gameState && currentSession && (
-        <div>
-          {/* Card Mã Phòng & Link Chia Sẻ */}
-          <div style={{
+        gameState.phase !== 'LOBBY' ? (
+          <OnlinePlayerGameView
+            gameState={gameState}
+            onLeaveRoom={handleLeaveRoom}
+          />
+        ) : (
+          <div>
+            {/* Card Mã Phòng & Link Chia Sẻ */}
+            <div style={{
             background: 'linear-gradient(135deg, #1e1b4b, #0f172a)',
             border: '1px solid rgba(99, 102, 241, 0.3)',
             borderRadius: '16px',
@@ -609,6 +616,7 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
             </button>
           </div>
         </div>
+        )
       )}
     </div>
   );
