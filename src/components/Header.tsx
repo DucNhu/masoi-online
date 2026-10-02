@@ -1,0 +1,158 @@
+import React, { useState } from 'react';
+import { Eye, EyeOff, BookOpen, RotateCcw, Moon, Sun } from 'lucide-react';
+import { GamePhase } from '../types/game';
+
+interface Props {
+  round: number;
+  phase: GamePhase;
+  privacyShield: boolean;
+  onTogglePrivacy: () => void;
+  onOpenLookup: () => void;
+  onResetGame: () => void;
+}
+
+export const Header: React.FC<Props> = ({
+  round,
+  phase,
+  privacyShield,
+  onTogglePrivacy,
+  onOpenLookup,
+  onResetGame,
+}) => {
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  const isNight = phase.startsWith('NIGHT');
+
+  const getPhaseLabel = () => {
+    switch (phase) {
+      case 'SETUP': return 'Thiết Lập';
+      case 'NIGHT_START': return `Đêm ${round}`;
+      case 'NIGHT_BODYGUARD': return `Đêm ${round} • Bảo Vệ`;
+      case 'NIGHT_WEREWOLF': return `Đêm ${round} • Ma Sói`;
+      case 'NIGHT_WITCH': return `Đêm ${round} • Phù Thủy`;
+      case 'NIGHT_SEER': return `Đêm ${round} • Tiên Tri`;
+      case 'DAY_DAWN': return `Ngày ${round} • Bình Minh`;
+      case 'DAY_DISCUSSION': return `Ngày ${round} • Thảo Luận`;
+      case 'DAY_VOTING': return `Ngày ${round} • Bỏ Phiếu`;
+      case 'DAY_EXECUTION': return `Ngày ${round} • Xử Tử`;
+      case 'GAME_OVER': return 'Kết Thúc';
+      default: return '';
+    }
+  };
+
+  return (
+    <>
+      <header className="top-header">
+        <div className="top-brand">
+          <div style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '10px',
+            background: isNight ? 'linear-gradient(135deg, #4338ca, #1e1b4b)' : 'linear-gradient(135deg, #d97706, #78350f)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: isNight ? '0 0 15px rgba(99, 102, 241, 0.4)' : '0 0 15px rgba(245, 158, 11, 0.4)',
+          }}>
+            {isNight ? <Moon size={20} color="#a5b4fc" /> : <Sun size={20} color="#fde047" />}
+          </div>
+          <div>
+            <div className="app-title">MA SÓI OFFLINE</div>
+            <div className="app-subtitle">
+              {phase === 'SETUP' ? 'TÚ LƠ KHƠ EDITION' : getPhaseLabel()}
+            </div>
+          </div>
+        </div>
+
+        {/* Action icons */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Lookup Modal */}
+          <button
+            onClick={onOpenLookup}
+            className="btn btn-ghost btn-icon-only"
+            title="Bảng tra cứu bài Tú"
+          >
+            <BookOpen size={18} color="#94a3b8" />
+          </button>
+
+          {/* Privacy Toggle */}
+          <button
+            onClick={onTogglePrivacy}
+            className="btn btn-ghost btn-icon-only"
+            style={{
+              borderColor: privacyShield ? 'var(--accent-seer)' : 'var(--border-subtle)',
+              background: privacyShield ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+            }}
+            title={privacyShield ? 'Đang che bài (Bảo mật)' : 'Đang hiện bài'}
+          >
+            {privacyShield ? <EyeOff size={18} color="#38bdf8" /> : <Eye size={18} color="#94a3b8" />}
+          </button>
+
+          {/* Reset Game */}
+          <button
+            onClick={() => setShowResetConfirm(true)}
+            className="btn btn-ghost btn-icon-only"
+            title="Làm mới / Ván mới"
+          >
+            <RotateCcw size={18} color="#94a3b8" />
+          </button>
+        </div>
+      </header>
+
+      {/* Reset Confirmation Modal */}
+      {showResetConfirm && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          backdropFilter: 'blur(10px)',
+          zIndex: 300,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+        }}>
+          <div style={{
+            background: '#16192b',
+            border: '1px solid rgba(239, 68, 68, 0.4)',
+            borderRadius: '20px',
+            padding: '24px',
+            maxWidth: '360px',
+            width: '100%',
+            textAlign: 'center',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.8)',
+          }}>
+            <h3 style={{ fontSize: '1.2rem', marginBottom: '8px', color: '#f87171' }} className="font-cinzel">
+              Bắt Đầu Ván Mới?
+            </h3>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: 1.5 }}>
+              Mọi dữ liệu ván đấu hiện tại sẽ được làm mới để chia bài lại từ đầu.
+            </p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                className="btn btn-ghost"
+                style={{ flex: 1 }}
+              >
+                Hủy Bỏ
+              </button>
+              <button
+                onClick={() => {
+                  setShowResetConfirm(false);
+                  onResetGame();
+                }}
+                className="btn btn-danger"
+                style={{ flex: 1 }}
+              >
+                Xác Nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
