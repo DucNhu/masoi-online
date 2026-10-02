@@ -19,7 +19,7 @@
 
 | Task ID | Tên Task | Role | Trạng thái | Dependency | Ghi chú |
 |---|---|---|---|---|---|
-| TASK-101 | Cấu hình Mobile Native Shell bằng Capacitor cho iOS & Android | Mobile Lead | READY | SPRINT 1 | `@capacitor/core`, `@capacitor/ios`, `@capacitor/android`, native safe-areas |
+| TASK-101 | Cấu hình Mobile Native Shell bằng Capacitor cho iOS & Android | Mobile Lead | DONE | SPRINT 1 | `@capacitor/core`, `@capacitor/ios`, `@capacitor/android`, native safe-areas |
 | TASK-102 | Thiết kế Protocol Realtime Multiplayer & State Synchronization (Zero-Knowledge) | System Architect | READY | SPRINT 1 | Room state schema, Zero role leak in client payloads, action dispatch |
 | TASK-103 | Triển khai Room Manager Server & WebSocket/Realtime Relay | Backend Dev | READY | TASK-102 | Room code 6 ký tự, Host/Player handshake, Reconnection resilience |
 | TASK-104 | Xây dựng UI Online Lobby & Ghép Phòng (Room Join, Player List, Ready status) | Frontend Dev | READY | TASK-103 | Hỗ trợ QR Code phòng, chia sẻ link mời bạn |

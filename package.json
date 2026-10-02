@@ -11,15 +11,24 @@
     "verify": "npm run lint && npm test && npm run build",
     "daemon": "node scripts/studio-daemon.mjs",
     "daemon:watch": "node scripts/studio-daemon.mjs --watch",
+    "mobile:sync": "npm run build && npx cap sync",
+    "mobile:ios": "npx cap open ios",
+    "mobile:android": "npx cap open android",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3",
     "canvas-confetti": "^1.9.4",
     "lucide-react": "^1.49.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/ios": "^8.5.2",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",

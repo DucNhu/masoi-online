@@ -38,3 +38,19 @@ test-results*.xml
 *.tmp
 tmp/
 scratch/
+
+# Capacitor / Mobile Native
+ios/App/Pods/
+ios/App/build/
+ios/App/Podfile.lock
+ios/App/*.xcworkspace/xcuserdata/
+ios/App/*.xcodeproj/xcuserdata/
+ios/App/*.xcodeproj/project.xcworkspace/xcuserdata/
+android/.gradle/
+android/build/
+android/app/build/
+android/captures/
+android/.idea/
+android/*.iml
+android/app/*.iml
+android/local.properties
