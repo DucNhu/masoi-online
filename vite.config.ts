@@ -2,9 +2,11 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+const basePath = process.env.BASE_PATH || (process.env.GITHUB_ACTIONS ? '/masoi-online/' : '/ma-soi-offline/');
+
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/ma-soi-offline/',
+  base: basePath,
   plugins: [
     react(),
     VitePWA({
@@ -17,8 +19,8 @@ export default defineConfig({
         theme_color: '#090a10',
         background_color: '#090a10',
         display: 'standalone',
-        start_url: '/ma-soi-offline/',
-        scope: '/ma-soi-offline/',
+        start_url: basePath,
+        scope: basePath,
         icons: [
           {
             src: 'favicon.svg',
