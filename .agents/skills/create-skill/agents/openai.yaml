@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Full Skill Set"
+  short_description: "Tạo trọn bộ 4 skill và VFX tách biệt cho một Pet"
+  default_prompt: "Tạo full skill cho Pet: xử lý đủ cả 4 skill, body cast và VFX decoupled."
