@@ -19,23 +19,23 @@
     + Tự động cân bằng và chia vai trò bí mật khi bắt đầu ván (Fischer-Yates shuffle).
     + Quản lý hành động đêm (Sói cắn, Tiên tri soi, Bảo vệ) và broadcast state qua Event Listeners.
   - Bộ kiểm thử: 5/5 unit tests trong `tests/roomManager.test.mjs` PASS 100%.
-- **TASK-104 [DONE]**: Xây dựng UI Online Lobby & Ghép Phòng.
-  - Đã xây dựng `src/components/OnlineLobby.tsx` và tích hợp chuyển đổi Offline / Online trên Header.
-- **TASK-105 [DONE]**: Xây dựng Giao diện Người Chơi Online (Private Role View, Action submit trong đêm).
-  - Đã xây dựng `src/components/OnlinePlayerGameView.tsx`:
-    + Thẻ vai trò bí mật của từng người chơi, ẩn/hiện mô tả kỹ năng.
-    + Nhận diện đồng đội Ma Sói (`teamMates`), người yêu (`couplePartnerId`), kết quả soi (`seerScanResult`).
-    + Chọn mục tiêu ban đêm theo vai trò (Sói cắn, Tiên tri soi, Bảo vệ) và gửi action bảo mật lên RoomManager.
-    + Danh sách người chơi còn sống / đã chết công khai, nút rời trận.
-- **TASK-106 [READY]**: Tối ưu hóa Native UX trên iOS (Dynamic Island, Haptics) & Android (Back button).
+- **TASK-104 [DONE]**: Xây dựng UI Online Lobby & Ghép Phòng (`src/components/OnlineLobby.tsx`, chuyển đổi linh hoạt Offline/Online trên Header).
+- **TASK-105 [DONE]**: Xây dựng Giao diện Người Chơi Online (`src/components/OnlinePlayerGameView.tsx`).
+- **TASK-106 [DONE]**: Tối ưu hóa Native UX trên iOS (Dynamic Island, Haptics) & Android (Back button).
+  - Đã triển khai `src/utils/nativeBridge.ts`:
+    + Tích hợp `@capacitor/status-bar`: Theme tối `#08090f` đồng bộ giao diện ma sói.
+    + Tích hợp `@capacitor/haptics`: Rung Taptic Engine chuyên biệt trên iPhone và Vibrator trên Android (haptic impact & haptic notification).
+    + Nâng cấp `src/utils/soundEffects.ts` và khởi chạy tại `src/main.tsx`.
+    + Đồng bộ hoàn tất `npm run mobile:sync` vào cả Xcode iOS và Gradle Android.
+- **TASK-107 [READY]**: QA Multi-client E2E & Xử lý mất kết nối (Reconnection, Host Migration).
 
 ---
 
 ## 2. Trạng Thái Backlog
 - **Tổng số task**: 15 Task.
-- **Đã hoàn thành (DONE)**: 13 Task (8 Task Sprint 1 + TASK-101 đến TASK-105).
-- **Hàng đợi khả dụng (READY)**: 2 Task (TASK-106 và TASK-107).
-- **Task tiếp theo**: `TASK-106` (Tối ưu hóa Native UX trên iOS và Android).
+- **Đã hoàn thành (DONE)**: 14 Task (8 Task Sprint 1 + TASK-101 đến TASK-106).
+- **Hàng đợi khả dụng (READY)**: 1 Task duy nhất (**`TASK-107`** - QA E2E & Reconnection).
+- **Task tiếp theo**: `TASK-107` (QA Lead: Viết kịch bản kiểm thử E2E đa client đồng thời giả lập 4-6 người chơi).
 
 ---
 
@@ -44,9 +44,9 @@
 - **Unit Test Suite**: 19/19 tests PASSED.
 - **Production Build**: `npm run build` PASSED (Vite + TypeScript + PWA precache).
 - **Mobile Native Shell**: Đồng bộ thành công dist -> ios & android qua `npm run mobile:sync`.
-- **Autonomous Schedule Daemon**: Đang chạy nền đều đặn 24/7.
+- **Autonomous Schedule Daemon**: Tự động kích hoạt theo lịch trình.
 
 ---
 
 ## 4. Hành Động Tiếp Theo Duy Nhất (Single Next Action)
-- Tiến hành thực thi `TASK-106`: Tích hợp các plugin Native của Capacitor vào luồng game (`@capacitor/haptics`, `@capacitor/status-bar`, App back button listener cho Android, và CSS safe-area insets chuẩn cho iPhone 16 Pro).
+- Tiến hành thực thi `TASK-107`: Viết bộ kiểm thử `tests/multiplayerE2E.test.mjs` giả lập toàn bộ vòng đời ván đấu đa người chơi online (Host tạo phòng -> 4 người vào -> bắt đầu -> đêm -> rớt mạng nối lại -> sáng -> vote -> phân định thắng thua) và chạy kiểm chứng toàn diện.

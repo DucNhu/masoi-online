@@ -1,6 +1,4 @@
-/**
- * Web Audio API synthesizer for instant zero-dependency sound effects on iOS Safari
- */
+import { NativeBridge } from './nativeBridge';
 
 class SoundManager {
   private ctx: AudioContext | null = null;
@@ -166,13 +164,10 @@ class SoundManager {
   }
 
   /**
-   * Haptic vibration feedback for mobile (if supported by browser)
+   * Haptic vibration feedback for mobile (Native Taptic Engine & Web fallback)
    */
   triggerHaptic(type: 'light' | 'medium' | 'heavy' = 'light') {
-    if (typeof window !== 'undefined' && 'navigator' in window && navigator.vibrate) {
-      const duration = type === 'light' ? 25 : type === 'medium' ? 50 : 100;
-      navigator.vibrate(duration);
-    }
+    NativeBridge.hapticImpact(type);
   }
 }
 
