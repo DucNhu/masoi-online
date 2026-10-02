@@ -37,6 +37,7 @@ export interface ServerGameState {
   roomId: string;
   phase: RoomPhase;
   subPhase?: string;
+  settings: RoomSettings;
   dayNumber: number;
   timerSeconds: number;
   players: (NetworkPlayer & {
