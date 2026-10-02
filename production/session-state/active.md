@@ -1,6 +1,6 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-10-02, Asia/Ho_Chi_Minh.
+- **Thời gian cập nhật**: 2026-10-02 21:30 (Asia/Ho_Chi_Minh) — Autonomous Heartbeat Verified.
 - **Mục tiêu**: Hoàn thành toàn diện SPRINT 4 (WebRTC Voice Chat Trực Tuyến & Âm Thanh Không Gian Procedural).
 - **Quyết định định hướng**: Nền tảng **React + TypeScript + Capacitor** (Thẻ bài / Bàn tròn / Avatar ma mị, siêu nhẹ, hỗ trợ cả Web + iOS + Android).
 - **Nhánh làm việc**: `feature/ma-soi-online`.
