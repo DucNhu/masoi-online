@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, BookOpen, RotateCcw, Moon, Sun } from 'lucide-react';
+import { Eye, EyeOff, BookOpen, RotateCcw, Moon, Sun, Globe } from 'lucide-react';
 import { GamePhase } from '../types/game';
 
 interface Props {
@@ -9,6 +9,8 @@ interface Props {
   onTogglePrivacy: () => void;
   onOpenLookup: () => void;
   onResetGame: () => void;
+  mode?: 'OFFLINE' | 'ONLINE';
+  onToggleMode?: () => void;
 }
 
 export const Header: React.FC<Props> = ({
@@ -18,6 +20,8 @@ export const Header: React.FC<Props> = ({
   onTogglePrivacy,
   onOpenLookup,
   onResetGame,
+  mode = 'OFFLINE',
+  onToggleMode,
 }) => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
@@ -57,15 +61,30 @@ export const Header: React.FC<Props> = ({
             {isNight ? <Moon size={20} color="#a5b4fc" /> : <Sun size={20} color="#fde047" />}
           </div>
           <div>
-            <div className="app-title">MA SÓI OFFLINE</div>
+            <div className="app-title">{mode === 'ONLINE' ? 'MA SÓI ONLINE' : 'MA SÓI OFFLINE'}</div>
             <div className="app-subtitle">
-              {phase === 'SETUP' ? 'TÚ LƠ KHƠ EDITION' : getPhaseLabel()}
+              {mode === 'ONLINE' ? 'PHÒNG CHƠI TRỰC TUYẾN' : (phase === 'SETUP' ? 'TÚ LƠ KHƠ EDITION' : getPhaseLabel())}
             </div>
           </div>
         </div>
 
         {/* Action icons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Mode Switcher */}
+          {onToggleMode && (
+            <button
+              onClick={onToggleMode}
+              className="btn btn-ghost btn-icon-only"
+              style={{
+                borderColor: mode === 'ONLINE' ? '#818cf8' : 'var(--border-subtle)',
+                background: mode === 'ONLINE' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+              }}
+              title={mode === 'ONLINE' ? 'Chuyển sang Chế độ Offline (Quản trò)' : 'Chuyển sang Chế độ Online (Ghép phòng)'}
+            >
+              <Globe size={18} color={mode === 'ONLINE' ? '#818cf8' : '#94a3b8'} />
+            </button>
+          )}
+
           {/* Lookup Modal */}
           <button
             onClick={onOpenLookup}

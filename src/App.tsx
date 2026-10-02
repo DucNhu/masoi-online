@@ -18,6 +18,7 @@ import { DayDiscussionView } from './components/DayDiscussionView';
 import { DayVotingView } from './components/DayVotingView';
 import { GameOverModal } from './components/GameOverModal';
 import { HistoryLogView } from './components/HistoryLogView';
+import { OnlineLobby } from './components/OnlineLobby';
 import { soundEffects } from './utils/soundEffects';
 import { Gamepad2, Users, History, BookOpen, Heart } from 'lucide-react';
 
@@ -52,6 +53,7 @@ export const App: React.FC = () => {
   });
 
   const [activeTab, setActiveTab] = useState<'GAME' | 'PLAYERS' | 'LOGS' | 'CARDS'>('GAME');
+  const [appMode, setAppMode] = useState<'OFFLINE' | 'ONLINE'>('OFFLINE');
   const [isLookupOpen, setIsLookupOpen] = useState<boolean>(false);
 
   // Lưu lại người chết qua đêm để DayDawnView hiển thị
@@ -408,20 +410,26 @@ export const App: React.FC = () => {
         onTogglePrivacy={() => setGameState(prev => ({ ...prev, privacyShield: !prev.privacyShield }))}
         onOpenLookup={() => setIsLookupOpen(true)}
         onResetGame={handleResetGame}
+        mode={appMode}
+        onToggleMode={() => setAppMode(prev => prev === 'OFFLINE' ? 'ONLINE' : 'OFFLINE')}
       />
 
-      {/* Main Content Area based on Active Tab */}
+      {/* Main Content Area based on Active Tab & Mode */}
       <main style={{ flex: 1, paddingBottom: '24px' }}>
-        {/* Tab 1: GAMEPLAY FLOW */}
-        {activeTab === 'GAME' && (
+        {appMode === 'ONLINE' ? (
+          <OnlineLobby onBackToOffline={() => setAppMode('OFFLINE')} />
+        ) : (
           <>
-            {gameState.phase === 'SETUP' && (
-              <SetupView
-                cardMappings={gameState.cardMappings}
-                onStartGame={handleStartGame}
-                privacyShield={gameState.privacyShield}
-              />
-            )}
+            {/* Tab 1: GAMEPLAY FLOW */}
+            {activeTab === 'GAME' && (
+              <>
+                {gameState.phase === 'SETUP' && (
+                  <SetupView
+                    cardMappings={gameState.cardMappings}
+                    onStartGame={handleStartGame}
+                    privacyShield={gameState.privacyShield}
+                  />
+                )}
 
             {gameState.phase.startsWith('NIGHT') && (
               <NightPhaseView
@@ -569,8 +577,10 @@ export const App: React.FC = () => {
                 </div>
               );
             })}
-          </div>
-        )}
+            </div>
+          )}
+        </>
+      )}
       </main>
 
       {/* Game Over Modal */}
@@ -591,51 +601,53 @@ export const App: React.FC = () => {
       />
 
       {/* Bottom Navigation Bar */}
-      <nav className="bottom-nav">
-        <button
-          onClick={() => {
-            soundEffects.triggerHaptic('light');
-            setActiveTab('GAME');
-          }}
-          className={`nav-item ${activeTab === 'GAME' ? 'active' : ''}`}
-        >
-          <Gamepad2 size={20} />
-          <span>Ván Đấu</span>
-        </button>
+      {appMode === 'OFFLINE' && (
+        <nav className="bottom-nav">
+          <button
+            onClick={() => {
+              soundEffects.triggerHaptic('light');
+              setActiveTab('GAME');
+            }}
+            className={`nav-item ${activeTab === 'GAME' ? 'active' : ''}`}
+          >
+            <Gamepad2 size={20} />
+            <span>Ván Đấu</span>
+          </button>
 
-        <button
-          onClick={() => {
-            soundEffects.triggerHaptic('light');
-            setActiveTab('PLAYERS');
-          }}
-          className={`nav-item ${activeTab === 'PLAYERS' ? 'active' : ''}`}
-        >
-          <Users size={20} />
-          <span>Người Chơi</span>
-        </button>
+          <button
+            onClick={() => {
+              soundEffects.triggerHaptic('light');
+              setActiveTab('PLAYERS');
+            }}
+            className={`nav-item ${activeTab === 'PLAYERS' ? 'active' : ''}`}
+          >
+            <Users size={20} />
+            <span>Người Chơi</span>
+          </button>
 
-        <button
-          onClick={() => {
-            soundEffects.triggerHaptic('light');
-            setActiveTab('LOGS');
-          }}
-          className={`nav-item ${activeTab === 'LOGS' ? 'active' : ''}`}
-        >
-          <History size={20} />
-          <span>Nhật Ký</span>
-        </button>
+          <button
+            onClick={() => {
+              soundEffects.triggerHaptic('light');
+              setActiveTab('LOGS');
+            }}
+            className={`nav-item ${activeTab === 'LOGS' ? 'active' : ''}`}
+          >
+            <History size={20} />
+            <span>Nhật Ký</span>
+          </button>
 
-        <button
-          onClick={() => {
-            soundEffects.triggerHaptic('light');
-            setActiveTab('CARDS');
-          }}
-          className={`nav-item ${activeTab === 'CARDS' ? 'active' : ''}`}
-        >
-          <BookOpen size={20} />
-          <span>Bài Tú</span>
-        </button>
-      </nav>
+          <button
+            onClick={() => {
+              soundEffects.triggerHaptic('light');
+              setActiveTab('CARDS');
+            }}
+            className={`nav-item ${activeTab === 'CARDS' ? 'active' : ''}`}
+          >
+            <BookOpen size={20} />
+            <span>Bài Tú</span>
+          </button>
+        </nav>
+      )}
     </div>
   );
 };
