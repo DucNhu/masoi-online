@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Timer, Play, Pause, RotateCcw, Plus, ArrowRight, Volume2 } from 'lucide-react';
 import { GameState } from '../types/game';
 import { soundEffects } from '../utils/soundEffects';
+import { ConfirmModal } from './ConfirmModal';
 
 interface Props {
   gameState: GameState;
@@ -20,6 +21,7 @@ export const DayDiscussionView: React.FC<Props> = ({
   const [initialSeconds, setInitialSeconds] = useState<number>(90);
   const [secondsLeft, setSecondsLeft] = useState<number>(90);
   const [isRunning, setIsRunning] = useState<boolean>(false);
+  const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
@@ -126,7 +128,13 @@ export const DayDiscussionView: React.FC<Props> = ({
         {/* Controls */}
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px' }}>
           <button
-            onClick={() => handleReset()}
+            onClick={() => {
+              if (isRunning || secondsLeft < initialSeconds) {
+                setShowResetConfirm(true);
+              } else {
+                handleReset();
+              }
+            }}
             className="btn btn-ghost btn-icon-only"
             title="Đặt lại giờ"
           >
@@ -211,6 +219,21 @@ export const DayDiscussionView: React.FC<Props> = ({
           Tiến Hành Bỏ Phiếu Treo Cổ <ArrowRight size={18} />
         </button>
       </div>
+
+      {/* Confirm Reset Discussion Timer Modal */}
+      <ConfirmModal
+        isOpen={showResetConfirm}
+        title="Đặt Lại Thời Gian Thảo Luận?"
+        message="Thời gian thảo luận hiện tại sẽ được dừng lại và thiết lập lại về ban đầu."
+        confirmText="Đặt Lại Giờ"
+        cancelText="Tiếp Tục Đếm"
+        type="warning"
+        onConfirm={() => {
+          setShowResetConfirm(false);
+          handleReset();
+        }}
+        onCancel={() => setShowResetConfirm(false)}
+      />
     </div>
   );
 };

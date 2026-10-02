@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { roomManager } from '../logic/roomManager';
 import { ClientGameState } from '../types/multiplayer';
 import { OnlinePlayerGameView } from './OnlinePlayerGameView';
+import { ConfirmModal } from './ConfirmModal';
 import { Users, Crown, CheckCircle2, Clock, Copy, Check, ArrowLeft, Play, LogOut, ShieldAlert } from 'lucide-react';
 
 interface Props {
@@ -18,6 +19,7 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
   const [activeView, setActiveView] = useState<'SELECT' | 'CREATE' | 'JOIN' | 'ROOM'>('SELECT');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
+  const [showLeaveRoomConfirm, setShowLeaveRoomConfirm] = useState<boolean>(false);
 
   // Trạng thái phiên hiện tại trong phòng
   const [currentSession, setCurrentSession] = useState<{
@@ -139,7 +141,7 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
       {/* Nút quay lại Offline */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
         <button
-          onClick={activeView === 'ROOM' ? handleLeaveRoom : onBackToOffline}
+          onClick={activeView === 'ROOM' ? () => setShowLeaveRoomConfirm(true) : onBackToOffline}
           style={{
             background: 'rgba(255,255,255,0.08)',
             border: '1px solid rgba(255,255,255,0.15)',
@@ -598,7 +600,7 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
             )}
 
             <button
-              onClick={handleLeaveRoom}
+              onClick={() => setShowLeaveRoomConfirm(true)}
               style={{
                 background: 'rgba(255,255,255,0.08)',
                 border: '1px solid rgba(255,255,255,0.15)',
@@ -618,6 +620,23 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
         </div>
         )
       )}
+
+      {/* Modal xác nhận rời phòng chờ */}
+      <ConfirmModal
+        isOpen={showLeaveRoomConfirm}
+        title="Rời Khỏi Phòng Chờ?"
+        message={isHost 
+          ? "Bạn đang là Chủ Phòng. Nếu bạn rời đi, phòng chờ sẽ bị hủy hoặc quyền chủ phòng sẽ được chuyển giao."
+          : "Bạn có chắc chắn muốn rời khỏi phòng chờ này?"}
+        confirmText="Rời Phòng"
+        cancelText="Ở Lại"
+        variant="danger"
+        onConfirm={() => {
+          setShowLeaveRoomConfirm(false);
+          handleLeaveRoom();
+        }}
+        onCancel={() => setShowLeaveRoomConfirm(false)}
+      />
     </div>
   );
 };

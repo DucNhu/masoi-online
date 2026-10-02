@@ -3,6 +3,7 @@ import { Moon, Shield, Eye, Sparkles, Skull, ArrowRight, Check, Heart, VenetianM
 import { GameState, NightStepAction, GamePhase } from '../types/game';
 import { ROLE_DEFINITIONS, MODERATOR_SCRIPTS } from '../data/roles';
 import { soundEffects } from '../utils/soundEffects';
+import { ConfirmModal } from './ConfirmModal';
 
 interface Props {
   gameState: GameState;
@@ -99,6 +100,7 @@ export const NightPhaseView: React.FC<Props> = ({
 
   // Tiên tri soi
   const [seerInvestigatedId, setSeerInvestigatedId] = useState<string | null>(null);
+  const [showFinishNightConfirm, setShowFinishNightConfirm] = useState<boolean>(false);
 
   // Chuyển sang bước kế tiếp
   const handleNextStep = () => {
@@ -112,9 +114,8 @@ export const NightPhaseView: React.FC<Props> = ({
         onPhaseChange(STEP_TO_PHASE[nextStep]);
       }
     } else {
-      // Kết thúc đêm -> Sang Ngày
-      soundEffects.playDawnChime();
-      onFinishNight();
+      // Yêu cầu xác nhận trước khi kết thúc đêm -> Sang Ngày
+      setShowFinishNightConfirm(true);
     }
   };
 
@@ -776,6 +777,22 @@ export const NightPhaseView: React.FC<Props> = ({
           )}
         </button>
       </div>
+
+      {/* Modal xác nhận kết thúc đêm */}
+      <ConfirmModal
+        isOpen={showFinishNightConfirm}
+        title="Đánh Thức Cả Làng?"
+        message={`Bạn có chắc chắn muốn kết thúc Đêm ${round} và bước sang Bình Minh? Kết quả bảo vệ, sói cắn, và bình thuốc của phù thủy sẽ được tổng hợp ngay.`}
+        confirmText="Đánh Thức Cả Làng"
+        cancelText="Kiểm Tra Lại"
+        variant="warning"
+        onConfirm={() => {
+          setShowFinishNightConfirm(false);
+          soundEffects.playDawnChime();
+          onFinishNight();
+        }}
+        onCancel={() => setShowFinishNightConfirm(false)}
+      />
     </div>
   );
 };

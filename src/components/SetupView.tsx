@@ -19,6 +19,7 @@ import {
 import { Player, CardRank, CardSuit, CardMappingConfig, RoleId } from '../types/game';
 import { ROLE_DEFINITIONS } from '../data/roles';
 import { soundEffects } from '../utils/soundEffects';
+import { ConfirmModal } from './ConfirmModal';
 
 interface Props {
   cardMappings: CardMappingConfig;
@@ -112,6 +113,11 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
   const [enableIdiot, setEnableIdiot] = useState(false);   // Lá 6 - Kẻ Ngốc
   const [enableCursed, setEnableCursed] = useState(false); // Lá 5 - Bán Sói
 
+  // Confirm dialog states
+  const [deleteTargetPlayer, setDeleteTargetPlayer] = useState<{ id: string; name: string } | null>(null);
+  const [showReshuffleConfirm, setShowReshuffleConfirm] = useState(false);
+  const [showBulkOverwriteConfirm, setShowBulkOverwriteConfirm] = useState(false);
+
   const syncRoleDefaults = (newCount: number) => {
     let recWolf = 1;
     if (newCount >= 7 && newCount <= 9) recWolf = 2;
@@ -156,17 +162,26 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
     soundEffects.triggerHaptic('light');
   };
 
-  // Xóa 1 người chơi
-  const handleRemovePlayer = (id: string) => {
+  // Yêu cầu xóa 1 người chơi (mở dialog xác nhận)
+  const handleRequestRemovePlayer = (id: string) => {
     if (players.length <= 4) return;
+    const target = players.find(p => p.id === id);
+    if (target) {
+      setDeleteTargetPlayer({ id: target.id, name: target.name });
+    }
+  };
+
+  const handleConfirmRemovePlayer = () => {
+    if (!deleteTargetPlayer) return;
     const filtered = players
-      .filter(p => p.id !== id)
+      .filter(p => p.id !== deleteTargetPlayer.id)
       .map((p, index) => ({
         ...p,
         seatNumber: index + 1,
       }));
     setPlayers(filtered);
     syncRoleDefaults(filtered.length);
+    setDeleteTargetPlayer(null);
     soundEffects.triggerHaptic('light');
   };
 
@@ -176,7 +191,7 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
   };
 
   // Xử lý nạp hàng loạt tên
-  const handleApplyBulkNames = () => {
+  const executeApplyBulkNames = () => {
     const rawList = bulkInputText
       .split(/[\n,]+/)
       .map(s => s.trim())
@@ -195,8 +210,24 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
       setPlayers(newPlayerList);
       syncRoleDefaults(newPlayerList.length);
       setShowBulkInputModal(false);
+      setShowBulkOverwriteConfirm(false);
       setBulkInputText('');
       soundEffects.triggerHaptic('medium');
+    }
+  };
+
+  const handleApplyBulkNames = () => {
+    const rawList = bulkInputText
+      .split(/[\n,]+/)
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    if (rawList.length < 4) return;
+
+    if (players.length > 0) {
+      setShowBulkOverwriteConfirm(true);
+    } else {
+      executeApplyBulkNames();
     }
   };
 
@@ -891,7 +922,7 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
                 {/* Delete button */}
                 {players.length > 4 && (
                   <button
-                    onClick={() => handleRemovePlayer(p.id)}
+                    onClick={() => handleRequestRemovePlayer(p.id)}
                     style={{
                       background: 'transparent',
                       border: 'none',
@@ -1267,7 +1298,7 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
           {/* Quick Reshuffle & Edit Back Buttons */}
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
-              onClick={handleShuffleAndDeal}
+              onClick={() => setShowReshuffleConfirm(true)}
               className="btn btn-ghost"
               style={{ flex: 1, fontSize: '0.82rem', padding: '10px' }}
             >
@@ -1390,6 +1421,45 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
           </div>
         </div>
       )}
+
+      {/* Confirm Delete Player Modal */}
+      <ConfirmModal
+        isOpen={Boolean(deleteTargetPlayer)}
+        title="Xóa Người Chơi?"
+        message={`Bạn có chắc chắn muốn xóa người chơi "${deleteTargetPlayer?.name}" khỏi danh sách?`}
+        confirmText="Xác Nhận Xóa"
+        cancelText="Giữ Lại"
+        type="danger"
+        onConfirm={handleConfirmRemovePlayer}
+        onCancel={() => setDeleteTargetPlayer(null)}
+      />
+
+      {/* Confirm Reshuffle & Deal Modal */}
+      <ConfirmModal
+        isOpen={showReshuffleConfirm}
+        title="Xào Lại Toàn Bộ Bài?"
+        message="Các lá bài đã phát sẽ bị hủy và chia lại ngẫu nhiên. Mọi người chơi sẽ cần xem lại lá bài của mình từ đầu."
+        confirmText="Xào Lại Ngay"
+        cancelText="Quay Lại"
+        type="warning"
+        onConfirm={() => {
+          setShowReshuffleConfirm(false);
+          handleShuffleAndDeal();
+        }}
+        onCancel={() => setShowReshuffleConfirm(false)}
+      />
+
+      {/* Confirm Overwrite Bulk Names Modal */}
+      <ConfirmModal
+        isOpen={showBulkOverwriteConfirm}
+        title="Ghi Đè Danh Sách Người Chơi?"
+        message="Danh sách người chơi hiện tại sẽ được thay thế hoàn toàn bằng danh sách mới vừa dán. Bạn có muốn tiếp tục?"
+        confirmText="Ghi Đè"
+        cancelText="Hủy Bỏ"
+        type="warning"
+        onConfirm={executeApplyBulkNames}
+        onCancel={() => setShowBulkOverwriteConfirm(false)}
+      />
     </div>
   );
 };

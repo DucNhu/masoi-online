@@ -3,6 +3,7 @@ import { Vote, Skull, Check, Plus, Minus, AlertTriangle, ShieldCheck } from 'luc
 import { GameState } from '../types/game';
 import { ROLE_DEFINITIONS } from '../data/roles';
 import { soundEffects } from '../utils/soundEffects';
+import { ConfirmModal } from './ConfirmModal';
 
 interface Props {
   gameState: GameState;
@@ -21,6 +22,8 @@ export const DayVotingView: React.FC<Props> = ({
   // Vote tallies: playerId -> count
   const [votes, setVotes] = useState<Record<string, number>>({});
   const [selectedHangedId, setSelectedHangedId] = useState<string | null>(null);
+  const [showHangConfirm, setShowHangConfirm] = useState<boolean>(false);
+  const [showSkipConfirm, setShowSkipConfirm] = useState<boolean>(false);
 
   const handleAdjustVote = (playerId: string, delta: number) => {
     soundEffects.triggerHaptic('light');
@@ -222,7 +225,7 @@ export const DayVotingView: React.FC<Props> = ({
       }}>
         {targetPlayer ? (
           <button
-            onClick={handleConfirmHanging}
+            onClick={() => setShowHangConfirm(true)}
             className="btn btn-danger"
             style={{ width: '100%', height: '52px', fontSize: '1.05rem' }}
           >
@@ -230,7 +233,7 @@ export const DayVotingView: React.FC<Props> = ({
           </button>
         ) : (
           <button
-            onClick={handleSkipHanging}
+            onClick={() => setShowSkipConfirm(true)}
             className="btn btn-ghost"
             style={{ width: '100%', height: '52px', fontSize: '1rem', border: '1px dashed var(--border-subtle)' }}
           >
@@ -238,6 +241,38 @@ export const DayVotingView: React.FC<Props> = ({
           </button>
         )}
       </div>
+
+      {/* Confirm Execution Modal */}
+      {targetPlayer && (
+        <ConfirmModal
+          isOpen={showHangConfirm}
+          title="Xác Nhận Treo Cổ?"
+          message={`Bạn có chắc chắn muốn xử tử ${targetPlayer.name} (Ghế #${targetPlayer.seatNumber})? Người này sẽ bị loại khỏi ván đấu và trăn trối lời cuối.`}
+          confirmText="Treo Cổ"
+          cancelText="Xem Lại"
+          type="danger"
+          onConfirm={() => {
+            setShowHangConfirm(false);
+            handleConfirmHanging();
+          }}
+          onCancel={() => setShowHangConfirm(false)}
+        />
+      )}
+
+      {/* Confirm Skip Hanging Modal */}
+      <ConfirmModal
+        isOpen={showSkipConfirm}
+        title="Bỏ Qua Lượt Treo Cổ?"
+        message="Cả làng sẽ không xử tử bất kỳ ai hôm nay và lập tức chuyển sang màn đêm tiếp theo. Bạn có muốn tiếp tục?"
+        confirmText="Bỏ Qua & Vào Đêm"
+        cancelText="Tiếp Tục Bỏ Phiếu"
+        type="warning"
+        onConfirm={() => {
+          setShowSkipConfirm(false);
+          handleSkipHanging();
+        }}
+        onCancel={() => setShowSkipConfirm(false)}
+      />
     </div>
   );
 };

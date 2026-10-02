@@ -3,6 +3,7 @@ import { ClientGameState } from '../types/multiplayer';
 import { ROLE_DEFINITIONS } from '../data/roles';
 import { roomManager } from '../logic/roomManager';
 import { soundEffects } from '../utils/soundEffects';
+import { ConfirmModal } from './ConfirmModal';
 import { 
   Eye, 
   EyeOff, 
@@ -28,6 +29,7 @@ interface Props {
 
 export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }) => {
   const [showRoleDetails, setShowRoleDetails] = useState<boolean>(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState<boolean>(false);
   const [selectedNightTargetId, setSelectedNightTargetId] = useState<string | null>(null);
   const [nightActionSubmitted, setNightActionSubmitted] = useState<boolean>(false);
   
@@ -180,7 +182,7 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
           </button>
 
           <button
-            onClick={onLeaveRoom}
+            onClick={() => setShowLeaveConfirm(true)}
             style={{
               background: 'rgba(239, 68, 68, 0.15)',
               border: '1px solid rgba(239, 68, 68, 0.3)',
@@ -983,6 +985,21 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
           })}
         </div>
       </div>
+
+      {/* Modal xác nhận rời trận đấu */}
+      <ConfirmModal
+        isOpen={showLeaveConfirm}
+        title="Rời Trận Đấu?"
+        message="Bạn có chắc chắn muốn rời khỏi trận đấu đang diễn ra? Tiến trình và vai trò của bạn trong ván chơi này sẽ bị hủy bỏ."
+        confirmText="Rời Trận"
+        cancelText="Ở Lại Tiếp Tục"
+        variant="danger"
+        onConfirm={() => {
+          setShowLeaveConfirm(false);
+          onLeaveRoom();
+        }}
+        onCancel={() => setShowLeaveConfirm(false)}
+      />
     </div>
   );
 };

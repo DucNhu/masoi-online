@@ -3,6 +3,7 @@ import { Sun, Skull, Crosshair, ArrowRight, ShieldCheck } from 'lucide-react';
 import { GameState } from '../types/game';
 import { ROLE_DEFINITIONS } from '../data/roles';
 import { soundEffects } from '../utils/soundEffects';
+import { ConfirmModal } from './ConfirmModal';
 
 interface Props {
   gameState: GameState;
@@ -25,6 +26,7 @@ export const DayDawnView: React.FC<Props> = ({
 }) => {
   const { round, players } = gameState;
   const [selectedHunterTargetId, setSelectedHunterTargetId] = useState<string | null>(null);
+  const [showHunterConfirm, setShowHunterConfirm] = useState<boolean>(false);
 
   const deadPlayers = players.filter(p => overnightDeadIds.includes(p.id));
   const hunterPlayer = players.find(p => p.id === hunterPendingId);
@@ -170,7 +172,7 @@ export const DayDawnView: React.FC<Props> = ({
 
           <button
             disabled={!selectedHunterTargetId}
-            onClick={handleConfirmHunter}
+            onClick={() => setShowHunterConfirm(true)}
             className="btn btn-danger"
             style={{ width: '100%' }}
           >
@@ -195,6 +197,23 @@ export const DayDawnView: React.FC<Props> = ({
             Bắt Đầu Thảo Luận Ban Ngày <ArrowRight size={18} />
           </button>
         </div>
+      )}
+
+      {/* Modal xác nhận phát đạn thợ săn */}
+      {hunterPlayer && (
+        <ConfirmModal
+          isOpen={showHunterConfirm}
+          title="Xác Nhận Bắn Chết?"
+          message={`Bạn có chắc chắn muốn xác nhận phát đạn của Thợ Săn (${hunterPlayer.name}) tiêu diệt "${alivePlayers.find(p => p.id === selectedHunterTargetId)?.name}"? Quyết định này không thể hoàn tác.`}
+          confirmText="Xác Nhận Bắn"
+          cancelText="Chọn Lại"
+          variant="danger"
+          onConfirm={() => {
+            setShowHunterConfirm(false);
+            handleConfirmHunter();
+          }}
+          onCancel={() => setShowHunterConfirm(false)}
+        />
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, BookOpen, RotateCcw, Moon, Sun, Globe } from 'lucide-react';
 import { GamePhase } from '../types/game';
+import { ConfirmModal } from './ConfirmModal';
 
 interface Props {
   round: number;
@@ -122,59 +123,19 @@ export const Header: React.FC<Props> = ({
       </header>
 
       {/* Reset Confirmation Modal */}
-      {showResetConfirm && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.85)',
-          backdropFilter: 'blur(10px)',
-          zIndex: 300,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '20px',
-        }}>
-          <div style={{
-            background: '#16192b',
-            border: '1px solid rgba(239, 68, 68, 0.4)',
-            borderRadius: '20px',
-            padding: '24px',
-            maxWidth: '360px',
-            width: '100%',
-            textAlign: 'center',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.8)',
-          }}>
-            <h3 style={{ fontSize: '1.2rem', marginBottom: '8px', color: '#f87171' }} className="font-cinzel">
-              Bắt Đầu Ván Mới?
-            </h3>
-            <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: 1.5 }}>
-              Mọi dữ liệu ván đấu hiện tại sẽ được làm mới để chia bài lại từ đầu.
-            </p>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                onClick={() => setShowResetConfirm(false)}
-                className="btn btn-ghost"
-                style={{ flex: 1 }}
-              >
-                Hủy Bỏ
-              </button>
-              <button
-                onClick={() => {
-                  setShowResetConfirm(false);
-                  onResetGame();
-                }}
-                className="btn btn-danger"
-                style={{ flex: 1 }}
-              >
-                Xác Nhận
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={showResetConfirm}
+        title="Bắt Đầu Ván Mới?"
+        message="Mọi dữ liệu ván đấu hiện tại sẽ được làm mới để chia bài lại từ đầu."
+        confirmText="Xác Nhận"
+        cancelText="Hủy Bỏ"
+        type="danger"
+        onConfirm={() => {
+          setShowResetConfirm(false);
+          onResetGame();
+        }}
+        onCancel={() => setShowResetConfirm(false)}
+      />
     </>
   );
 };

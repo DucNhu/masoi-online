@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { Trophy, RotateCcw, Skull, Users, Heart } from 'lucide-react';
 import { TeamSide, Player } from '../types/game';
 import { ROLE_DEFINITIONS } from '../data/roles';
+import { ConfirmModal } from './ConfirmModal';
 
 interface Props {
   winner: TeamSide | 'NONE';
@@ -17,6 +18,7 @@ export const GameOverModal: React.FC<Props> = ({
   players,
   onNewGame,
 }) => {
+  const [showConfirmNewGame, setShowConfirmNewGame] = useState(false);
   useEffect(() => {
     // Fire celebratory confetti!
     confetti({
@@ -166,7 +168,7 @@ export const GameOverModal: React.FC<Props> = ({
         {/* Footer */}
         <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border-subtle)' }}>
           <button
-            onClick={onNewGame}
+            onClick={() => setShowConfirmNewGame(true)}
             className="btn btn-primary"
             style={{ width: '100%', height: '50px', fontSize: '1.05rem' }}
           >
@@ -174,6 +176,21 @@ export const GameOverModal: React.FC<Props> = ({
           </button>
         </div>
       </div>
+
+      {/* Confirm Start New Game Modal */}
+      <ConfirmModal
+        isOpen={showConfirmNewGame}
+        title="Bắt Đầu Ván Mới?"
+        message="Mọi kết quả và dữ liệu ván đấu vừa kết thúc sẽ được làm mới để chia bài lại từ đầu."
+        confirmText="Ván Mới"
+        cancelText="Xem Lại Kết Quả"
+        type="warning"
+        onConfirm={() => {
+          setShowConfirmNewGame(false);
+          onNewGame();
+        }}
+        onCancel={() => setShowConfirmNewGame(false)}
+      />
     </div>
   );
 };
