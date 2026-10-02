@@ -118,7 +118,7 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
     else if (newCount >= 10 && newCount <= 12) recWolf = 3;
     else if (newCount >= 13) recWolf = 4;
     setWolfCount(recWolf);
-    setEnableHunter(newCount >= 7);
+    setEnableHunter(newCount >= 5);
     setEnableGuard(newCount >= 4);
   };
 

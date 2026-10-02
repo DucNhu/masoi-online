@@ -62,6 +62,7 @@ export type GamePhase =
   | 'NIGHT_CUPID'
   | 'NIGHT_MINION'
   | 'NIGHT_BODYGUARD'
+  | 'NIGHT_HUNTER'
   | 'NIGHT_WEREWOLF'
   | 'NIGHT_WITCH'
   | 'NIGHT_SEER'
@@ -73,6 +74,7 @@ export type GamePhase =
 
 export interface NightStepAction {
   protectedPlayerId: string | null;
+  hunterTargetId?: string | null;
   werewolfTargetId: string | null;
   witchSaved: boolean;
   witchPoisonTargetId: string | null;

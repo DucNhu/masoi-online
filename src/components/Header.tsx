@@ -34,6 +34,7 @@ export const Header: React.FC<Props> = ({
       case 'NIGHT_CUPID': return `Đêm ${round} • Thần Tình Yêu`;
       case 'NIGHT_MINION': return `Đêm ${round} • Kẻ Bán Tơ`;
       case 'NIGHT_BODYGUARD': return `Đêm ${round} • Bảo Vệ`;
+      case 'NIGHT_HUNTER': return `Đêm ${round} • Thợ Săn`;
       case 'NIGHT_WEREWOLF': return `Đêm ${round} • Ma Sói`;
       case 'NIGHT_WITCH': return `Đêm ${round} • Phù Thủy`;
       case 'NIGHT_SEER': return `Đêm ${round} • Tiên Tri`;

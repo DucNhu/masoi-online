@@ -31,6 +31,7 @@ const INITIAL_STATE: GameState = {
   lastProtectedPlayerId: null,
   currentNightAction: {
     protectedPlayerId: null,
+    hunterTargetId: null,
     werewolfTargetId: null,
     witchSaved: false,
     witchPoisonTargetId: null,
@@ -272,6 +273,7 @@ export const App: React.FC = () => {
         phase: 'NIGHT_START',
         currentNightAction: {
           protectedPlayerId: null,
+          hunterTargetId: null,
           werewolfTargetId: null,
           witchSaved: false,
           witchPoisonTargetId: null,
@@ -313,6 +315,7 @@ export const App: React.FC = () => {
         players: updatedPlayers,
         currentNightAction: {
           protectedPlayerId: null,
+          hunterTargetId: null,
           werewolfTargetId: null,
           witchSaved: false,
           witchPoisonTargetId: null,
@@ -380,6 +383,7 @@ export const App: React.FC = () => {
         players: updatedPlayers,
         currentNightAction: {
           protectedPlayerId: null,
+          hunterTargetId: null,
           werewolfTargetId: null,
           witchSaved: false,
           witchPoisonTargetId: null,

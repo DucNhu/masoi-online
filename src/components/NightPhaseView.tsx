@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Moon, Shield, Eye, Sparkles, Skull, ArrowRight, Check, Heart, VenetianMask } from 'lucide-react';
+import { Moon, Shield, Eye, Sparkles, Skull, ArrowRight, Check, Heart, VenetianMask, Crosshair } from 'lucide-react';
 import { GameState, NightStepAction, GamePhase } from '../types/game';
 import { ROLE_DEFINITIONS, MODERATOR_SCRIPTS } from '../data/roles';
 import { soundEffects } from '../utils/soundEffects';
@@ -13,13 +13,14 @@ interface Props {
   privacyShield: boolean;
 }
 
-type NightSubStep = 'INTRO' | 'CUPID' | 'MINION' | 'BODYGUARD' | 'WEREWOLF' | 'WITCH' | 'SEER' | 'OUTRO';
+type NightSubStep = 'INTRO' | 'CUPID' | 'MINION' | 'BODYGUARD' | 'HUNTER' | 'WEREWOLF' | 'WITCH' | 'SEER' | 'OUTRO';
 
 const STEP_TO_PHASE: Record<NightSubStep, GamePhase> = {
   INTRO: 'NIGHT_START',
   CUPID: 'NIGHT_CUPID',
   MINION: 'NIGHT_MINION',
   BODYGUARD: 'NIGHT_BODYGUARD',
+  HUNTER: 'NIGHT_HUNTER',
   WEREWOLF: 'NIGHT_WEREWOLF',
   WITCH: 'NIGHT_WITCH',
   SEER: 'NIGHT_SEER',
@@ -41,6 +42,7 @@ export const NightPhaseView: React.FC<Props> = ({
   const hasAliveCupid = players.some(p => p.roleId === 'CUPID' && p.isAlive);
   const hasAliveMinion = players.some(p => p.roleId === 'MINION' && p.isAlive);
   const hasAliveBodyguard = players.some(p => p.roleId === 'BODYGUARD' && p.isAlive);
+  const hasAliveHunter = players.some(p => p.roleId === 'HUNTER' && p.isAlive);
   const hasAliveWerewolf = players.some(p => (ROLE_DEFINITIONS[p.roleId].team === 'WEREWOLF' || (p.roleId === 'CURSED' && p.isCursedTurned)) && p.isAlive);
   const hasAliveWitch = players.some(p => p.roleId === 'WITCH' && p.isAlive);
   const hasAliveSeer = players.some(p => p.roleId === 'SEER' && p.isAlive);
@@ -51,12 +53,13 @@ export const NightPhaseView: React.FC<Props> = ({
     if (hasAliveCupid && round === 1 && !gameState.cupidPaired) list.push('CUPID');
     if (hasAliveMinion && round === 1) list.push('MINION');
     if (hasAliveBodyguard) list.push('BODYGUARD');
+    if (hasAliveHunter) list.push('HUNTER');
     if (hasAliveWerewolf) list.push('WEREWOLF');
     if (hasAliveWitch) list.push('WITCH');
     if (hasAliveSeer) list.push('SEER');
     list.push('OUTRO');
     return list;
-  }, [hasAliveCupid, round, gameState.cupidPaired, hasAliveMinion, hasAliveBodyguard, hasAliveWerewolf, hasAliveWitch, hasAliveSeer]);
+  }, [hasAliveCupid, round, gameState.cupidPaired, hasAliveMinion, hasAliveBodyguard, hasAliveHunter, hasAliveWerewolf, hasAliveWitch, hasAliveSeer]);
 
   // Khởi tạo index từ phase hiện tại để không mất bước khi chuyển Tab
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(() => {
@@ -368,6 +371,90 @@ export const NightPhaseView: React.FC<Props> = ({
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* Step: HUNTER (Thợ Săn - Lá 10) */}
+      {currentStep === 'HUNTER' && (
+        <div className="card-glass" style={{ borderLeft: '4px solid var(--accent-hunter)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <Crosshair size={20} color="var(--accent-hunter)" />
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }} className="font-cinzel">
+              Thợ Săn (Lá 10) Thức Dậy
+            </h3>
+          </div>
+
+          <div style={{
+            background: 'rgba(0, 0, 0, 0.35)',
+            borderRadius: '12px',
+            padding: '12px',
+            marginBottom: '14px',
+          }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--accent-gold)', fontWeight: 800 }}>
+              📢 LỜI THOẠI QUẢN TRÒ:
+            </div>
+            <p style={{ fontSize: '0.88rem', color: '#f1f5f9', fontStyle: 'italic' }}>
+              "{MODERATOR_SCRIPTS.hunterWake}"
+            </p>
+          </div>
+
+          <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+            Thợ Săn chọn ai để găm đạn đêm nay? (Nếu Thợ Săn chết đêm nay, người này sẽ chết theo):
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+            {alivePlayers.map(p => {
+              const isSelected = currentNightAction.hunterTargetId === p.id;
+              const isHunterHimself = p.roleId === 'HUNTER';
+
+              return (
+                <button
+                  key={p.id}
+                  disabled={isHunterHimself}
+                  onClick={() => {
+                    onUpdateNightAction({
+                      hunterTargetId: isSelected ? null : p.id,
+                    });
+                  }}
+                  className={`btn ${isSelected ? 'btn-primary' : 'btn-ghost'}`}
+                  style={{
+                    padding: '10px',
+                    fontSize: '0.85rem',
+                    justifyContent: 'flex-start',
+                    background: isSelected ? 'linear-gradient(135deg, #10b981, #047857)' : undefined,
+                    borderColor: isSelected ? 'var(--accent-hunter)' : undefined,
+                    opacity: isHunterHimself ? 0.35 : 1,
+                  }}
+                >
+                  <span style={{ fontWeight: 800 }}>{p.seatNumber}.</span> {p.name}
+                  {isHunterHimself && (
+                    <span style={{ fontSize: '0.65rem', marginLeft: 'auto', color: 'var(--text-muted)' }}>(Bản thân)</span>
+                  )}
+                  {isSelected && <Crosshair size={16} style={{ marginLeft: 'auto' }} />}
+                </button>
+              );
+            })}
+          </div>
+
+          {currentNightAction.hunterTargetId && (
+            <div style={{
+              marginTop: '12px',
+              background: 'rgba(16, 185, 129, 0.12)',
+              border: '1px solid rgba(16, 185, 129, 0.35)',
+              borderRadius: '12px',
+              padding: '10px 14px',
+              fontSize: '0.82rem',
+              color: '#6ee7b7',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}>
+              <Crosshair size={16} color="var(--accent-hunter)" />
+              <span>
+                🎯 Đã găm đạn vào: <strong>{players.find(p => p.id === currentNightAction.hunterTargetId)?.name}</strong>. Nếu Thợ Săn ngã xuống đêm nay, nạn nhân này sẽ chết theo.
+              </span>
+            </div>
+          )}
         </div>
       )}
 

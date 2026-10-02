@@ -114,9 +114,37 @@ export function resolveNightActions(state: GameState): NightResolutionOutcome {
   for (const deadId of deadPlayerIds) {
     const deadP = players.find(p => p.id === deadId);
     if (deadP && deadP.roleId === 'HUNTER') {
-      hunterTriggeredId = deadId;
-      summaryLogs.push(`🏹 Thợ Săn ${deadP.name} đã ngã xuống! Súng báo thù được kích hoạt!`);
+      const targetId = currentNightAction.hunterTargetId;
+      const target = targetId ? players.find(p => p.id === targetId) : null;
+      if (target && !deadPlayerIds.includes(target.id)) {
+        deadPlayerIds.push(target.id);
+        deathReasons[target.id] = `Bị Thợ Săn ${deadP.name} găm đạn bắn chết`;
+        summaryLogs.push(`🏹 Thợ Săn ${deadP.name} ngã xuống! Phát đạn găm sẵn lập tức hạ gục ${target.name} (Ghế ${target.seatNumber})!`);
+        hunterTriggeredId = null;
+      } else {
+        hunterTriggeredId = deadId;
+        summaryLogs.push(`🏹 Thợ Săn ${deadP.name} đã ngã xuống! Súng báo thù được kích hoạt!`);
+      }
       break;
+    }
+  }
+
+  // 5. Kiểm tra lại Cặp Đôi chết chùm nếu mục tiêu của Thợ Săn nằm trong cặp đôi
+  if (lovers) {
+    const [loverAId, loverBId] = lovers;
+    const loverADead = deadPlayerIds.includes(loverAId);
+    const loverBDead = deadPlayerIds.includes(loverBId);
+
+    if (loverADead && !loverBDead) {
+      const partner = players.find(p => p.id === loverBId);
+      deadPlayerIds.push(loverBId);
+      deathReasons[loverBId] = 'Tuẫn tiết chết theo người yêu';
+      summaryLogs.push(`💔 ${partner ? partner.name : 'Người yêu'} quá đau buồn vì người yêu chết nên đã tuẫn tiết đi theo!`);
+    } else if (loverBDead && !loverADead) {
+      const partner = players.find(p => p.id === loverAId);
+      deadPlayerIds.push(loverAId);
+      deathReasons[loverAId] = 'Tuẫn tiết chết theo người yêu';
+      summaryLogs.push(`💔 ${partner ? partner.name : 'Người yêu'} quá đau buồn vì người yêu chết nên đã tuẫn tiết đi theo!`);
     }
   }
 
