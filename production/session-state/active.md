@@ -23,9 +23,11 @@
   - Lá bài số nào không được bật làm vai trò mở rộng thì tự động là **Dân Làng** (2..9).
   - Tích hợp trọn vẹn: State Machine các pha đêm/ngày, giải quyết thương vong trong `gameEngine.ts`, 8 bộ unit test PASS 100%, bảng quy ước bài tú `RoleLookupModal.tsx`.
 
-## Trạng thái GitHub & Deploy
+## Trạng thái GitHub & Deploy (ĐÃ DEPLOY THÀNH CÔNG)
 - **Repository Remote**: `https://github.com/DucNhu/masoi-online.git`
-- **Trạng thái Build**: PASS 100% (`tsc -b && vite build` tạo `dist/` thành công).
+- **Branch main**: Đã push commit `0a7773b` (Bao gồm nâng cấp font tiếng Việt chuẩn & Gói mở rộng 5 vai trò).
+- **Branch gh-pages**: Đã build và publish thành công (`Published` via `gh-pages -d dist`).
+- **GitHub Pages URL**: `https://ducnhu.github.io/masoi-online/` (Chạy HTTPS an toàn cho Safari PWA).
 - **Unit Test**: 8/8 test PASS (`npx tsx tests/gameEngine.test.mjs`).
 
 ## Trạng thái Local
