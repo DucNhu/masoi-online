@@ -37,5 +37,11 @@
 
 ---
 
-## 3. Hành Động Tiếp Theo Duy Nhất (Single Next Action)
-- Báo cáo kết quả kiểm tra và sửa lỗi cho người dùng; tuân thủ quy tắc KHÔNG tự ý chạy git push.
+## 3. Trạng Thái Triển Khai (Deployment Status)
+- **Git Push**: Đã hoàn tất commit và push cả 2 nhánh `feature/ma-soi-online` và `main` lên GitHub remote (`origin`).
+- **GitHub Actions Deploy**: Tự động kích hoạt workflow `.github/workflows/deploy.yml` khi push nhánh `main` để build và xuất bản GitHub Pages tại `https://ducnhu.github.io/masoi-online/`.
+
+---
+
+## 4. Hành Động Tiếp Theo Duy Nhất (Single Next Action)
+- Kiểm tra kết quả xuất bản thực tế trên GitHub Pages và nghiệm thu tính năng hiển thị role Bảo Vệ cùng WebRTC Voice Chat trên môi trường Production.
