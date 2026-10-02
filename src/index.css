@@ -1,7 +1,8 @@
 /* Design System for Ma Sói Offline — Werewolf Night Aesthetics */
 :root {
-  --font-serif: 'Cinzel', serif, -apple-system, BlinkMacSystemFont;
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
 
   /* Color Palette */
   --bg-deep: #08090f;
@@ -54,6 +55,9 @@ html, body {
   background-color: var(--bg-deep);
   color: var(--text-primary);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   min-height: 100vh;
   min-height: -webkit-fill-available;
   overflow-x: hidden;
@@ -87,8 +91,15 @@ body::before {
 
 /* Typography Utilities */
 .font-cinzel {
-  font-family: var(--font-serif);
-  letter-spacing: 0.05em;
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+  font-weight: 800;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  font-weight: 900;
 }
 
 /* App Container (Tối ưu cho màn hình iPhone 16 Pro) */
@@ -122,9 +133,10 @@ body::before {
 }
 
 .app-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: 1.25rem;
-  font-weight: 800;
+  font-weight: 900;
+  letter-spacing: 0.05em;
   background: linear-gradient(135deg, #fff 0%, #cbd5e1 50%, #94a3b8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
