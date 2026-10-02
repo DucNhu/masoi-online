@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "test": "tsx tests/gameEngine.test.mjs",
+    "test": "tsx tests/gameEngine.test.mjs && tsx tests/roomProtocol.test.mjs",
     "verify": "npm run lint && npm test && npm run build",
     "daemon": "node scripts/studio-daemon.mjs",
     "daemon:watch": "node scripts/studio-daemon.mjs --watch",
