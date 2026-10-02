@@ -9,7 +9,7 @@ interface Props {
   cardMappings: CardMappingConfig;
 }
 
-export const RoleLookupModal: React.FC<Props> = ({ isOpen, onClose, cardMappings }) => {
+export const RoleLookupModal: React.FC<Props> = ({ isOpen, onClose, cardMappings: _cardMappings }) => {
   if (!isOpen) return null;
 
   const baseCardList = [

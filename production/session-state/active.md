@@ -1,36 +1,47 @@
 # Active Session State — Ma Sói Game Studio
 
 - **Thời gian cập nhật**: 2026-10-02, Asia/Ho_Chi_Minh.
-- **Mục tiêu cấp bách**: Hoàn thành ứng dụng Quản trò Ma Sói Offline (bộ bài Tú lơ khơ 2-10, J, Q, K, A) phục vụ người dùng chơi tối nay (deadline: 6 tiếng) trên iPhone 16 Pro.
-- **Quy trình áp dụng**: Game Studio hierarchy (BA → PM → Executor → QA) từ `pokemon-battle` (`Claude-Code-Game-Studios`), RTK token-saving proxy, single source of truth session memory.
+- **Mục tiêu hiện tại**: Chuyển giao sang SPRINT 2 (Ma Sói Online & Đóng gói Mobile iOS/Android qua Capacitor), thiết lập toàn diện hệ thống Schedule & Rule tự vận hành task ngày đêm.
+- **Quy trình áp dụng**: Game Studio Hierarchy (BA → PM → Executor → QA) + Autonomous Day & Night Engine.
 
-## Cập Nhật Typography (100% Tiếng Việt)
-- **Vấn đề đã xử lý**: Font `Cinzel` trước đây không hỗ trợ đầy đủ các ký tự tiếng Việt có dấu (SÓI, THỦY, BẢO VỆ, QUẢN TRÒ, TIÊN TRI, THỢ SĂN...) dẫn đến tình trạng lỗi hiển thị (fallback font chữ lộn xộn).
-- **Bộ font mới tối ưu**:
-  - **Tiêu đề & Game Display**: `Montserrat` (weights 700, 800, 900) — mạnh mẽ, đậm chất gaming điện ảnh, sắc nét, hỗ trợ 100% tiếng Việt không lỗi dấu.
-  - **Giao diện & Nội dung**: `Be Vietnam Pro` (weights 400, 500, 600, 700, 800) — thiết kế chuyên biệt cho tiếng Việt bởi các nhà thiết kế Việt Nam, dấu thanh thanh thoát, dễ đọc trong bóng tối.
-  - **Tối ưu hiển thị**: Thêm `text-rendering: optimizeLegibility` và `-webkit-font-smoothing: antialiased` cho màn hình Retina của iPhone 16 Pro.
+---
 
-## Cập Nhật Mới: Gói Mở Rộng Vai Trò (Expansion Pack)
-- **Mặc định**: Chỉ có các vai trò cơ bản: Ma Sói (K), Tiên Tri (A), Phù Thủy (Q), Bảo Vệ (J), Thợ Săn (10), và Dân Làng (2-9).
-- **Tính năng Mở Rộng (Nút "✨ Mở Rộng Vai Trò")**:
-  - Khi người dùng bấm nút mở rộng, panel mở rộng xổ ra cho phép bật/tắt linh hoạt 5 vai trò mới:
-    1. 💘 **Thần Tình Yêu (Lá 9)**: Thức dậy Đêm 1 ghép đôi 2 người chơi. Một người chết, người kia tuẫn tiết chết theo.
-    2. 🎭 **Kẻ Bán Tơ (Lá 8)**: Phe Ma Sói. Nhận diện mặt Sói trong đêm 1. Khi Tiên Tri soi ra kết quả Người tốt (Dân).
-    3. 🛡️ **Già Làng (Lá 7)**: Có 2 sinh mạng kiên cường trước đòn cắn của Sói (bị cắn lần đầu không chết). Bị treo cổ hoặc bị đầu độc thì chết ngay.
-    4. 🃏 **Kẻ Ngốc (Lá 6)**: Nếu bị dân làng bỏ phiếu treo cổ ban ngày, Kẻ Ngốc lật bài công khai thân phận và được tha chết! Tiếp tục sống nhưng mất quyền biểu quyết.
-    5. 🐺 **Bán Sói (Lá 5)**: Ban đầu là Dân Làng. Nếu bị Ma Sói cắn trong đêm, không chết mà lời nguyền thức tỉnh, chính thức biến thành Ma Sói từ đêm tiếp theo!
-  - Lá bài số nào không được bật làm vai trò mở rộng thì tự động là **Dân Làng** (2..9).
-  - Tích hợp trọn vẹn: State Machine các pha đêm/ngày, giải quyết thương vong trong `gameEngine.ts`, 8 bộ unit test PASS 100%, bảng quy ước bài tú `RoleLookupModal.tsx`.
+## 1. Hệ Thống Schedule Tự Vận Hành Ngày Đêm (ĐÃ THIẾT LẬP HOÀN CHỈNH)
+1. **Studio Daemon CLI (`scripts/studio-daemon.mjs`)**:
+   - Chạy kiểm tra định kỳ: `npm run daemon` hoặc `npm run daemon:watch`.
+   - Tự động quét backlog `production/tasks/studio-terminal-backlog.md`, xác định task READY kế tiếp.
+   - Chạy chuỗi tự động kiểm chứng: `npm run verify` (`oxlint` + `npm test` + `npm run build`).
+   - Ghi log nhịp đập ngày đêm vào `production/session-state/daemon-heartbeat.log`.
+2. **GitHub Actions Scheduled CI (`.github/workflows/autonomous-ci-cron.yml`)**:
+   - Chạy tự động 4 lần/ngày đêm trên GitHub Actions runner (00:00, 06:00, 12:00, 18:00 UTC).
+   - Tự động chạy verify và build bundle trên cloud.
+3. **Agent Native Scheduler Daemon**:
+   - Kích hoạt tiến trình ngầm chu kỳ 30 phút (`task-89`) thông qua công cụ `schedule` để đánh thức AI kiểm tra và xử lý backlog độc lập.
 
-## Trạng thái GitHub & Deploy (ĐÃ DEPLOY THÀNH CÔNG)
-- **Repository Remote**: `https://github.com/DucNhu/masoi-online.git`
-- **Branch main**: Đã push commit `0a7773b` (Bao gồm nâng cấp font tiếng Việt chuẩn & Gói mở rộng 5 vai trò).
-- **Branch gh-pages**: Đã build và publish thành công (`Published` via `gh-pages -d dist`).
-- **GitHub Pages URL**: `https://ducnhu.github.io/masoi-online/` (Chạy HTTPS an toàn cho Safari PWA).
-- **Unit Test**: 8/8 test PASS (`npx tsx tests/gameEngine.test.mjs`).
+---
 
-## Trạng thái Local
-- Dev server đang chạy:
-  - Localhost: `http://localhost:5173/ma-soi-offline/`
-  - iPhone 16 Pro (cùng mạng): `http://172.20.10.5:5173/ma-soi-offline/`
+## 2. Hệ Thống Quy Tắc Chuyên Biệt Mới (Studio Rules)
+1. **`.agents/rules/autonomous-workflow.md`**: Quy định chu trình khép kín 6 bước (Scan -> Contract -> Code -> Verify -> Memory Sync -> Local Commit) kèm quy tắc 3-strike self-healing.
+2. **`.agents/rules/mobile-capacitor.md`**: Tiêu chuẩn Viewport Safe-area (Dynamic Island, Home Indicator), Touch Target 48px, Haptic Feedback, và pipeline đóng gói Native cho iOS & Android qua Capacitor.
+3. **`.agents/rules/multiplayer-architecture.md`**: Tiêu chuẩn Server-Authoritative, **Zero-Knowledge Payload** (tuyệt đối không gửi lén thông tin vai trò người khác qua network tab), Room Code 6 ký tự, Reconnection resilience.
+4. **`AGENTS.md`**: Cập nhật Mục 6 (Autonomous Day & Night Execution Engine) và Mục 7 (Mobile Capacitor & Online Multiplayer Standards).
+
+---
+
+## 3. Trạng Thái Backlog
+- **SPRINT 1 (Trợ Lý Quản Trò Offline)**: 8/8 Task **DONE** (Đã deploy và live tại `https://ducnhu.github.io/masoi-online/`).
+- **SPRINT 2 (Ma Sói Online & Mobile iOS/Android)**: 7 Task **READY** trong hàng đợi.
+  - Task kế tiếp: `TASK-101`: Cấu hình Mobile Native Shell bằng Capacitor cho iOS & Android.
+
+---
+
+## 4. Trạng Thái Kỹ Thuật (System Health)
+- **Lint**: `oxlint` PASSED 100% (0 errors, 0 warnings).
+- **Game Engine Unit Tests**: 8/8 tests PASSED (`npm test`).
+- **Production Build**: `npm run build` PASSED (Vite + TypeScript + PWA precache).
+- **Capacitor Config**: Đã khởi tạo `capacitor.config.ts` với `appId: com.masoi.online`, tên app "Ma Sói".
+
+---
+
+## 5. Hành Động Tiếp Theo Duy Nhất (Single Next Action)
+- Tạo local branch `feature/ma-soi-online` và tiến hành thực thi `TASK-101` (Cài đặt dependencies Capacitor Native & cấu hình Xcode/Android project structure).

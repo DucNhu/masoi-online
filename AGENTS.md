@@ -10,7 +10,7 @@ Dự án này vận hành theo mô hình Game Studio hoàn chỉnh được chuy
 - **Tự động nhập vai Agents chuyên trách**: Đọc và áp dụng đúng chuyên môn từ `Claude-Code-Game-Studios/.claude/agents/*.md`:
   - `creative-director.md` & `game-designer.md`: Thiết kế trải nghiệm ma sói, cơ chế phân vai bằng bài tú, kịch bản quản trò.
   - `gameplay-programmer.md`: Triển khai state machine các pha đêm/ngày, luật ma sói, logic thợ săn, bảo vệ, phù thủy.
-  - `producer.md`: Điều phối phạm vi MVP theo deadline khắt khe (6 tiếng), sprint backlog, tiến độ.
+  - `producer.md`: Điều phối phạm vi MVP, sprint backlog, tiến độ ngày đêm.
   - `qa-lead.md`: Kiểm thử các trường hợp ngoại lệ, xung đột kỹ năng đêm, kiểm tra điều kiện thắng thua.
 
 ### Quy tắc Role Quản lý / Task Manager
@@ -30,14 +30,14 @@ Dự án này vận hành theo mô hình Game Studio hoàn chỉnh được chuy
 - **Tách biệt Logic và UI (Decoupled Game Engine & Store)**:
   - Game State Machine (giai đoạn Setup, Night Phase, Day Discussion, Day Voting, Win Condition Check) được viết bằng TypeScript thuần hoặc Store riêng biệt, có unit test.
   - UI (React Components) chỉ lắng nghe state và gửi dispatch action, không sở hữu logic phán đoán thắng thua hay xử lý cái chết trực tiếp trên UI component.
-- **Tối ưu hóa đặc biệt cho iPhone 16 Pro (Mobile First / PWA)**:
+- **Tối ưu hóa đặc biệt cho iPhone 16 Pro & Mobile Touch UX**:
   - Chuẩn viewport: `viewport-fit=cover`, xử lý an toàn cho Dynamic Island và Home Indicator (`safe-area-inset-top`, `safe-area-inset-bottom`).
   - Kích thước chạm (Touch Targets) tối thiểu 44-48px, hạn chế double-tap zoom ngoài ý muốn (`touch-action: manipulation`).
   - Offline-first: Tự động lưu game state vào `localStorage` sau mỗi hành động để không bao giờ bị mất dữ liệu giữa trận nếu lỡ reload trang hoặc khóa màn hình.
 - **Thiết kế Thẩm mỹ Cao cấp (Rich Aesthetics - Werewolf Theme)**:
   - Tone màu huyền bí: Đen đêm trăng (`#0a0a12`), tím ma mị (`#2d1b4e`), đỏ máu sói (`#8b1e2d`), vàng trăng rằm (`#f4c430`), xanh ngọc phù thủy (`#10b981`).
-  - Glassmorphism, viền neon tinh tế, font chữ hiện đại dễ đọc trong điều kiện ánh sáng yếu (buổi tối khi chơi offline).
-  - Privacy Mode (Chế độ Che Màn Hình): Tính năng chống người chơi ngồi cạnh nhìn trộm lá bài/vai trò trên điện thoại Quản trò.
+  - Glassmorphism, viền neon tinh tế, font chữ hiện đại dễ đọc trong điều kiện ánh sáng yếu (`Montserrat` & `Be Vietnam Pro`).
+  - Privacy Mode (Chế độ Che Màn Hình): Chống nhìn trộm lá bài/vai trò trên điện thoại.
 
 ## 4. Tiết Kiệm Token
 - Đọc và áp dụng `RTK.md` khi dùng shell; ưu tiên RTK cho đầu ra Git, build và test được hỗ trợ.
@@ -47,3 +47,20 @@ Dự án này vận hành theo mô hình Game Studio hoàn chỉnh được chuy
 - Khi bắt đầu một tác vụ mới, AI **BẮT BUỘC** đọc `production/session-state/active.md` trước khi lập kế hoạch hoặc thay đổi dự án.
 - `active.md` là trạng thái bàn giao: mục tiêu hiện tại, quyết định đã chốt, việc đã xong, việc đang làm, blocker, bằng chứng kiểm tra và đúng một hành động tiếp theo.
 - Sau mỗi tác vụ có thay đổi đáng kể, AI phải cập nhật `active.md` trong cùng lượt làm việc.
+
+## 6. Hệ Thống Tự Vận Hành Ngày Đêm (Autonomous Day & Night Execution Engine)
+- **Quy trình chuẩn**: Bắt buộc tuân thủ `.agents/rules/autonomous-workflow.md`.
+- **Bộ điều khiển Daemon & Verification**:
+  - Chạy `npm run daemon` để phân tích hàng đợi backlog và kiểm tra sức khỏe hệ thống.
+  - Lệnh kiểm chứng bắt buộc trước mọi commit: `npm run verify` (`oxlint` + `npm test` + `npm run build`).
+  - Lịch trình tự động ngày đêm: Kích hoạt qua GitHub Actions (`.github/workflows/autonomous-ci-cron.yml`) và native AI scheduler daemon.
+- **Cơ chế tự sửa lỗi (Self-Healing)**: Nếu chu trình kiểm thử phát hiện lỗi, tự động truy vết stack trace và sửa chữa cục bộ, không để trạng thái broken tồn tại qua đêm.
+
+## 7. Chuẩn Bị & Chuyển Giao: Ma Sói Online & Mobile App (iOS / Android)
+- **Mobile Native (iOS/Android)**:
+  - Tuân thủ tiêu chuẩn tại `.agents/rules/mobile-capacitor.md`.
+  - Sử dụng Capacitor làm cầu nối native, hỗ trợ xuất project Xcode (`ios`) và Android Studio (`android`).
+- **Realtime Multiplayer & An Toàn Dữ Liệu**:
+  - Tuân thủ tiêu chuẩn tại `.agents/rules/multiplayer-architecture.md`.
+  - Triển khai mô hình **Zero-Knowledge Payload**: Tuyệt đối không gửi vai trò thật của người chơi khác trong gói tin broadcast mạng.
+  - Room Management: Mã phòng 6 ký tự, hỗ trợ tự kết nối lại (reconnection resilience).
