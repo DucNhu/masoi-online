@@ -12,9 +12,12 @@ export type RoleId =
   | 'WITCH'      // Phù Thủy (Mặc định: Q)
   | 'BODYGUARD'  // Bảo Vệ (Mặc định: J)
   | 'HUNTER'     // Thợ Săn (Mặc định: 10)
-  | 'CUPID'      // Thần Tình Yêu (Mặc định: 9)
-  | 'MINION'     // Kẻ Bán Tơ / Phản Bội (Mặc định: 8)
-  | 'VILLAGER';  // Dân Làng (Mặc định: 2..7)
+  | 'CUPID'      // Thần Tình Yêu (Mở rộng: 9)
+  | 'MINION'     // Kẻ Bán Tơ / Phản Bội (Mở rộng: 8)
+  | 'ELDER'      // Già Làng (Mở rộng: 7)
+  | 'IDIOT'      // Kẻ Ngốc / Thằng Khờ (Mở rộng: 6)
+  | 'CURSED'     // Bán Sói (Mở rộng: 5)
+  | 'VILLAGER';  // Dân Làng (Mặc định: 2..9)
 
 export type TeamSide = 'WEREWOLF' | 'VILLAGE' | 'LOVERS';
 
@@ -30,6 +33,7 @@ export interface RoleDefinition {
   iconName: string;
   color: string;
   badgeBg: string;
+  isExpansion?: boolean; // Đánh dấu vai trò thuộc gói mở rộng
 }
 
 export interface CardMappingConfig {
@@ -47,12 +51,16 @@ export interface Player {
   deathRound?: number;
   isLover: boolean;
   loverWithId?: string;
+  elderLivesRemaining?: number; // Già Làng: 2 mạng trước đòn cắn của Sói
+  isIdiotRevealed?: boolean;    // Kẻ Ngốc: đã lật bài thoát chết treo cổ
+  isCursedTurned?: boolean;     // Bán Sói: đã bị cắn và thức tỉnh thành Ma Sói
 }
 
 export type GamePhase = 
   | 'SETUP'
   | 'NIGHT_START'
   | 'NIGHT_CUPID'
+  | 'NIGHT_MINION'
   | 'NIGHT_BODYGUARD'
   | 'NIGHT_WEREWOLF'
   | 'NIGHT_WITCH'

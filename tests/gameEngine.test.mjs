@@ -205,4 +205,82 @@ console.log('--- BẮT ĐẦU KIỂM THỬ GAME ENGINE MA SÓI ---');
   console.log('✓ PASS: Số lượng Sói >= Dân -> Phe Ma Sói Thắng');
 }
 
-console.log('🎉 TOÀN BỘ 6 BỘ TEST ĐÃ PASS 100%!');
+// 7. Test Elder 2 lives against werewolf bite
+{
+  const elderPlayer = { id: 'p2', seatNumber: 2, name: 'Già Làng', card: { rank: '7' }, roleId: 'ELDER', isAlive: true, isLover: false, elderLivesRemaining: 2 };
+  const state = {
+    round: 1,
+    phase: 'NIGHT_START',
+    players: [
+      { id: 'p1', seatNumber: 1, name: 'Sói', card: { rank: 'K' }, roleId: 'WEREWOLF', isAlive: true, isLover: false },
+      elderPlayer,
+    ],
+    cardMappings: {},
+    witchPotions: { hasHealPotion: true, hasPoisonPotion: true },
+    lastProtectedPlayerId: null,
+    currentNightAction: {
+      protectedPlayerId: null,
+      werewolfTargetId: 'p2', // Sói cắn Già Làng
+      witchSaved: false,
+      witchPoisonTargetId: null,
+      seerTargetId: null,
+    },
+    cupidPaired: false,
+    lovers: null,
+    historyLogs: [],
+    winner: null,
+    winReason: null,
+    hunterPendingRevenge: false,
+    hunterPendingPlayerId: null,
+    privacyShield: false,
+  };
+
+  const outcome1 = resolveNightActions(state);
+  assert.strictEqual(outcome1.deadPlayerIds.length, 0, 'Già Làng bị cắn lần 1 không chết');
+  assert.strictEqual(elderPlayer.elderLivesRemaining, 1, 'Già Làng còn lại 1 mạng');
+  console.log('✓ PASS: Già Làng sống sót sau lần cắn đầu tiên của Ma Sói');
+
+  // Cắn lần 2 -> Chết
+  const outcome2 = resolveNightActions(state);
+  assert.deepStrictEqual(outcome2.deadPlayerIds, ['p2'], 'Già Làng bị cắn lần 2 phải chết');
+  console.log('✓ PASS: Già Làng bị Sói cắn lần 2 thì hy sinh');
+}
+
+// 8. Test Cursed infection by Werewolf bite
+{
+  const cursedPlayer = { id: 'p2', seatNumber: 2, name: 'Bán Sói', card: { rank: '5' }, roleId: 'CURSED', isAlive: true, isLover: false, isCursedTurned: false };
+  const state = {
+    round: 1,
+    phase: 'NIGHT_START',
+    players: [
+      { id: 'p1', seatNumber: 1, name: 'Sói', card: { rank: 'K' }, roleId: 'WEREWOLF', isAlive: true, isLover: false },
+      cursedPlayer,
+    ],
+    cardMappings: {},
+    witchPotions: { hasHealPotion: true, hasPoisonPotion: true },
+    lastProtectedPlayerId: null,
+    currentNightAction: {
+      protectedPlayerId: null,
+      werewolfTargetId: 'p2', // Sói cắn Bán Sói
+      witchSaved: false,
+      witchPoisonTargetId: null,
+      seerTargetId: null,
+    },
+    cupidPaired: false,
+    lovers: null,
+    historyLogs: [],
+    winner: null,
+    winReason: null,
+    hunterPendingRevenge: false,
+    hunterPendingPlayerId: null,
+    privacyShield: false,
+  };
+
+  const outcome = resolveNightActions(state);
+  assert.strictEqual(outcome.deadPlayerIds.length, 0, 'Bán Sói không chết khi bị cắn');
+  assert.strictEqual(cursedPlayer.isCursedTurned, true, 'Bán Sói đã bị lây nhiễm');
+  assert.strictEqual(cursedPlayer.roleId, 'WEREWOLF', 'Bán Sói biến thành Ma Sói');
+  console.log('✓ PASS: Bán Sói bị cắn biến thành Ma Sói thay vì chết');
+}
+
+console.log('🎉 TOÀN BỘ 8 BỘ TEST ĐÃ PASS 100%!');

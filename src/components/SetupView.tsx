@@ -91,7 +91,7 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
     }));
   });
 
-  // Tùy chỉnh số lượng vai trò (KHÔNG CÓ CUPID VÀ KẺ BÁN TƠ)
+  // Tùy chỉnh số lượng vai trò cơ bản
   const [wolfCount, setWolfCount] = useState<number>(() => {
     const n = players.length;
     if (n <= 6) return 1;
@@ -103,6 +103,14 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
   const [enableWitch, setEnableWitch] = useState(true);
   const [enableGuard, setEnableGuard] = useState(true);
   const [enableHunter, setEnableHunter] = useState(true);
+
+  // Gói Mở Rộng (Mặc định đóng & tắt, chỉ mở khi người dùng bấm 'Mở Rộng')
+  const [showExpansion, setShowExpansion] = useState(false);
+  const [enableCupid, setEnableCupid] = useState(false);   // Lá 9 - Thần Tình Yêu
+  const [enableMinion, setEnableMinion] = useState(false); // Lá 8 - Kẻ Bán Tơ
+  const [enableElder, setEnableElder] = useState(false);   // Lá 7 - Già Làng
+  const [enableIdiot, setEnableIdiot] = useState(false);   // Lá 6 - Kẻ Ngốc
+  const [enableCursed, setEnableCursed] = useState(false); // Lá 5 - Bán Sói
 
   const syncRoleDefaults = (newCount: number) => {
     let recWolf = 1;
@@ -192,10 +200,12 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
     }
   };
 
-  // Tính toán số Dân Làng
-  const specialCount = (enableSeer ? 1 : 0) + (enableWitch ? 1 : 0) + (enableGuard ? 1 : 0) + (enableHunter ? 1 : 0);
-  const villagerCount = Math.max(0, players.length - wolfCount - specialCount);
-  const totalCardsConfigured = wolfCount + specialCount + villagerCount;
+  // Tính toán số Dân Làng (tự động cân bằng theo vai trò cơ bản + vai trò mở rộng)
+  const baseSpecialCount = (enableSeer ? 1 : 0) + (enableWitch ? 1 : 0) + (enableGuard ? 1 : 0) + (enableHunter ? 1 : 0);
+  const expansionCount = (enableCupid ? 1 : 0) + (enableMinion ? 1 : 0) + (enableElder ? 1 : 0) + (enableIdiot ? 1 : 0) + (enableCursed ? 1 : 0);
+  const totalSpecialCount = baseSpecialCount + expansionCount;
+  const villagerCount = Math.max(0, players.length - wolfCount - totalSpecialCount);
+  const totalCardsConfigured = wolfCount + totalSpecialCount + villagerCount;
 
   // Thuật toán: Xào Bài & Chia Ngẫu Nhiên
   const handleShuffleAndDeal = () => {
@@ -241,11 +251,34 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
       deck.push({ rank: '10', suit: '♥', roleId: 'HUNTER' });
     }
 
-    // Dân Làng (2..9) — cấp các lá bài số thực tế
-    const villagerRanks: CardRank[] = ['9', '8', '7', '6', '5', '4', '3', '2'];
+    // Gói Mở Rộng: gán chính xác các lá bài số quy ước
+    if (enableCupid) {
+      deck.push({ rank: '9', suit: '♥', roleId: 'CUPID' });
+    }
+    if (enableMinion) {
+      deck.push({ rank: '8', suit: '♠', roleId: 'MINION' });
+    }
+    if (enableElder) {
+      deck.push({ rank: '7', suit: '♦', roleId: 'ELDER' });
+    }
+    if (enableIdiot) {
+      deck.push({ rank: '6', suit: '♣', roleId: 'IDIOT' });
+    }
+    if (enableCursed) {
+      deck.push({ rank: '5', suit: '♠', roleId: 'CURSED' });
+    }
+
+    // Dân Làng (2..9) — sử dụng các lá bài số không bị vai trò mở rộng chiếm
+    const availableVillagerRanks: CardRank[] = ['2', '3', '4'];
+    if (!enableCursed) availableVillagerRanks.push('5');
+    if (!enableIdiot) availableVillagerRanks.push('6');
+    if (!enableElder) availableVillagerRanks.push('7');
+    if (!enableMinion) availableVillagerRanks.push('8');
+    if (!enableCupid) availableVillagerRanks.push('9');
+
     const villagerSuits: CardSuit[] = ['♣', '♦', '♠', '♥'];
     for (let i = 0; i < villagerCount; i++) {
-      const vRank = villagerRanks[i % villagerRanks.length];
+      const vRank = availableVillagerRanks[i % availableVillagerRanks.length];
       const vSuit = villagerSuits[i % villagerSuits.length];
       deck.push({
         rank: vRank,
@@ -305,6 +338,9 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
       roleId: p.roleId,
       isAlive: true,
       isLover: false,
+      elderLivesRemaining: p.roleId === 'ELDER' ? 2 : undefined,
+      isIdiotRevealed: false,
+      isCursedTurned: false,
     }));
 
     saveNamesToStorage(players);
@@ -573,6 +609,209 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
                   {villagerCount}
                 </span>
               </div>
+            </div>
+
+            {/* GÓI MỞ RỘNG (EXPANSION PACK) */}
+            <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px dashed rgba(255, 255, 255, 0.1)' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  soundEffects.triggerHaptic('medium');
+                  setShowExpansion(!showExpansion);
+                }}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 14px',
+                  borderRadius: '12px',
+                  background: showExpansion 
+                    ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.18), rgba(236, 72, 153, 0.18))' 
+                    : 'rgba(255, 255, 255, 0.04)',
+                  border: showExpansion 
+                    ? '1px solid rgba(168, 85, 247, 0.5)' 
+                    : '1px solid var(--border-subtle)',
+                  color: showExpansion ? '#f3e8ff' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Sparkles size={17} color={showExpansion ? '#c084fc' : 'var(--accent-gold)'} />
+                  <span style={{ fontSize: '0.88rem', fontWeight: 800 }}>
+                    {showExpansion ? 'Gói Mở Rộng (5 Vai Trò)' : '✨ Mở Rộng Vai Trò (Tùy Chọn)'}
+                  </span>
+                </div>
+                <span style={{
+                  fontSize: '0.72rem',
+                  fontWeight: 800,
+                  padding: '2px 8px',
+                  borderRadius: '999px',
+                  background: expansionCount > 0 
+                    ? 'linear-gradient(135deg, #a855f7, #ec4899)' 
+                    : 'rgba(255, 255, 255, 0.08)',
+                  color: '#ffffff',
+                }}>
+                  {expansionCount > 0 ? `Đang bật ${expansionCount}` : (showExpansion ? 'Thu gọn ▲' : 'Bấm để mở ▼')}
+                </span>
+              </button>
+
+              {/* Panel các role mở rộng */}
+              {showExpansion && (
+                <div style={{
+                  marginTop: '10px',
+                  padding: '12px',
+                  borderRadius: '14px',
+                  background: 'rgba(0, 0, 0, 0.3)',
+                  border: '1px solid rgba(168, 85, 247, 0.25)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                }}>
+                  <div style={{ fontSize: '0.75rem', color: '#c084fc', fontWeight: 700, marginBottom: '2px' }}>
+                    🃏 Bật vai trò sẽ tự động gán vào lá bài số tương ứng:
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                    {/* Thần Tình Yêu (Lá 9) */}
+                    <button
+                      type="button"
+                      onClick={() => setEnableCupid(!enableCupid)}
+                      style={{
+                        background: enableCupid ? 'rgba(236, 72, 153, 0.18)' : 'rgba(255, 255, 255, 0.03)',
+                        border: enableCupid ? '1px solid var(--accent-cupid)' : '1px solid var(--border-subtle)',
+                        borderRadius: '10px',
+                        padding: '8px 10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: enableCupid ? 'var(--accent-cupid)' : 'var(--text-muted)' }}>
+                          💘 Thần Tình Yêu
+                        </div>
+                        <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Lá 9 • Cặp đôi</div>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 800, color: enableCupid ? 'var(--accent-cupid)' : 'var(--text-muted)' }}>
+                        {enableCupid ? '1' : '0'}
+                      </span>
+                    </button>
+
+                    {/* Kẻ Bán Tơ (Lá 8) */}
+                    <button
+                      type="button"
+                      onClick={() => setEnableMinion(!enableMinion)}
+                      style={{
+                        background: enableMinion ? 'rgba(249, 115, 22, 0.18)' : 'rgba(255, 255, 255, 0.03)',
+                        border: enableMinion ? '1px solid #f97316' : '1px solid var(--border-subtle)',
+                        borderRadius: '10px',
+                        padding: '8px 10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: enableMinion ? '#f97316' : 'var(--text-muted)' }}>
+                          🎭 Kẻ Bán Tơ
+                        </div>
+                        <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Lá 8 • Phe Sói</div>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 800, color: enableMinion ? '#f97316' : 'var(--text-muted)' }}>
+                        {enableMinion ? '1' : '0'}
+                      </span>
+                    </button>
+
+                    {/* Già Làng (Lá 7) */}
+                    <button
+                      type="button"
+                      onClick={() => setEnableElder(!enableElder)}
+                      style={{
+                        background: enableElder ? 'rgba(234, 179, 8, 0.18)' : 'rgba(255, 255, 255, 0.03)',
+                        border: enableElder ? '1px solid #eab308' : '1px solid var(--border-subtle)',
+                        borderRadius: '10px',
+                        padding: '8px 10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: enableElder ? '#eab308' : 'var(--text-muted)' }}>
+                          🛡️ Già Làng
+                        </div>
+                        <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Lá 7 • 2 Mạng</div>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 800, color: enableElder ? '#eab308' : 'var(--text-muted)' }}>
+                        {enableElder ? '1' : '0'}
+                      </span>
+                    </button>
+
+                    {/* Kẻ Ngốc (Lá 6) */}
+                    <button
+                      type="button"
+                      onClick={() => setEnableIdiot(!enableIdiot)}
+                      style={{
+                        background: enableIdiot ? 'rgba(6, 182, 212, 0.18)' : 'rgba(255, 255, 255, 0.03)',
+                        border: enableIdiot ? '1px solid #06b6d4' : '1px solid var(--border-subtle)',
+                        borderRadius: '10px',
+                        padding: '8px 10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: enableIdiot ? '#06b6d4' : 'var(--text-muted)' }}>
+                          🃏 Kẻ Ngốc
+                        </div>
+                        <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Lá 6 • Tha chết</div>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 800, color: enableIdiot ? '#06b6d4' : 'var(--text-muted)' }}>
+                        {enableIdiot ? '1' : '0'}
+                      </span>
+                    </button>
+
+                    {/* Bán Sói (Lá 5) */}
+                    <button
+                      type="button"
+                      onClick={() => setEnableCursed(!enableCursed)}
+                      style={{
+                        background: enableCursed ? 'rgba(139, 92, 246, 0.18)' : 'rgba(255, 255, 255, 0.03)',
+                        border: enableCursed ? '1px solid #8b5cf6' : '1px solid var(--border-subtle)',
+                        borderRadius: '10px',
+                        padding: '8px 10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        gridColumn: 'span 2',
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: enableCursed ? '#8b5cf6' : 'var(--text-muted)' }}>
+                          🐺 Bán Sói (Kẻ Bị Nguyền)
+                        </div>
+                        <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Lá 5 • Bị cắn thức tỉnh biến thành Sói</div>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 800, color: enableCursed ? '#8b5cf6' : 'var(--text-muted)' }}>
+                        {enableCursed ? '1' : '0'}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

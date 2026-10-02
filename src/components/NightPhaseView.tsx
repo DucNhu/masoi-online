@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Moon, Shield, Eye, Sparkles, Skull, ArrowRight, Check } from 'lucide-react';
+import { Moon, Shield, Eye, Sparkles, Skull, ArrowRight, Check, Heart, VenetianMask } from 'lucide-react';
 import { GameState, NightStepAction } from '../types/game';
 import { ROLE_DEFINITIONS, MODERATOR_SCRIPTS } from '../data/roles';
 import { soundEffects } from '../utils/soundEffects';
@@ -12,25 +12,30 @@ interface Props {
   privacyShield: boolean;
 }
 
-type NightSubStep = 'INTRO' | 'BODYGUARD' | 'WEREWOLF' | 'WITCH' | 'SEER' | 'OUTRO';
+type NightSubStep = 'INTRO' | 'CUPID' | 'MINION' | 'BODYGUARD' | 'WEREWOLF' | 'WITCH' | 'SEER' | 'OUTRO';
 
 export const NightPhaseView: React.FC<Props> = ({
   gameState,
   onUpdateNightAction,
   onFinishNight,
+  onSetLovers,
   privacyShield,
 }) => {
   const { round, players, currentNightAction, lastProtectedPlayerId, witchPotions } = gameState;
 
   // Xác định những vai trò nào đang còn sống trong game
   const alivePlayers = players.filter(p => p.isAlive);
+  const hasAliveCupid = players.some(p => p.roleId === 'CUPID' && p.isAlive);
+  const hasAliveMinion = players.some(p => p.roleId === 'MINION' && p.isAlive);
   const hasAliveBodyguard = players.some(p => p.roleId === 'BODYGUARD' && p.isAlive);
-  const hasAliveWerewolf = players.some(p => ROLE_DEFINITIONS[p.roleId].team === 'WEREWOLF' && p.isAlive);
+  const hasAliveWerewolf = players.some(p => (ROLE_DEFINITIONS[p.roleId].team === 'WEREWOLF' || (p.roleId === 'CURSED' && p.isCursedTurned)) && p.isAlive);
   const hasAliveWitch = players.some(p => p.roleId === 'WITCH' && p.isAlive);
   const hasAliveSeer = players.some(p => p.roleId === 'SEER' && p.isAlive);
 
   // Xác định danh sách các bước cần gọi trong đêm này
   const steps: NightSubStep[] = ['INTRO'];
+  if (hasAliveCupid && round === 1 && !gameState.cupidPaired) steps.push('CUPID');
+  if (hasAliveMinion && round === 1) steps.push('MINION');
   if (hasAliveBodyguard) steps.push('BODYGUARD');
   if (hasAliveWerewolf) steps.push('WEREWOLF');
   if (hasAliveWitch) steps.push('WITCH');
@@ -39,6 +44,25 @@ export const NightPhaseView: React.FC<Props> = ({
 
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
   const currentStep = steps[currentStepIndex];
+
+  // Thần tình yêu ghép đôi
+  const [selectedLovers, setSelectedLovers] = useState<string[]>(gameState.lovers ? [...gameState.lovers] : []);
+
+  const handleToggleLover = (playerId: string) => {
+    soundEffects.triggerHaptic('light');
+    if (selectedLovers.includes(playerId)) {
+      const updated = selectedLovers.filter(id => id !== playerId);
+      setSelectedLovers(updated);
+    } else {
+      if (selectedLovers.length < 2) {
+        const updated = [...selectedLovers, playerId];
+        setSelectedLovers(updated);
+        if (updated.length === 2 && onSetLovers) {
+          onSetLovers(updated[0], updated[1]);
+        }
+      }
+    }
+  };
 
   // Tiên tri soi
   const [seerInvestigatedId, setSeerInvestigatedId] = useState<string | null>(null);
@@ -128,6 +152,125 @@ export const NightPhaseView: React.FC<Props> = ({
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
             Đảm bảo tất cả người chơi đã cúi đầu, nhắm mắt và không nhìn trộm.
           </p>
+        </div>
+      )}
+
+      {/* Step: CUPID (Thần Tình Yêu - Lá 9) */}
+      {currentStep === 'CUPID' && (
+        <div className="card-glass" style={{ borderLeft: '4px solid var(--accent-cupid)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <Heart size={20} color="var(--accent-cupid)" />
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }} className="font-cinzel">
+              Thần Tình Yêu (Lá 9) Thức Dậy
+            </h3>
+          </div>
+
+          <div style={{
+            background: 'rgba(0, 0, 0, 0.35)',
+            borderRadius: '12px',
+            padding: '12px',
+            marginBottom: '14px',
+          }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--accent-gold)', fontWeight: 800 }}>
+              📢 LỜI THOẠI QUẢN TRÒ:
+            </div>
+            <p style={{ fontSize: '0.88rem', color: '#f1f5f9', fontStyle: 'italic' }}>
+              "{MODERATOR_SCRIPTS.cupidWake}"
+            </p>
+          </div>
+
+          <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+            Chọn 2 người chơi làm Cặp đôi ({selectedLovers.length}/2):
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginBottom: '14px' }}>
+            {alivePlayers.map(p => {
+              const isSelected = selectedLovers.includes(p.id);
+
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => handleToggleLover(p.id)}
+                  className={`btn ${isSelected ? 'btn-primary' : 'btn-ghost'}`}
+                  style={{
+                    padding: '10px',
+                    fontSize: '0.85rem',
+                    justifyContent: 'flex-start',
+                    background: isSelected ? 'linear-gradient(135deg, #ec4899, #be185d)' : undefined,
+                    borderColor: isSelected ? 'var(--accent-cupid)' : undefined,
+                  }}
+                >
+                  <span style={{ fontWeight: 800 }}>{p.seatNumber}.</span> {p.name}
+                  {isSelected && <Heart size={16} style={{ marginLeft: 'auto' }} fill="#ffffff" />}
+                </button>
+              );
+            })}
+          </div>
+
+          {selectedLovers.length === 2 && (
+            <div style={{
+              background: 'rgba(236, 72, 153, 0.15)',
+              border: '1px solid rgba(236, 72, 153, 0.4)',
+              borderRadius: '12px',
+              padding: '10px 14px',
+              textAlign: 'center',
+              fontSize: '0.85rem',
+              color: '#f472b6',
+              fontWeight: 700,
+            }}>
+              💘 Đã kết duyên: {players.find(p => p.id === selectedLovers[0])?.name} & {players.find(p => p.id === selectedLovers[1])?.name}
+              <div style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-secondary)', marginTop: '4px' }}>
+                Quản trò hãy đến vỗ nhẹ vai 2 người này để họ mở mắt nhận diện nhau rồi ngủ lại!
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Step: MINION (Kẻ Bán Tơ - Lá 8) */}
+      {currentStep === 'MINION' && (
+        <div className="card-glass" style={{ borderLeft: '4px solid #f97316' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <VenetianMask size={20} color="#f97316" />
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }} className="font-cinzel">
+              Kẻ Bán Tơ (Lá 8) Thức Dậy
+            </h3>
+          </div>
+
+          <div style={{
+            background: 'rgba(0, 0, 0, 0.35)',
+            borderRadius: '12px',
+            padding: '12px',
+            marginBottom: '14px',
+          }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--accent-gold)', fontWeight: 800 }}>
+              📢 LỜI THOẠI QUẢN TRÒ:
+            </div>
+            <p style={{ fontSize: '0.88rem', color: '#f1f5f9', fontStyle: 'italic' }}>
+              "{MODERATOR_SCRIPTS.minionWake}"
+            </p>
+          </div>
+
+          <div style={{
+            background: 'rgba(249, 115, 22, 0.12)',
+            border: '1px solid rgba(249, 115, 22, 0.35)',
+            borderRadius: '12px',
+            padding: '12px',
+            fontSize: '0.85rem',
+          }}>
+            <div style={{ fontWeight: 800, color: '#fb923c', marginBottom: '6px' }}>
+              🐺 Danh sách Ma Sói để Quản trò đối chiếu:
+            </div>
+            <div style={{ color: '#fed7aa', fontWeight: 600 }}>
+              {players
+                .filter(p => ROLE_DEFINITIONS[p.roleId].team === 'WEREWOLF' && p.roleId !== 'MINION')
+                .map(p => `${p.name} (Ghế ${p.seatNumber} - ${p.card.rank}${p.card.suit || ''})`)
+                .join(', ') || 'Chưa có sói'}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
+              💡 Lưu ý: Kẻ Bán Tơ biết mặt Sói, nhưng Sói không biết ai là Kẻ Bán Tơ. Tiên Tri soi Kẻ Bán Tơ sẽ ra kết quả Dân Làng/Người tốt.
+            </div>
+          </div>
         </div>
       )}
 

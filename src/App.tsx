@@ -284,6 +284,44 @@ export const App: React.FC = () => {
     const victim = gameState.players.find(p => p.id === hangedPlayerId);
     if (!victim) return;
 
+    // Kẻ Ngốc (IDIOT): Nếu bị treo cổ lần đầu thì lật bài tha chết, mất quyền vote
+    if (victim.roleId === 'IDIOT' && !victim.isIdiotRevealed) {
+      soundEffects.triggerHaptic('heavy');
+      const foolLog = createRoundLog(
+        gameState.round,
+        'DAY',
+        `Biểu Quyết Treo Cổ Ngày ${gameState.round}`,
+        [
+          `🃏 ${victim.name} (Ghế ${victim.seatNumber}) bị bỏ phiếu treo cổ nhưng đã lật bài KẺ NGỐC!`,
+          `Dân làng tha tội chết! Kẻ Ngốc tiếp tục sống nhưng bị tước quyền biểu quyết từ nay về sau.`
+        ]
+      );
+
+      const updatedPlayers = gameState.players.map(p => {
+        if (p.id === hangedPlayerId) {
+          return { ...p, isIdiotRevealed: true };
+        }
+        return p;
+      });
+
+      setGameState(prev => ({
+        ...prev,
+        round: prev.round + 1,
+        phase: 'NIGHT_START',
+        players: updatedPlayers,
+        currentNightAction: {
+          protectedPlayerId: null,
+          werewolfTargetId: null,
+          witchSaved: false,
+          witchPoisonTargetId: null,
+          seerTargetId: null,
+        },
+        historyLogs: [...prev.historyLogs, foolLog],
+      }));
+      soundEffects.playNightAmbiance();
+      return;
+    }
+
     const deadIds = [hangedPlayerId];
     const logDetails = [`⚖️ ${victim.name} (Ghế ${victim.seatNumber}) đã bị dân làng treo cổ.`];
 

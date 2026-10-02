@@ -60,9 +60,18 @@ export function resolveNightActions(state: GameState): NightResolutionOutcome {
       summaryLogs.push(`🛡️ Sói cắn ${victimName}, nhưng đã được Bảo Vệ che chắn kịp thời!`);
     } else if (witchSaved) {
       summaryLogs.push(`🧪 Sói cắn ${victimName}, nhưng Phù Thủy đã dùng Bình Cứu hồi sinh!`);
+    } else if (victim && victim.roleId === 'ELDER' && (victim.elderLivesRemaining === undefined || victim.elderLivesRemaining > 1)) {
+      victim.elderLivesRemaining = 1;
+      summaryLogs.push(`🛡️ Già Làng ${victimName} bị Ma Sói cắn nhưng đã kiên cường sống sót nhờ sinh mệnh thứ 2! (Còn 1 mạng).`);
+    } else if (victim && victim.roleId === 'CURSED' && !victim.isCursedTurned) {
+      victim.isCursedTurned = true;
+      victim.roleId = 'WEREWOLF';
+      summaryLogs.push(`🌑 Nạn nhân bị Sói cắn không chết... mà lời nguyền đã thức tỉnh! Bán Sói ${victimName} chính thức biến thành Ma Sói!`);
     } else {
       deadPlayerIds.push(werewolfTarget);
-      deathReasons[werewolfTarget] = 'Bị Ma Sói cắn chết trong đêm';
+      deathReasons[werewolfTarget] = victim?.roleId === 'ELDER' 
+        ? 'Già Làng bị Ma Sói cắn lần 2 và hy sinh'
+        : 'Bị Ma Sói cắn chết trong đêm';
       summaryLogs.push(`🐺 ${victimName} đã bị Ma Sói cắn chết.`);
     }
   } else {
