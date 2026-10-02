@@ -1,4 +1,4 @@
-import { ServerGameState, ClientGameState, RoomSettings } from '../types/multiplayer';
+import { ServerGameState, ClientGameState, RoomSettings, ChatMessage } from '../types/multiplayer';
 import { RoleId } from '../types/game';
 import { generateRoomCode, maskGameStateForPlayer } from './roomProtocol';
 
@@ -60,6 +60,7 @@ export class RoomManager {
       },
       seerHistory: {},
       currentVotes: {},
+      chatMessages: [],
       winner: null,
       historyLog: [`Phòng ${roomId} được tạo bởi ${hostName}`],
     };
@@ -497,6 +498,66 @@ export class RoomManager {
     }
 
     return false;
+  }
+
+  /**
+   * Gửi tin nhắn Chat phân quyền (PUBLIC / WOLF / DEAD)
+   */
+  public sendChatMessage(
+    roomId: string,
+    senderId: string,
+    text: string,
+    channel: 'PUBLIC' | 'WOLF' | 'DEAD' = 'PUBLIC'
+  ): void {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+
+    const sender = room.players.find((p) => p.id === senderId);
+    if (!sender) return;
+
+    const trimmed = text.trim();
+    if (!trimmed) return;
+
+    // Phân quyền kênh gửi
+    if (channel === 'WOLF') {
+      const isWolf = sender.role === 'WEREWOLF' || (sender.role === 'CURSED' && sender.cursedTurnedWolf);
+      if (!isWolf) {
+        throw new Error('Chỉ Ma Sói mới có thể truy cập kênh bàn mưu này.');
+      }
+    } else if (channel === 'DEAD') {
+      if (sender.isAlive) {
+        throw new Error('Người sống không thể giao tiếp với thế giới âm ty.');
+      }
+    } else if (channel === 'PUBLIC') {
+      // Người chết không được nói chuyện ở kênh Làng để tránh spoil
+      if (!sender.isAlive) {
+        throw new Error('Bạn đã hy sinh, linh hồn chỉ có thể trò chuyện ở cõi âm.');
+      }
+      // Ban đêm không được chat công khai
+      if (room.phase === 'NIGHT') {
+        throw new Error('Đêm tối mọi người đều đang ngủ, không được gây ồn ào.');
+      }
+    }
+
+    const message: ChatMessage = {
+      id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      senderId: sender.id,
+      senderName: sender.name,
+      senderAvatar: sender.avatar,
+      channel,
+      text: trimmed,
+      timestamp: Date.now(),
+    };
+
+    if (!room.chatMessages) room.chatMessages = [];
+    room.chatMessages.push(message);
+
+    // Giữ tối đa 100 tin nhắn gần nhất
+    if (room.chatMessages.length > 100) {
+      room.chatMessages.shift();
+    }
+
+    this.broadcastState(roomId);
   }
 
   /**

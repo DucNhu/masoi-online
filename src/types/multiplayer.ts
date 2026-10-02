@@ -29,6 +29,16 @@ export interface NetworkPlayer {
   hasActedNight: boolean;
 }
 
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  senderAvatar: string;
+  channel: 'PUBLIC' | 'WOLF' | 'DEAD';
+  text: string;
+  timestamp: number;
+}
+
 /**
  * Server Master State — Giữ toàn bộ thông tin tuyệt mật
  * Tuyệt đối KHÔNG BAO GIỜ gửi trực tiếp toàn bộ object này xuống Client!
@@ -52,6 +62,7 @@ export interface ServerGameState {
   nightActions: NightStepAction;
   seerHistory: Record<string, { targetId: string; isWolf: boolean }>; // seerId -> result
   currentVotes: Record<string, string | null>; // voterId -> targetId
+  chatMessages: ChatMessage[];
   winner: 'VILLAGERS' | 'WEREWOLVES' | 'LOVERS' | null;
   historyLog: string[];
 }
@@ -77,6 +88,11 @@ export interface ClientGameState {
   couplePartnerId?: string; // ID người yêu (nếu được Cupid ghép đôi)
   seerScanResult?: { targetId: string; isWolf: boolean }; // Kết quả soi đêm gần nhất của Tiên Tri
   
+  // Thông tin Bỏ phiếu & Chat phân quyền
+  voteTally?: Record<string, number>; // targetId -> số phiếu nhận được
+  myVote?: string | null;
+  chatMessages: ChatMessage[];
+
   historyLog: string[];
   winner: 'VILLAGERS' | 'WEREWOLVES' | 'LOVERS' | null;
 }

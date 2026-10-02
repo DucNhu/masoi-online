@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ClientGameState } from '../types/multiplayer';
 import { ROLE_DEFINITIONS } from '../data/roles';
 import { roomManager } from '../logic/roomManager';
@@ -13,7 +13,10 @@ import {
   Users, 
   Heart, 
   Skull,
-  LogOut
+  LogOut,
+  Send,
+  Trophy,
+  Vote
 } from 'lucide-react';
 
 interface Props {
@@ -23,20 +26,60 @@ interface Props {
 
 export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }) => {
   const [showRoleDetails, setShowRoleDetails] = useState<boolean>(false);
-  const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null);
-  const [actionSubmitted, setActionSubmitted] = useState<boolean>(false);
+  const [selectedNightTargetId, setSelectedNightTargetId] = useState<string | null>(null);
+  const [nightActionSubmitted, setNightActionSubmitted] = useState<boolean>(false);
+  
+  // Bỏ phiếu ban ngày
+  const [selectedVoteTargetId, setSelectedVoteTargetId] = useState<string | null>(null);
+  const [voteSubmitted, setVoteSubmitted] = useState<boolean>(false);
+
+  // Lưu trữ phase trước đó để tự động reset cờ khi sang pha mới
+  const [prevPhase, setPrevPhase] = useState<string>(gameState.phase);
+
+  // Chat Tab & Input
+  const [activeChatTab, setActiveChatTab] = useState<'PUBLIC' | 'WOLF' | 'DEAD'>('PUBLIC');
+  const [chatInputText, setChatInputText] = useState<string>('');
+  const chatMessagesEndRef = useRef<HTMLDivElement>(null);
 
   const me = gameState.players.find((p) => p.id === gameState.myPlayerId);
+  const isAlive = me?.isAlive ?? true;
+  const isHost = me?.isHost ?? false;
   const myRoleDef = ROLE_DEFINITIONS[gameState.myRole] || ROLE_DEFINITIONS.VILLAGER;
+  
   const isNight = gameState.phase === 'NIGHT';
+  const isDayDiscussion = gameState.phase === 'DAY_DISCUSSION';
+  const isDayVoting = gameState.phase === 'DAY_VOTING';
+  const isGameOver = gameState.phase === 'GAME_OVER';
 
-  // Danh sách người chơi còn sống (loại trừ bản thân cho một số hành động)
+  const isWolfSide = gameState.myRole === 'WEREWOLF' || gameState.myRole === 'MINION';
+
+  // Đồng bộ reset cờ khi server đổi phase
+  if (gameState.phase !== prevPhase) {
+    setPrevPhase(gameState.phase);
+    if (gameState.phase === 'NIGHT') {
+      setNightActionSubmitted(false);
+      setSelectedNightTargetId(null);
+    }
+    if (gameState.phase === 'DAY_VOTING') {
+      setVoteSubmitted(false);
+      setSelectedVoteTargetId(null);
+    }
+  }
+
+  // Tự động cuộn chat xuống cuối khi có tin nhắn mới
+  useEffect(() => {
+    chatMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [gameState.chatMessages]);
+
+  // Tab chat hợp lệ
+  const effectiveChatTab = !isAlive ? 'DEAD' : (activeChatTab === 'DEAD' ? 'PUBLIC' : activeChatTab);
+
+  // Danh sách người chơi còn sống
   const livingPlayers = gameState.players.filter((p) => p.isAlive);
 
-  // Xử lý gửi hành động đêm
+  // Xử lý gửi hành động ban đêm
   const handleSubmitNightAction = () => {
-    if (!selectedTargetId) return;
-
+    if (!selectedNightTargetId) return;
     soundEffects.triggerHaptic('medium');
 
     let actionType = '';
@@ -47,18 +90,42 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
     if (actionType) {
       roomManager.submitNightAction(gameState.roomId, gameState.myPlayerId, {
         actionType,
-        targetId: selectedTargetId,
+        targetId: selectedNightTargetId,
       });
-      setActionSubmitted(true);
+      setNightActionSubmitted(true);
+    }
+  };
+
+  // Xử lý bỏ phiếu ban ngày
+  const handleCastVote = (targetId: string | null) => {
+    soundEffects.triggerHaptic('medium');
+    setSelectedVoteTargetId(targetId);
+    roomManager.castVote(gameState.roomId, gameState.myPlayerId, targetId);
+    setVoteSubmitted(true);
+  };
+
+  // Xử lý gửi tin nhắn chat
+  const handleSendMessage = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const text = chatInputText.trim();
+    if (!text) return;
+
+    try {
+      roomManager.sendChatMessage(gameState.roomId, gameState.myPlayerId, text, effectiveChatTab);
+      setChatInputText('');
+      soundEffects.triggerHaptic('light');
+    } catch (err: unknown) {
+      const error = err as Error;
+      alert(error.message || 'Không thể gửi tin nhắn.');
     }
   };
 
   return (
-    <div style={{ padding: '16px', maxWidth: '640px', margin: '0 auto', color: '#fff' }}>
+    <div style={{ padding: '16px', maxWidth: '640px', margin: '0 auto', color: '#fff', paddingBottom: '80px' }}>
       {/* Header nhỏ hiển thị mã phòng & nút thoát */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
         <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 700 }}>
-          PHÒNG: <strong style={{ color: '#38bdf8' }}>{gameState.roomId}</strong> • BẠN: <strong style={{ color: '#fff' }}>{me?.name}</strong>
+          PHÒNG: <strong style={{ color: '#38bdf8' }}>{gameState.roomId}</strong> • BẠN: <strong style={{ color: '#fff' }}>{me?.name}</strong> {isHost && '👑'}
         </span>
         <button
           onClick={onLeaveRoom}
@@ -66,7 +133,7 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
             background: 'rgba(239, 68, 68, 0.15)',
             border: '1px solid rgba(239, 68, 68, 0.3)',
             color: '#fca5a5',
-            padding: '4px 10px',
+            padding: '5px 12px',
             borderRadius: '8px',
             fontSize: '0.75rem',
             fontWeight: 600,
@@ -79,9 +146,14 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
           <LogOut size={12} /> Rời Trận
         </button>
       </div>
-      {/* Thanh Trạng Thái Pha & Thời Gian */}
+
+      {/* THANH TRẠNG THÁI PHA & THỜI GIAN */}
       <div style={{
-        background: isNight ? 'linear-gradient(135deg, #1e1b4b, #0f172a)' : 'linear-gradient(135deg, #78350f, #1e293b)',
+        background: isNight 
+          ? 'linear-gradient(135deg, #1e1b4b, #0f172a)' 
+          : isGameOver 
+          ? 'linear-gradient(135deg, #312e81, #064e3b)' 
+          : 'linear-gradient(135deg, #78350f, #1e293b)',
         border: '1px solid rgba(255,255,255,0.15)',
         borderRadius: '16px',
         padding: '14px 18px',
@@ -89,25 +161,35 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
         alignItems: 'center',
         justifyContent: 'space-between',
         marginBottom: '16px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{
             width: '42px',
             height: '42px',
             borderRadius: '12px',
-            background: isNight ? 'rgba(99, 102, 241, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+            background: isNight ? 'rgba(99, 102, 241, 0.2)' : isGameOver ? 'rgba(234, 179, 8, 0.2)' : 'rgba(245, 158, 11, 0.2)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}>
-            {isNight ? <Moon size={22} color="#a5b4fc" /> : <Sun size={22} color="#fde047" />}
+            {isNight && <Moon size={22} color="#a5b4fc" />}
+            {isDayDiscussion && <Sun size={22} color="#fde047" />}
+            {isDayVoting && <Vote size={22} color="#f97316" />}
+            {isGameOver && <Trophy size={22} color="#facc15" />}
           </div>
           <div>
             <div style={{ fontSize: '1rem', fontWeight: 800, color: '#f8fafc' }}>
-              {isNight ? `ĐÊM THỨ ${gameState.dayNumber}` : `NGÀY THỨ ${gameState.dayNumber}`}
+              {isNight && `ĐÊM THỨ ${gameState.dayNumber}`}
+              {isDayDiscussion && `NGÀY THỨ ${gameState.dayNumber}: THẢO LUẬN`}
+              {isDayVoting && `NGÀY THỨ ${gameState.dayNumber}: BỎ PHIẾU TREO CỔ`}
+              {isGameOver && `KẾT THÚC TRẬN ĐẤU`}
             </div>
-            <div style={{ fontSize: '0.8rem', color: isNight ? '#a5b4fc' : '#fde047' }}>
-              {isNight ? 'Trời tối • Hãy thực hiện lượt đi bí mật' : 'Trời sáng • Làng thảo luận và bỏ phiếu'}
+            <div style={{ fontSize: '0.8rem', color: isNight ? '#a5b4fc' : isGameOver ? '#a7f3d0' : '#fde047' }}>
+              {isNight && 'Trời tối • Hãy thực hiện lượt đi bí mật'}
+              {isDayDiscussion && 'Trời sáng • Thảo luận tìm ra kẻ khả nghi'}
+              {isDayVoting && 'Bỏ phiếu công khai để xử tử một người'}
+              {isGameOver && 'Ván đấu đã ngã ngũ! Xem kết quả bên dưới'}
             </div>
           </div>
         </div>
@@ -126,7 +208,131 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
         </div>
       </div>
 
-      {/* THẺ VAI TRÒ BÍ MẬT CỦA BẠN (PRIVATE ROLE CARD) */}
+      {/* ĐIỀU KHIỂN CỦA QUẢN TRÒ (HOST CONTROLS) */}
+      {isHost && !isGameOver && (
+        <div style={{
+          background: 'rgba(56, 189, 248, 0.08)',
+          border: '1px dashed rgba(56, 189, 248, 0.4)',
+          borderRadius: '12px',
+          padding: '10px 14px',
+          marginBottom: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <span style={{ fontSize: '0.8rem', color: '#7dd3fc', fontWeight: 700 }}>
+            👑 Quyền Quản Trò (Host Quick Controls):
+          </span>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {isNight && (
+              <button
+                onClick={() => roomManager.resolveNightToDay(gameState.roomId)}
+                style={{
+                  background: 'linear-gradient(135deg, #0284c7, #0369a1)',
+                  border: 'none',
+                  color: '#fff',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <Sun size={13} /> Chuyển Sang Ngày
+              </button>
+            )}
+            {isDayDiscussion && (
+              <button
+                onClick={() => roomManager.startDayVoting(gameState.roomId)}
+                style={{
+                  background: 'linear-gradient(135deg, #d97706, #b45309)',
+                  border: 'none',
+                  color: '#fff',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <Vote size={13} /> Bắt Đầu Bỏ Phiếu
+              </button>
+            )}
+            {isDayVoting && (
+              <button
+                onClick={() => roomManager.concludeDayVoting(gameState.roomId)}
+                style={{
+                  background: 'linear-gradient(135deg, #dc2626, #991b1b)',
+                  border: 'none',
+                  color: '#fff',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <Moon size={13} /> Chốt Phiếu & Sang Đêm
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* BANNER KẾT QUẢ KHI GAME OVER */}
+      {isGameOver && (
+        <div style={{
+          background: gameState.winner === 'VILLAGERS' 
+            ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 78, 59, 0.4))' 
+            : gameState.winner === 'WEREWOLVES' 
+            ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(127, 29, 29, 0.4))' 
+            : 'linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(131, 24, 67, 0.4))',
+          border: '2px solid rgba(255,255,255,0.2)',
+          borderRadius: '16px',
+          padding: '20px',
+          textAlign: 'center',
+          marginBottom: '16px',
+        }}>
+          <div style={{ fontSize: '3rem', marginBottom: '8px' }}>
+            {gameState.winner === 'VILLAGERS' && '🎉'}
+            {gameState.winner === 'WEREWOLVES' && '🐺'}
+            {gameState.winner === 'LOVERS' && '💘'}
+          </div>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 900, margin: '0 0 6px 0' }}>
+            {gameState.winner === 'VILLAGERS' && 'PHE DÂN LÀNG CHIẾN THẮNG!'}
+            {gameState.winner === 'WEREWOLVES' && 'PHE MA SÓI CHIẾN THẮNG!'}
+            {gameState.winner === 'LOVERS' && 'CẶP ĐÔI TÌNH YÊU CHIẾN THẮNG!'}
+          </h2>
+          <p style={{ fontSize: '0.85rem', color: '#cbd5e1', margin: '0 0 16px 0' }}>
+            Trận chiến đã kết thúc. Toàn bộ danh tính thực sự của các cư dân đã được lật mở!
+          </p>
+          <button
+            onClick={onLeaveRoom}
+            style={{
+              background: '#fff',
+              color: '#0f172a',
+              border: 'none',
+              padding: '10px 20px',
+              borderRadius: '10px',
+              fontWeight: 800,
+              cursor: 'pointer',
+            }}
+          >
+            Quay Lại Sảnh Chờ
+          </button>
+        </div>
+      )}
+
+      {/* THẺ VAI TRÒ BÍ MẬT CỦA BẠN */}
       <div style={{
         background: 'rgba(18, 18, 30, 0.95)',
         border: `2px solid ${myRoleDef.color}`,
@@ -153,7 +359,7 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
             </div>
             <div>
               <div style={{ fontSize: '0.8rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                VAI TRÒ BÍ MẬT CỦA BẠN
+                VAI TRÒ CỦA BẠN {!isAlive && <span style={{ color: '#ef4444' }}>(ĐÃ HY SINH)</span>}
               </div>
               <div style={{ fontSize: '1.4rem', fontWeight: 900, color: myRoleDef.color }}>
                 {myRoleDef.name}
@@ -177,7 +383,7 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
             }}
           >
             {showRoleDetails ? <EyeOff size={14} /> : <Eye size={14} />}
-            {showRoleDetails ? 'Ẩn Mô Tả' : 'Xem Kỹ Năng'}
+            {showRoleDetails ? 'Ẩn' : 'Kỹ Năng'}
           </button>
         </div>
 
@@ -194,8 +400,7 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
           </div>
         )}
 
-        {/* THÔNG TIN NỘI GIÁN ĐẶC BIỆT */}
-        {/* 1. Đồng đội Sói */}
+        {/* THÔNG TIN ĐỒNG ĐỘI / NGƯỜI YÊU / SOI TIÊN TRI */}
         {gameState.teamMates.length > 0 && (
           <div style={{
             marginTop: '12px',
@@ -211,7 +416,7 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
           }}>
             <span>🐺</span>
             <span>
-              Đồng đội Ma Sói của bạn:{' '}
+              Đồng đội Ma Sói:{' '}
               <strong>
                 {gameState.players
                   .filter((p) => gameState.teamMates.includes(p.id))
@@ -222,7 +427,6 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
           </div>
         )}
 
-        {/* 2. Cặp đôi Cupid */}
         {gameState.couplePartnerId && (
           <div style={{
             marginTop: '12px',
@@ -238,13 +442,12 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
           }}>
             <Heart size={16} color="#ec4899" fill="#ec4899" />
             <span>
-              Người yêu định mệnh của bạn:{' '}
+              Người yêu:{' '}
               <strong>{gameState.players.find((p) => p.id === gameState.couplePartnerId)?.name}</strong>
             </span>
           </div>
         )}
 
-        {/* 3. Kết quả soi của Tiên Tri */}
         {gameState.seerScanResult && (
           <div style={{
             marginTop: '12px',
@@ -271,42 +474,38 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
         )}
       </div>
 
-      {/* KHU VỰC HÀNH ĐỘNG TRONG ĐÊM (NIGHT ACTIONS) */}
-      {isNight && (
+      {/* KHU VỰC HÀNH ĐỘNG BAN ĐÊM (NIGHT PHASE) */}
+      {isNight && isAlive && (
         <div style={{
           background: '#12121e',
           border: '1px solid rgba(255,255,255,0.1)',
           borderRadius: '16px',
           padding: '18px',
-          marginBottom: '20px',
+          marginBottom: '16px',
         }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {gameState.myRole === 'WEREWOLF' && <><Crosshair size={18} color="#ef4444" /> Chọn Con Mồi Để Cắn</>}
+            {gameState.myRole === 'WEREWOLF' && <><Crosshair size={18} color="#ef4444" /> Chọn Mục Tiêu Để Cắn</>}
             {gameState.myRole === 'SEER' && <><Eye size={18} color="#38bdf8" /> Chọn Người Để Soi Danh Tính</>}
             {gameState.myRole === 'BODYGUARD' && <><Shield size={18} color="#3b82f6" /> Chọn Người Để Bảo Vệ</>}
-            {gameState.myRole === 'VILLAGER' && <><Moon size={18} color="#94a3b8" /> Ban Đêm Yên Lặng</>}
+            {gameState.myRole === 'VILLAGER' && <><Moon size={18} color="#94a3b8" /> Đêm Nay Bạn Chỉ Cần Ngủ Ngoan</>}
           </h3>
 
           {gameState.myRole === 'VILLAGER' ? (
             <p style={{ fontSize: '0.9rem', color: '#94a3b8', margin: 0 }}>
-              Bạn là Dân Làng lương thiện. Hãy nhắm mắt ngủ ngoan và cầu nguyện cho một bình minh yên lành.
+              Bạn là Dân Làng. Hãy nhắm mắt chờ trời sáng và theo dõi tình hình thảo luận.
             </p>
           ) : (
             <div>
-              <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '14px' }}>
-                Chạm vào một người chơi bên dưới để thi triển kỹ năng của bạn:
-              </p>
-
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px', marginBottom: '16px' }}>
                 {livingPlayers.map((p) => {
-                  const isSelected = selectedTargetId === p.id;
+                  const isSelected = selectedNightTargetId === p.id;
                   const isSelf = p.id === gameState.myPlayerId;
 
                   return (
                     <button
                       key={p.id}
-                      onClick={() => setSelectedTargetId(p.id)}
-                      disabled={actionSubmitted}
+                      onClick={() => setSelectedNightTargetId(p.id)}
+                      disabled={nightActionSubmitted}
                       style={{
                         background: isSelected ? 'rgba(99, 102, 241, 0.25)' : 'rgba(255,255,255,0.04)',
                         border: isSelected ? '2px solid #818cf8' : '1px solid rgba(255,255,255,0.1)',
@@ -314,8 +513,8 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
                         padding: '12px 8px',
                         textAlign: 'center',
                         color: '#fff',
-                        cursor: actionSubmitted ? 'not-allowed' : 'pointer',
-                        opacity: actionSubmitted && !isSelected ? 0.5 : 1,
+                        cursor: nightActionSubmitted ? 'not-allowed' : 'pointer',
+                        opacity: nightActionSubmitted && !isSelected ? 0.5 : 1,
                       }}
                     >
                       <div style={{ fontSize: '1.8rem', marginBottom: '4px' }}>{p.avatar}</div>
@@ -328,20 +527,20 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
                 })}
               </div>
 
-              {!actionSubmitted ? (
+              {!nightActionSubmitted ? (
                 <button
                   onClick={handleSubmitNightAction}
-                  disabled={!selectedTargetId}
+                  disabled={!selectedNightTargetId}
                   style={{
                     width: '100%',
-                    padding: '14px',
-                    background: selectedTargetId ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'rgba(255,255,255,0.08)',
+                    padding: '12px',
+                    background: selectedNightTargetId ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'rgba(255,255,255,0.08)',
                     border: 'none',
-                    color: selectedTargetId ? '#fff' : '#64748b',
+                    color: selectedNightTargetId ? '#fff' : '#64748b',
                     borderRadius: '12px',
-                    fontSize: '1rem',
+                    fontSize: '0.95rem',
                     fontWeight: 800,
-                    cursor: selectedTargetId ? 'pointer' : 'not-allowed',
+                    cursor: selectedNightTargetId ? 'pointer' : 'not-allowed',
                   }}
                 >
                   Xác Nhận Hành Động
@@ -352,12 +551,12 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
                   background: 'rgba(16, 185, 129, 0.15)',
                   border: '1px solid #10b981',
                   color: '#34d399',
-                  padding: '12px',
-                  borderRadius: '12px',
+                  padding: '10px',
+                  borderRadius: '10px',
                   fontWeight: 700,
-                  fontSize: '0.9rem',
+                  fontSize: '0.85rem',
                 }}>
-                  ✓ Bạn đã gửi hành động ban đêm thành công! Đang chờ những người khác...
+                  ✓ Đã gửi hành động đêm! Đang đợi chuyển sang Ngày...
                 </div>
               )}
             </div>
@@ -365,22 +564,295 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
         </div>
       )}
 
-      {/* DANH SÁCH TOÀN BỘ NGƯỜI CHƠI TRONG PHÒNG */}
+      {/* KHU VỰC BỎ PHIẾU TREO CỔ BAN NGÀY (DAY VOTING & LIVE TALLY) */}
+      {isDayVoting && (
+        <div style={{
+          background: '#12121e',
+          border: '2px solid rgba(249, 115, 22, 0.4)',
+          borderRadius: '16px',
+          padding: '18px',
+          marginBottom: '16px',
+          boxShadow: '0 8px 30px rgba(249, 115, 22, 0.15)',
+        }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '8px', color: '#fb923c' }}>
+            <Vote size={20} /> Tòa Án Bỏ Phiếu Treo Cổ
+          </h3>
+          <p style={{ fontSize: '0.85rem', color: '#cbd5e1', margin: '0 0 14px 0' }}>
+            {isAlive 
+              ? 'Chọn 1 người mà bạn nghi ngờ là Ma Sói để xử tử, hoặc Bỏ Phiếu Trắng:' 
+              : 'Bạn đã hy sinh, không thể tham gia bỏ phiếu.'}
+          </p>
+
+          {/* Danh sách người chơi để Vote kèm Live Tally */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px', marginBottom: '14px' }}>
+            {livingPlayers.map((p) => {
+              const voteCount = gameState.voteTally?.[p.id] || 0;
+              const isSelected = selectedVoteTargetId === p.id;
+              const isSelf = p.id === gameState.myPlayerId;
+
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => isAlive && handleCastVote(p.id)}
+                  disabled={!isAlive}
+                  style={{
+                    background: isSelected ? 'rgba(249, 115, 22, 0.25)' : 'rgba(255,255,255,0.04)',
+                    border: isSelected ? '2px solid #f97316' : '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '12px',
+                    padding: '12px 8px',
+                    textAlign: 'center',
+                    color: '#fff',
+                    position: 'relative',
+                    cursor: isAlive ? 'pointer' : 'default',
+                  }}
+                >
+                  {/* Badge số phiếu trực tiếp (Live Tally) */}
+                  {voteCount > 0 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '6px',
+                      right: '6px',
+                      background: '#ef4444',
+                      color: '#fff',
+                      borderRadius: '10px',
+                      padding: '2px 8px',
+                      fontSize: '0.75rem',
+                      fontWeight: 900,
+                      boxShadow: '0 2px 8px rgba(239, 68, 68, 0.6)',
+                    }}>
+                      {voteCount} 🗳️
+                    </div>
+                  )}
+
+                  <div style={{ fontSize: '1.8rem', marginBottom: '4px' }}>{p.avatar}</div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {p.name} {isSelf && '(Bạn)'}
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Ghế #{p.seatNumber}</div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Nút Bỏ phiếu trắng */}
+          {isAlive && (
+            <button
+              onClick={() => handleCastVote(null)}
+              style={{
+                width: '100%',
+                padding: '10px',
+                background: selectedVoteTargetId === null && voteSubmitted ? 'rgba(148, 163, 184, 0.3)' : 'rgba(255,255,255,0.05)',
+                border: selectedVoteTargetId === null && voteSubmitted ? '1px solid #94a3b8' : '1px dashed rgba(255,255,255,0.2)',
+                borderRadius: '10px',
+                color: '#cbd5e1',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              🕊️ Bỏ Phiếu Trắng (Không Treo Cổ Ai)
+            </button>
+          )}
+
+          {voteSubmitted && (
+            <div style={{
+              marginTop: '10px',
+              textAlign: 'center',
+              color: '#34d399',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+            }}>
+              ✓ Bạn đã bỏ phiếu thành công! Có thể chọn lại trước khi hết giờ.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* KHUNG CHAT PHÂN QUYỀN REALTIME (VILLAGE / WOLF / DEAD) */}
+      <div style={{
+        background: '#12121e',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '16px',
+        padding: '14px',
+        marginBottom: '16px',
+      }}>
+        {/* Navigation Tabs của Kênh Chat */}
+        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px', marginBottom: '12px' }}>
+          {isAlive && (
+            <button
+              onClick={() => setActiveChatTab('PUBLIC')}
+              style={{
+                flex: 1,
+                background: effectiveChatTab === 'PUBLIC' ? 'rgba(56, 189, 248, 0.2)' : 'transparent',
+                border: effectiveChatTab === 'PUBLIC' ? '1px solid #38bdf8' : 'none',
+                color: effectiveChatTab === 'PUBLIC' ? '#38bdf8' : '#94a3b8',
+                padding: '6px 8px',
+                borderRadius: '8px',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              🏘️ Kênh Làng
+            </button>
+          )}
+
+          {isAlive && isWolfSide && (
+            <button
+              onClick={() => setActiveChatTab('WOLF')}
+              style={{
+                flex: 1,
+                background: effectiveChatTab === 'WOLF' ? 'rgba(239, 68, 68, 0.2)' : 'transparent',
+                border: effectiveChatTab === 'WOLF' ? '1px solid #ef4444' : 'none',
+                color: effectiveChatTab === 'WOLF' ? '#ef4444' : '#94a3b8',
+                padding: '6px 8px',
+                borderRadius: '8px',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              🐺 Hang Sói
+            </button>
+          )}
+
+          {!isAlive && (
+            <button
+              onClick={() => setActiveChatTab('DEAD')}
+              style={{
+                flex: 1,
+                background: effectiveChatTab === 'DEAD' ? 'rgba(168, 85, 247, 0.2)' : 'transparent',
+                border: effectiveChatTab === 'DEAD' ? '1px solid #a855f7' : 'none',
+                color: effectiveChatTab === 'DEAD' ? '#a855f7' : '#94a3b8',
+                padding: '6px 8px',
+                borderRadius: '8px',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              👻 Cõi Âm
+            </button>
+          )}
+        </div>
+
+        {/* Khung hiển thị tin nhắn */}
+        <div style={{
+          height: '160px',
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+          paddingRight: '6px',
+          marginBottom: '10px',
+        }}>
+          {gameState.chatMessages.filter((m) => m.channel === effectiveChatTab).length === 0 ? (
+            <div style={{ textAlign: 'center', color: '#64748b', fontSize: '0.8rem', marginTop: '50px' }}>
+              Chưa có tin nhắn nào trong kênh này...
+            </div>
+          ) : (
+            gameState.chatMessages
+              .filter((m) => m.channel === effectiveChatTab)
+              .map((m) => {
+                const isMe = m.senderId === gameState.myPlayerId;
+                return (
+                  <div
+                    key={m.id}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: isMe ? 'flex-end' : 'flex-start',
+                    }}
+                  >
+                    <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginBottom: '2px' }}>
+                      {m.senderAvatar} {m.senderName}
+                    </div>
+                    <div style={{
+                      background: isMe ? 'linear-gradient(135deg, #4f46e5, #4338ca)' : 'rgba(255,255,255,0.08)',
+                      border: isMe ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                      color: '#fff',
+                      padding: '8px 12px',
+                      borderRadius: isMe ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+                      fontSize: '0.85rem',
+                      maxWidth: '80%',
+                      wordBreak: 'break-word',
+                    }}>
+                      {m.text}
+                    </div>
+                  </div>
+                );
+              })
+          )}
+          <div ref={chatMessagesEndRef} />
+        </div>
+
+        {/* Ô nhập tin nhắn & nút Gửi */}
+        <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '8px' }}>
+          <input
+            type="text"
+            value={chatInputText}
+            onChange={(e) => setChatInputText(e.target.value)}
+            placeholder={
+              effectiveChatTab === 'PUBLIC' && isNight 
+                ? 'Đêm tối làng đang ngủ, giữ trật tự...' 
+                : effectiveChatTab === 'PUBLIC' && !isAlive
+                ? 'Linh hồn không thể chat ở kênh làng...'
+                : `Nhập tin nhắn (${effectiveChatTab})...`
+            }
+            disabled={(effectiveChatTab === 'PUBLIC' && isNight) || (effectiveChatTab === 'PUBLIC' && !isAlive)}
+            style={{
+              flex: 1,
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: '10px',
+              padding: '10px 14px',
+              color: '#fff',
+              fontSize: '0.85rem',
+              outline: 'none',
+            }}
+          />
+          <button
+            type="submit"
+            disabled={(effectiveChatTab === 'PUBLIC' && isNight) || (effectiveChatTab === 'PUBLIC' && !isAlive)}
+            style={{
+              background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+              border: 'none',
+              borderRadius: '10px',
+              padding: '0 16px',
+              color: '#fff',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Send size={16} />
+          </button>
+        </form>
+      </div>
+
+      {/* DANH SÁCH TẤT CẢ NGƯỜI CHƠI TRONG PHÒNG */}
       <div style={{
         background: '#12121e',
         border: '1px solid rgba(255,255,255,0.1)',
         borderRadius: '16px',
         padding: '16px',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontSize: '0.9rem', color: '#94a3b8' }}>
-          <Users size={16} />
-          <span>Danh Sách Người Chơi ({gameState.players.length})</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', color: '#94a3b8' }}>
+            <Users size={16} />
+            <span>Danh Sách Người Chơi ({gameState.players.length})</span>
+          </div>
+          <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600 }}>
+            {livingPlayers.length} còn sống
+          </span>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {gameState.players.map((p) => {
             const isDead = !p.isAlive;
             const revealedRole = gameState.revealedRoles[p.id];
+            const isMe = p.id === gameState.myPlayerId;
 
             return (
               <div
@@ -389,22 +861,26 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  background: p.id === gameState.myPlayerId ? 'rgba(99, 102, 241, 0.1)' : 'rgba(255,255,255,0.03)',
-                  border: p.id === gameState.myPlayerId ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid rgba(255,255,255,0.06)',
+                  background: isMe ? 'rgba(99, 102, 241, 0.1)' : 'rgba(255,255,255,0.03)',
+                  border: isMe ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid rgba(255,255,255,0.06)',
                   borderRadius: '10px',
                   padding: '10px 14px',
-                  opacity: isDead ? 0.5 : 1,
+                  opacity: isDead ? 0.45 : 1,
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <span style={{ fontSize: '1.4rem' }}>{p.avatar}</span>
                   <div>
                     <div style={{ fontSize: '0.9rem', fontWeight: 700, color: isDead ? '#94a3b8' : '#f8fafc' }}>
-                      #{p.seatNumber} {p.name} {p.id === gameState.myPlayerId && '(Bạn)'}
+                      #{p.seatNumber} {p.name} {isMe && '(Bạn)'} {p.isHost && '👑'}
                     </div>
-                    {isDead && (
+                    {isDead ? (
                       <div style={{ fontSize: '0.72rem', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <Skull size={12} /> Đã Hy Sinh
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '0.72rem', color: '#10b981' }}>
+                        {isDayVoting ? (p.hasVoted ? '✓ Đã Bỏ Phiếu' : '⏳ Đang Suy Nghĩ') : 'Sống Sót'}
                       </div>
                     )}
                   </div>

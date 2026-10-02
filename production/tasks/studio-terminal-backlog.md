@@ -34,6 +34,6 @@
 | Task ID | Tên Task | Role | Trạng thái | Dependency | Ghi chú |
 |---|---|---|---|---|---|
 | TASK-201 | Triển khai Full Day-Night Automated State Machine trong RoomManager | Game Engine Dev | DONE | SPRINT 2 | Tự động resolve đêm, thợ săn, già làng, bán sói, chuyển Ngày & kiểm tra thắng thua |
-| TASK-202 | Xây dựng UI Day Voting trực tuyến & Tally thời gian thực | Frontend Dev | READY | TASK-201 | Bỏ phiếu trực tiếp, đếm phiếu công khai, animation xử tử hoặc Kẻ Ngốc lật bài |
-| TASK-203 | Triển khai Chat Stream thời gian thực phân quyền (Làng, Sói đêm, Người chết) | Backend/Frontend | READY | TASK-201 | Bảo mật kênh Sói chỉ Sói đọc được, người chết không spoil cho người sống |
-| TASK-204 | QA Test Suite trọn vẹn 1 ván đấu Online từ Đêm 1 đến Game Over | QA Lead | READY | TASK-201..203 | Đảm bảo tính toán thắng thua chuẩn xác tuyệt đối |
+| TASK-202 | Xây dựng UI Day Voting trực tuyến & Tally thời gian thực | Frontend Dev | DONE | TASK-201 | Bỏ phiếu trực tiếp, đếm phiếu công khai, animation xử tử hoặc Kẻ Ngốc lật bài |
+| TASK-203 | Triển khai Chat Stream thời gian thực phân quyền (Làng, Sói đêm, Người chết) | Backend/Frontend | DONE | TASK-201 | Bảo mật kênh Sói chỉ Sói đọc được, người chết không spoil cho người sống |
+| TASK-204 | QA Test Suite trọn vẹn 1 ván đấu Online từ Đêm 1 đến Game Over | QA Lead | DONE | TASK-201..203 | Đảm bảo tính toán thắng thua chuẩn xác tuyệt đối |

@@ -88,6 +88,26 @@ export function maskGameStateForPlayer(
     }
   });
 
+  // 6. Tính tổng số phiếu công khai khi đang ở pha Bỏ Phiếu DAY_VOTING
+  let voteTally: Record<string, number> | undefined;
+  if (serverState.phase === 'DAY_VOTING') {
+    voteTally = {};
+    Object.values(serverState.currentVotes).forEach((targetId) => {
+      if (targetId) {
+        voteTally![targetId] = (voteTally![targetId] || 0) + 1;
+      }
+    });
+  }
+  const myVote = serverState.currentVotes[playerId] ?? null;
+
+  // 7. Lọc Chat Messages theo phân quyền nghiêm ngặt
+  const filteredChat = (serverState.chatMessages || []).filter((msg) => {
+    if (msg.channel === 'PUBLIC') return true;
+    if (msg.channel === 'WOLF') return isWolfSide;
+    if (msg.channel === 'DEAD') return !me.isAlive;
+    return false;
+  });
+
   return {
     roomId: serverState.roomId,
     phase: serverState.phase,
@@ -102,6 +122,9 @@ export function maskGameStateForPlayer(
     teamMates,
     couplePartnerId,
     seerScanResult,
+    voteTally,
+    myVote,
+    chatMessages: filteredChat,
     historyLog: serverState.historyLog,
     winner: serverState.winner,
   };
