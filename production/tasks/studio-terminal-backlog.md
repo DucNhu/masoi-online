@@ -15,7 +15,7 @@
 
 ---
 
-## SPRINT 2: Ma Sói Online & Mobile App (iOS / Android)
+## SPRINT 2: Ma Sói Online & Mobile App (iOS / Android) — ĐÃ HOÀN THÀNH
 
 | Task ID | Tên Task | Role | Trạng thái | Dependency | Ghi chú |
 |---|---|---|---|---|---|
@@ -26,3 +26,14 @@
 | TASK-105 | Xây dựng Giao diện Người Chơi Online (Private Role View, Action submit trong đêm) | Frontend Dev | DONE | TASK-103 | Màn hình riêng cho từng client, đếm ngược hành động bí mật |
 | TASK-106 | Tối ưu hóa Native UX trên iOS (Dynamic Island, Haptics) & Android (Back button) | Mobile UX Lead | DONE | TASK-101, 105 | @capacitor/haptics, @capacitor/status-bar |
 | TASK-107 | QA Multi-client E2E & Xử lý mất kết nối (Reconnection, Host Migration) | QA Lead | DONE | TASK-104..106 | Kiểm thử đa thiết bị đồng thời |
+
+---
+
+## SPRINT 3: Chu Trình Ván Đấu Trực Tuyến Tự Động & Live Voting (Full Match Online)
+
+| Task ID | Tên Task | Role | Trạng thái | Dependency | Ghi chú |
+|---|---|---|---|---|---|
+| TASK-201 | Triển khai Full Day-Night Automated State Machine trong RoomManager | Game Engine Dev | DONE | SPRINT 2 | Tự động resolve đêm, thợ săn, già làng, bán sói, chuyển Ngày & kiểm tra thắng thua |
+| TASK-202 | Xây dựng UI Day Voting trực tuyến & Tally thời gian thực | Frontend Dev | READY | TASK-201 | Bỏ phiếu trực tiếp, đếm phiếu công khai, animation xử tử hoặc Kẻ Ngốc lật bài |
+| TASK-203 | Triển khai Chat Stream thời gian thực phân quyền (Làng, Sói đêm, Người chết) | Backend/Frontend | READY | TASK-201 | Bảo mật kênh Sói chỉ Sói đọc được, người chết không spoil cho người sống |
+| TASK-204 | QA Test Suite trọn vẹn 1 ván đấu Online từ Đêm 1 đến Game Over | QA Lead | READY | TASK-201..203 | Đảm bảo tính toán thắng thua chuẩn xác tuyệt đối |

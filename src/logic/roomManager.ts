@@ -249,6 +249,257 @@ export class RoomManager {
   }
 
   /**
+   * Kết thúc Đêm -> Tự động tính toán thương vong và chuyển sang Ban Ngày
+   */
+  public resolveNightToDay(roomId: string): void {
+    const room = this.rooms.get(roomId);
+    if (!room || room.phase !== 'NIGHT') return;
+
+    const deadThisNight: string[] = [];
+    const { werewolfTargetId, protectedPlayerId, witchSaved, witchPoisonTargetId } = room.nightActions;
+
+    // 1. Xử lý Sói cắn
+    if (werewolfTargetId) {
+      const isProtected = protectedPlayerId === werewolfTargetId;
+      const isSaved = witchSaved;
+
+      if (!isProtected && !isSaved) {
+        const victim = room.players.find((p) => p.id === werewolfTargetId);
+        if (victim && victim.isAlive) {
+          // Bán Sói (Cursed) bị cắn biến thành Sói thay vì chết
+          if (victim.role === 'CURSED' && !victim.cursedTurnedWolf) {
+            victim.cursedTurnedWolf = true;
+            room.historyLog.push(`🐺 Lời nguyền thức tỉnh! Một người chơi bị cắn đã biến thành Ma Sói.`);
+          }
+          // Già Làng (Elder) có 2 mạng trước đòn cắn của Sói
+          else if (victim.role === 'ELDER' && (victim.elderLivesRemaining ?? 2) > 1) {
+            victim.elderLivesRemaining = 1;
+            room.historyLog.push(`🛡️ Già Làng bị Ma Sói tấn công nhưng kiên cường sống sót!`);
+          } else {
+            deadThisNight.push(victim.id);
+          }
+        }
+      }
+    }
+
+    // 2. Xử lý Thuốc Độc Phù Thủy
+    if (witchPoisonTargetId && !deadThisNight.includes(witchPoisonTargetId)) {
+      deadThisNight.push(witchPoisonTargetId);
+    }
+
+    // 3. Xử lý Cặp Đôi chết chùm
+    const coupleVictims: string[] = [];
+    deadThisNight.forEach((deadId) => {
+      const victim = room.players.find((p) => p.id === deadId);
+      if (victim?.isCoupleWith && !deadThisNight.includes(victim.isCoupleWith) && !coupleVictims.includes(victim.isCoupleWith)) {
+        coupleVictims.push(victim.isCoupleWith);
+      }
+    });
+    deadThisNight.push(...coupleVictims);
+
+    // Cập nhật người chết
+    deadThisNight.forEach((deadId) => {
+      const p = room.players.find((player) => player.id === deadId);
+      if (p) {
+        p.isAlive = false;
+        room.historyLog.push(`☠️ ${p.name} (Ghế #${p.seatNumber}) đã hy sinh trong đêm.`);
+      }
+    });
+
+    if (deadThisNight.length === 0) {
+      room.historyLog.push(`✨ Đêm bình yên trôi qua, không có ai hy sinh!`);
+    }
+
+    // Kiểm tra điều kiện thắng
+    const isGameOver = this.checkWinCondition(room);
+
+    if (!isGameOver) {
+      room.phase = 'DAY_DISCUSSION';
+      room.timerSeconds = room.settings.discussionTimeSeconds || 60;
+      room.historyLog.push(`=== NGÀY THỨ ${room.dayNumber} BẮT ĐẦU: LÀNG THẢO LUẬN ===`);
+
+      // Reset cờ hành động
+      room.players.forEach((p) => {
+        p.hasActedNight = false;
+        p.hasVoted = false;
+      });
+      room.nightActions = {
+        protectedPlayerId: null,
+        werewolfTargetId: null,
+        witchSaved: false,
+        witchPoisonTargetId: null,
+        seerTargetId: null,
+      };
+      room.currentVotes = {};
+    }
+
+    this.broadcastState(roomId);
+  }
+
+  /**
+   * Bắt đầu giai đoạn Bỏ Phiếu ban ngày
+   */
+  public startDayVoting(roomId: string): void {
+    const room = this.rooms.get(roomId);
+    if (!room || room.phase !== 'DAY_DISCUSSION') return;
+
+    room.phase = 'DAY_VOTING';
+    room.timerSeconds = room.settings.votingTimeSeconds || 30;
+    room.currentVotes = {};
+    room.historyLog.push(`⚖️ Giai đoạn bỏ phiếu treo cổ bắt đầu!`);
+
+    this.broadcastState(roomId);
+  }
+
+  /**
+   * Bỏ phiếu treo cổ
+   */
+  public castVote(roomId: string, voterId: string, targetId: string | null): void {
+    const room = this.rooms.get(roomId);
+    if (!room || room.phase !== 'DAY_VOTING') return;
+
+    const voter = room.players.find((p) => p.id === voterId);
+    if (!voter || !voter.isAlive) return;
+
+    // Kẻ Ngốc đã lật bài thì mất quyền bỏ phiếu
+    if (voter.role === 'IDIOT' && voter.idiotRevealed) {
+      throw new Error('Kẻ Ngốc đã lật bài bị tước quyền bỏ phiếu.');
+    }
+
+    room.currentVotes[voterId] = targetId;
+    voter.hasVoted = true;
+
+    // Nếu tất cả người sống đã bỏ phiếu -> tự động kết thúc vote
+    const livingVoters = room.players.filter((p) => p.isAlive && !(p.role === 'IDIOT' && p.idiotRevealed));
+    const allVoted = livingVoters.every((p) => p.hasVoted);
+
+    if (allVoted) {
+      this.concludeDayVoting(roomId);
+      return;
+    }
+
+    this.broadcastState(roomId);
+  }
+
+  /**
+   * Tổng kết phiếu bầu & Treo cổ
+   */
+  public concludeDayVoting(roomId: string): void {
+    const room = this.rooms.get(roomId);
+    if (!room || room.phase !== 'DAY_VOTING') return;
+
+    const voteCounts: Record<string, number> = {};
+    Object.values(room.currentVotes).forEach((targetId) => {
+      if (targetId) {
+        voteCounts[targetId] = (voteCounts[targetId] || 0) + 1;
+      }
+    });
+
+    let highestTargetId: string | null = null;
+    let highestCount = 0;
+    let isTie = false;
+
+    Object.entries(voteCounts).forEach(([targetId, count]) => {
+      if (count > highestCount) {
+        highestCount = count;
+        highestTargetId = targetId;
+        isTie = false;
+      } else if (count === highestCount) {
+        isTie = true;
+      }
+    });
+
+    if (highestTargetId && !isTie && highestCount > 0) {
+      const victim = room.players.find((p) => p.id === highestTargetId);
+      if (victim && victim.isAlive) {
+        // Kẻ Ngốc lật bài thoát chết treo cổ
+        if (victim.role === 'IDIOT' && !victim.idiotRevealed) {
+          victim.idiotRevealed = true;
+          room.historyLog.push(`🃏 ${victim.name} là Kẻ Ngốc! Lật bài công khai và được tha chết, nhưng mất quyền vote.`);
+        } else {
+          victim.isAlive = false;
+          room.historyLog.push(`🪢 Làng đã quyết định xử tử ${victim.name} (${highestCount} phiếu).`);
+
+          // Nếu có người yêu thì chết theo
+          if (victim.isCoupleWith) {
+            const partner = room.players.find((p) => p.id === victim.isCoupleWith);
+            if (partner && partner.isAlive) {
+              partner.isAlive = false;
+              room.historyLog.push(`💔 ${partner.name} vì quá đau thương đã tuẫn tiết chết theo người yêu.`);
+            }
+          }
+        }
+      }
+    } else {
+      room.historyLog.push(`🕊️ Số phiếu hòa hoặc bỏ trắng. Không ai bị treo cổ hôm nay.`);
+    }
+
+    // Kiểm tra điều kiện thắng
+    const isGameOver = this.checkWinCondition(room);
+
+    if (!isGameOver) {
+      // Chuyển sang Đêm kế tiếp
+      room.phase = 'NIGHT';
+      room.dayNumber += 1;
+      room.timerSeconds = 45;
+      room.historyLog.push(`=== ĐÊM THỨ ${room.dayNumber} BUÔNG XUỐNG ===`);
+
+      room.players.forEach((p) => {
+        p.hasActedNight = false;
+        p.hasVoted = false;
+      });
+      room.currentVotes = {};
+    }
+
+    this.broadcastState(roomId);
+  }
+
+  /**
+   * Kiểm tra điều kiện thắng thua của ván đấu
+   */
+  public checkWinCondition(room: ServerGameState): boolean {
+    const livingPlayers = room.players.filter((p) => p.isAlive);
+    const livingWolves = livingPlayers.filter(
+      (p) => p.role === 'WEREWOLF' || (p.role === 'CURSED' && p.cursedTurnedWolf)
+    );
+    const livingVillagers = livingPlayers.filter(
+      (p) => p.role !== 'WEREWOLF' && !(p.role === 'CURSED' && p.cursedTurnedWolf)
+    );
+
+    // Kiểm tra cặp đôi khác phe sống sót cuối cùng
+    if (livingPlayers.length === 2 && livingPlayers[0].isCoupleWith === livingPlayers[1].id) {
+      const isDifferentTeam =
+        (livingPlayers[0].role === 'WEREWOLF' && livingPlayers[1].role !== 'WEREWOLF') ||
+        (livingPlayers[1].role === 'WEREWOLF' && livingPlayers[0].role !== 'WEREWOLF');
+
+      if (isDifferentTeam) {
+        room.phase = 'GAME_OVER';
+        room.winner = 'LOVERS';
+        room.historyLog.push(`💘 CẶP ĐÔI KHÁC PHE SỐNG SÓT CUỐI CÙNG — CẶP ĐÔI CHIẾN THẮNG!`);
+        return true;
+      }
+    }
+
+    // Dân làng thắng: Sói chết hết
+    if (livingWolves.length === 0) {
+      room.phase = 'GAME_OVER';
+      room.winner = 'VILLAGERS';
+      room.historyLog.push(`🎉 TOÀN BỘ MA SÓI ĐÃ BỊ TIÊU DIỆT — PHE DÂN LÀNG CHIẾN THẮNG!`);
+      return true;
+    }
+
+    // Ma sói thắng: Số Sói >= Số Dân
+    if (livingWolves.length >= livingVillagers.length) {
+      room.phase = 'GAME_OVER';
+      room.winner = 'WEREWOLVES';
+      room.historyLog.push(`🐺 SỐ LƯỢNG MA SÓI ĐÃ ÁP ĐẢO DÂN LÀNG — PHE MA SÓI CHIẾN THẮNG!`);
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
    * Đăng ký lắng nghe thay đổi trạng thái theo phòng
    */
   public subscribe(roomId: string, listener: StateListener): () => void {

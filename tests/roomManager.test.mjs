@@ -80,4 +80,33 @@ assert.strictEqual(updatedSeerView.seerScanResult.targetId, wolfPlayerView.myPla
 assert.strictEqual(updatedSeerView.seerScanResult.isWolf, true);
 console.log('✓ PASS: Thực hiện hành động đêm và gửi kết quả soi chính xác cho Tiên Tri');
 
-console.log('🎉 TOÀN BỘ CÁC BỘ TEST ROOM MANAGER ĐÃ PASS 100%!');
+// TEST 6: Chuyển từ Đêm sang Ngày Thảo Luận (resolveNightToDay)
+manager.resolveNightToDay(hostRes.roomId);
+const dayHostView = manager.getMaskedState(hostRes.roomId, hostRes.playerId);
+assert.strictEqual(dayHostView.phase, 'DAY_DISCUSSION');
+const deadSeer = dayHostView.players.find((p) => p.id === seerPlayerView.myPlayerId);
+assert.strictEqual(deadSeer.isAlive, false, 'Tiên tri bị Sói cắn phải hy sinh');
+console.log('✓ PASS: Xử lý giải quyết đêm, ghi nhận người chết và chuyển sang Ngày thảo luận');
+
+// TEST 7: Bắt đầu giai đoạn Bỏ Phiếu (startDayVoting)
+manager.startDayVoting(hostRes.roomId);
+const votingHostView = manager.getMaskedState(hostRes.roomId, hostRes.playerId);
+assert.strictEqual(votingHostView.phase, 'DAY_VOTING');
+console.log('✓ PASS: Chuyển sang giai đoạn Bỏ phiếu treo cổ');
+
+// TEST 8: Bỏ phiếu và Tổng kết Treo Cổ (castVote & concludeDayVoting)
+// Lấy các người chơi còn sống
+const aliveLiving = votingHostView.players.filter((p) => p.isAlive);
+// Cho tất cả người chơi còn sống bỏ phiếu treo cổ Sói
+aliveLiving.forEach((p) => {
+  manager.castVote(hostRes.roomId, p.id, wolfPlayerView.myPlayerId);
+});
+
+// TEST 9: Kiểm tra ván đấu kết thúc khi Sói chết hết (Dân Làng thắng)
+const gameOverView = manager.getMaskedState(hostRes.roomId, hostRes.playerId);
+assert.strictEqual(gameOverView.phase, 'GAME_OVER');
+assert.strictEqual(gameOverView.winner, 'VILLAGERS');
+console.log('✓ PASS: Treo cổ Ma Sói thành công -> Phe Dân Làng Chiến Thắng!');
+
+console.log('🎉 TOÀN BỘ 9 TEST ROOM MANAGER & FULL GAME CYCLE ĐÃ PASS 100%!');
+
