@@ -55,6 +55,8 @@ export function maskGameStateForPlayer(
     seatNumber: p.seatNumber,
     hasVoted: p.hasVoted,
     hasActedNight: p.hasActedNight,
+    isSpeaking: p.isSpeaking,
+    isMuted: p.isMuted,
   }));
 
   // 2. Tính toán danh sách đồng đội Sói (chỉ mở cho Ma Sói hoặc Kẻ Bán Tơ)

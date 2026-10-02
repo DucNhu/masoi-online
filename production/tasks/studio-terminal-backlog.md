@@ -37,3 +37,15 @@
 | TASK-202 | Xây dựng UI Day Voting trực tuyến & Tally thời gian thực | Frontend Dev | DONE | TASK-201 | Bỏ phiếu trực tiếp, đếm phiếu công khai, animation xử tử hoặc Kẻ Ngốc lật bài |
 | TASK-203 | Triển khai Chat Stream thời gian thực phân quyền (Làng, Sói đêm, Người chết) | Backend/Frontend | DONE | TASK-201 | Bảo mật kênh Sói chỉ Sói đọc được, người chết không spoil cho người sống |
 | TASK-204 | QA Test Suite trọn vẹn 1 ván đấu Online từ Đêm 1 đến Game Over | QA Lead | DONE | TASK-201..203 | Đảm bảo tính toán thắng thua chuẩn xác tuyệt đối |
+
+---
+
+## SPRINT 4: WebRTC Voice Chat Trực Tuyến & Âm Thanh Không Gian (Spatial Audio Immersion)
+
+| Task ID | Tên Task | Role | Trạng thái | Dependency | Ghi chú |
+|---|---|---|---|---|---|
+| TASK-301 | Thiết kế WebRTC Voice Signaling Relay & Audio Permissions trong RoomManager | Backend / System Architect | DONE | SPRINT 3 | SDP/ICE relay, cơ chế Night Auto-Mute làng ngủ, kênh Voice Hang Sói |
+| TASK-302 | Xây dựng UI Voice Indicator & Bộ Điều Khiển Mic (Mute/Unmute, Speaking Waves) | Frontend Dev | DONE | TASK-301 | Hiệu ứng sóng âm khi người chơi phát biểu, icon mic nhấp nháy theo nhịp |
+| TASK-303 | Nâng cấp Hệ thống Âm thanh Không Gian & Sound FX Ma Mị (Sói hú, Gà gáy, Tòa án) | Audio/Frontend Lead | DONE | TASK-301 | Web Audio API synthesizer/procedural sound, không phụ thuộc file ngoài nặng |
+| TASK-304 | QA Test Suite kiểm thử tích hợp Voice Signaling & Audio Permissions | QA Lead | DONE | TASK-301..303 | Đảm bảo không rò rỉ âm thanh ban đêm và an toàn tín hiệu P2P |
+

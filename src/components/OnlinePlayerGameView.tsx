@@ -12,11 +12,13 @@ import {
   Crosshair, 
   Users, 
   Heart, 
-  Skull,
-  LogOut,
-  Send,
-  Trophy,
-  Vote
+  Skull, 
+  LogOut, 
+  Send, 
+  Trophy, 
+  Vote,
+  Mic,
+  MicOff
 } from 'lucide-react';
 
 interface Props {
@@ -32,6 +34,9 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
   // Bỏ phiếu ban ngày
   const [selectedVoteTargetId, setSelectedVoteTargetId] = useState<string | null>(null);
   const [voteSubmitted, setVoteSubmitted] = useState<boolean>(false);
+
+  // Micro & Voice Control
+  const [isMuted, setIsMuted] = useState<boolean>(true);
 
   // Lưu trữ phase trước đó để tự động reset cờ khi sang pha mới
   const [prevPhase, setPrevPhase] = useState<string>(gameState.phase);
@@ -53,18 +58,43 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
 
   const isWolfSide = gameState.myRole === 'WEREWOLF' || gameState.myRole === 'MINION';
 
-  // Đồng bộ reset cờ khi server đổi phase
+  // Đồng bộ reset cờ và phát âm thanh không gian khi server đổi phase
   if (gameState.phase !== prevPhase) {
     setPrevPhase(gameState.phase);
     if (gameState.phase === 'NIGHT') {
       setNightActionSubmitted(false);
       setSelectedNightTargetId(null);
+      setIsMuted(true);
+      soundEffects.playWolfHowl();
+    }
+    if (gameState.phase === 'DAY_DISCUSSION') {
+      soundEffects.playRoosterMorning();
     }
     if (gameState.phase === 'DAY_VOTING') {
       setVoteSubmitted(false);
       setSelectedVoteTargetId(null);
+      soundEffects.playCourtGavel();
     }
   }
+
+  // Xử lý bật/tắt micro
+  const handleToggleMic = () => {
+    if (isNight && !isWolfSide) {
+      soundEffects.triggerHaptic('heavy');
+      alert('🔒 Night Auto-Mute: Đêm tối cả làng ngủ say, micro bị khóa để bảo toàn tĩnh lặng.');
+      return;
+    }
+    if (!isAlive) {
+      soundEffects.triggerHaptic('heavy');
+      alert('👻 Âm dương cách biệt: Linh hồn đã hy sinh không thể phát giọng nói tới người sống.');
+      return;
+    }
+
+    const nextMuted = !isMuted;
+    setIsMuted(nextMuted);
+    soundEffects.triggerHaptic('light');
+    roomManager.setVoiceState(gameState.roomId, gameState.myPlayerId, !nextMuted, nextMuted);
+  };
 
   // Tự động cuộn chat xuống cuối khi có tin nhắn mới
   useEffect(() => {
@@ -127,24 +157,47 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
         <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 700 }}>
           PHÒNG: <strong style={{ color: '#38bdf8' }}>{gameState.roomId}</strong> • BẠN: <strong style={{ color: '#fff' }}>{me?.name}</strong> {isHost && '👑'}
         </span>
-        <button
-          onClick={onLeaveRoom}
-          style={{
-            background: 'rgba(239, 68, 68, 0.15)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            color: '#fca5a5',
-            padding: '5px 12px',
-            borderRadius: '8px',
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-          }}
-        >
-          <LogOut size={12} /> Rời Trận
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {/* Nút Điều Khiển Micro */}
+          <button
+            onClick={handleToggleMic}
+            style={{
+              background: !isMuted ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.15)',
+              border: !isMuted ? '1px solid #22c55e' : '1px solid rgba(239, 68, 68, 0.3)',
+              color: !isMuted ? '#4ade80' : '#fca5a5',
+              padding: '5px 12px',
+              borderRadius: '8px',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            {!isMuted ? <Mic size={14} color="#4ade80" /> : <MicOff size={14} color="#fca5a5" />}
+            {!isMuted ? 'Mic BẬT' : 'Mic TẮT'}
+          </button>
+
+          <button
+            onClick={onLeaveRoom}
+            style={{
+              background: 'rgba(239, 68, 68, 0.15)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#fca5a5',
+              padding: '5px 12px',
+              borderRadius: '8px',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+          >
+            <LogOut size={12} /> Rời Trận
+          </button>
+        </div>
       </div>
 
       {/* THANH TRẠNG THÁI PHA & THỜI GIAN */}
@@ -861,18 +914,45 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  background: isMe ? 'rgba(99, 102, 241, 0.1)' : 'rgba(255,255,255,0.03)',
-                  border: isMe ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid rgba(255,255,255,0.06)',
+                  background: p.isSpeaking 
+                    ? 'rgba(34, 197, 94, 0.12)' 
+                    : isMe 
+                    ? 'rgba(99, 102, 241, 0.1)' 
+                    : 'rgba(255,255,255,0.03)',
+                  border: p.isSpeaking
+                    ? '1px solid #22c55e'
+                    : isMe 
+                    ? '1px solid rgba(99, 102, 241, 0.4)' 
+                    : '1px solid rgba(255,255,255,0.06)',
                   borderRadius: '10px',
                   padding: '10px 14px',
                   opacity: isDead ? 0.45 : 1,
+                  boxShadow: p.isSpeaking ? '0 0 12px rgba(34, 197, 94, 0.35)' : 'none',
+                  transition: 'all 0.2s ease',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '1.4rem' }}>{p.avatar}</span>
+                  <div style={{ position: 'relative' }}>
+                    <span style={{ fontSize: '1.4rem' }}>{p.avatar}</span>
+                    {p.isMuted && (
+                      <span style={{ position: 'absolute', bottom: '-2px', right: '-4px', background: '#ef4444', borderRadius: '50%', padding: '1px', display: 'flex' }}>
+                        <MicOff size={10} color="#fff" />
+                      </span>
+                    )}
+                    {p.isSpeaking && (
+                      <span style={{ position: 'absolute', bottom: '-2px', right: '-4px', background: '#22c55e', borderRadius: '50%', padding: '1px', display: 'flex' }}>
+                        <Mic size={10} color="#fff" />
+                      </span>
+                    )}
+                  </div>
                   <div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: isDead ? '#94a3b8' : '#f8fafc' }}>
-                      #{p.seatNumber} {p.name} {isMe && '(Bạn)'} {p.isHost && '👑'}
+                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: isDead ? '#94a3b8' : '#f8fafc', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>#{p.seatNumber} {p.name} {isMe && '(Bạn)'} {p.isHost && '👑'}</span>
+                      {p.isSpeaking && (
+                        <span style={{ fontSize: '0.68rem', color: '#4ade80', fontWeight: 800 }}>
+                          [Đang Nói 🎙️]
+                        </span>
+                      )}
                     </div>
                     {isDead ? (
                       <div style={{ fontSize: '0.72rem', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '4px' }}>

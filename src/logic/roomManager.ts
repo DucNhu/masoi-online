@@ -1,12 +1,14 @@
-import { ServerGameState, ClientGameState, RoomSettings, ChatMessage } from '../types/multiplayer';
+import { ServerGameState, ClientGameState, RoomSettings, ChatMessage, VoiceSignalPayload } from '../types/multiplayer';
 import { RoleId } from '../types/game';
 import { generateRoomCode, maskGameStateForPlayer } from './roomProtocol';
 
 export type StateListener = (playerId: string, state: ClientGameState) => void;
+export type VoiceSignalListener = (signal: VoiceSignalPayload) => void;
 
 export class RoomManager {
   private rooms: Map<string, ServerGameState> = new Map();
   private listeners: Map<string, Set<StateListener>> = new Map();
+  private voiceListeners: Map<string, Set<VoiceSignalListener>> = new Map();
 
   /**
    * Tạo phòng mới với Host
@@ -574,6 +576,78 @@ export class RoomManager {
     return () => {
       set?.delete(listener);
     };
+  }
+
+  /**
+   * Đăng ký lắng nghe tín hiệu WebRTC Voice
+   */
+  public subscribeVoiceSignal(roomId: string, listener: VoiceSignalListener): () => void {
+    let set = this.voiceListeners.get(roomId);
+    if (!set) {
+      set = new Set();
+      this.voiceListeners.set(roomId, set);
+    }
+    set.add(listener);
+
+    return () => {
+      set?.delete(listener);
+    };
+  }
+
+  /**
+   * Chuyển tiếp tín hiệu WebRTC Voice có phân quyền nghiêm ngặt
+   */
+  public sendVoiceSignal(roomId: string, payload: VoiceSignalPayload): void {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+
+    const sender = room.players.find((p) => p.id === payload.senderId);
+    if (!sender) return;
+
+    // Phân quyền ban đêm (Night Auto-Mute)
+    if (room.phase === 'NIGHT') {
+      const isWolf = sender.role === 'WEREWOLF' || (sender.role === 'CURSED' && sender.cursedTurnedWolf);
+      if (!isWolf) {
+        throw new Error('Night Auto-Mute: Đêm tối cả làng ngủ say, micro bị khóa.');
+      }
+      // Nếu là Sói, người nhận cũng phải là Sói
+      if (payload.receiverId !== '*') {
+        const receiver = room.players.find((p) => p.id === payload.receiverId);
+        const isReceiverWolf = receiver?.role === 'WEREWOLF' || (receiver?.role === 'CURSED' && receiver?.cursedTurnedWolf);
+        if (!isReceiverWolf) {
+          throw new Error('Không thể truyền tín hiệu âm thanh tới người ngoài bầy Sói.');
+        }
+      }
+    }
+
+    // Phân quyền người chết: không được truyền âm thanh tới người sống
+    if (!sender.isAlive && payload.receiverId !== '*') {
+      const receiver = room.players.find((p) => p.id === payload.receiverId);
+      if (receiver && receiver.isAlive) {
+        throw new Error('Linh hồn không thể truyền giọng nói tới người sống.');
+      }
+    }
+
+    const set = this.voiceListeners.get(roomId);
+    if (set) {
+      set.forEach((listener) => listener(payload));
+    }
+  }
+
+  /**
+   * Cập nhật trạng thái Nói / Tắt tiếng (Speaking / Muted)
+   */
+  public setVoiceState(roomId: string, playerId: string, isSpeaking: boolean, isMuted: boolean): void {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+
+    const player = room.players.find((p) => p.id === playerId);
+    if (!player) return;
+
+    player.isSpeaking = isSpeaking;
+    player.isMuted = isMuted;
+
+    this.broadcastState(roomId);
   }
 
   /**

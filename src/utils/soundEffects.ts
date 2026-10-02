@@ -164,6 +164,137 @@ class SoundManager {
   }
 
   /**
+   * Âm thanh Sói hú rùng rợn lúc nửa đêm (Procedural Werewolf Howl)
+   */
+  playWolfHowl() {
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sawtooth';
+      const t = this.ctx.currentTime;
+
+      // Đường cong tần số tiếng sói hú: Trầm -> Rít cao -> Trầm dần
+      osc.frequency.setValueAtTime(260, t);
+      osc.frequency.exponentialRampToValueAtTime(620, t + 0.8);
+      osc.frequency.exponentialRampToValueAtTime(580, t + 1.4);
+      osc.frequency.exponentialRampToValueAtTime(180, t + 2.4);
+
+      gain.gain.setValueAtTime(0.01, t);
+      gain.gain.linearRampToValueAtTime(0.35, t + 0.5);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 2.4);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(t);
+      osc.stop(t + 2.4);
+    } catch (e) {
+      console.warn('Audio play failed', e);
+    }
+  }
+
+  /**
+   * Âm thanh gà gáy rạng sáng / Bình minh buông xuống
+   */
+  playRoosterMorning() {
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+
+      const t = this.ctx.currentTime;
+      const notes = [
+        { freq: 440, time: 0, dur: 0.2 },
+        { freq: 554, time: 0.25, dur: 0.2 },
+        { freq: 659, time: 0.5, dur: 0.7 },
+      ];
+
+      notes.forEach(({ freq, time, dur }) => {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, t + time);
+
+        gain.gain.setValueAtTime(0.2, t + time);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + time + dur);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(t + time);
+        osc.stop(t + time + dur);
+      });
+    } catch (e) {
+      console.warn('Audio play failed', e);
+    }
+  }
+
+  /**
+   * Tiếng gõ búa tòa án đanh thép khi Bỏ Phiếu
+   */
+  playCourtGavel() {
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+
+      const t = this.ctx.currentTime;
+      [0, 0.25].forEach((delay) => {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(140, t + delay);
+        osc.frequency.exponentialRampToValueAtTime(40, t + delay + 0.12);
+
+        gain.gain.setValueAtTime(0.4, t + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.12);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(t + delay);
+        osc.stop(t + delay + 0.12);
+      });
+    } catch (e) {
+      console.warn('Audio play failed', e);
+    }
+  }
+
+  /**
+   * Tiếng chuông tử thần u tối khi có người bị xử tử
+   */
+  playDeathBell() {
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(196, this.ctx.currentTime); // G3 note
+      osc.frequency.exponentialRampToValueAtTime(98, this.ctx.currentTime + 2.0);
+
+      gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 2.0);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start();
+      osc.stop(this.ctx.currentTime + 2.0);
+    } catch (e) {
+      console.warn('Audio play failed', e);
+    }
+  }
+
+  /**
    * Haptic vibration feedback for mobile (Native Taptic Engine & Web fallback)
    */
   triggerHaptic(type: 'light' | 'medium' | 'heavy' = 'light') {

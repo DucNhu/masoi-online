@@ -27,6 +27,16 @@ export interface NetworkPlayer {
   seatNumber: number;
   hasVoted: boolean;
   hasActedNight: boolean;
+  isSpeaking?: boolean;
+  isMuted?: boolean;
+}
+
+export interface VoiceSignalPayload {
+  senderId: string;
+  receiverId: string; // ID người nhận, hoặc '*' nếu là broadcast trong phòng
+  signalType: 'OFFER' | 'ANSWER' | 'ICE_CANDIDATE' | 'MUTE_STATE';
+  data: string;
+  timestamp: number;
 }
 
 export interface ChatMessage {
