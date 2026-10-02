@@ -119,7 +119,7 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
     else if (newCount >= 13) recWolf = 4;
     setWolfCount(recWolf);
     setEnableHunter(newCount >= 7);
-    setEnableGuard(newCount >= 6);
+    setEnableGuard(newCount >= 4);
   };
 
   // Lưu tên vào LocalStorage để lần sau dùng lại
@@ -204,8 +204,9 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
   const baseSpecialCount = (enableSeer ? 1 : 0) + (enableWitch ? 1 : 0) + (enableGuard ? 1 : 0) + (enableHunter ? 1 : 0);
   const expansionCount = (enableCupid ? 1 : 0) + (enableMinion ? 1 : 0) + (enableElder ? 1 : 0) + (enableIdiot ? 1 : 0) + (enableCursed ? 1 : 0);
   const totalSpecialCount = baseSpecialCount + expansionCount;
+  const isOverCapacity = (wolfCount + totalSpecialCount) > players.length;
   const villagerCount = Math.max(0, players.length - wolfCount - totalSpecialCount);
-  const totalCardsConfigured = wolfCount + totalSpecialCount + villagerCount;
+  const totalCardsConfigured = isOverCapacity ? (wolfCount + totalSpecialCount) : players.length;
 
   // Thuật toán: Xào Bài & Chia Ngẫu Nhiên
   const handleShuffleAndDeal = () => {
@@ -441,10 +442,26 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
                 <Layers size={18} color="var(--accent-witch)" />
                 <span style={{ fontSize: '0.92rem', fontWeight: 800 }}>Bộ Bài Dự Kiến ({totalCardsConfigured} Lá)</span>
               </div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                Tú lơ khơ chuẩn
+              <span style={{ fontSize: '0.75rem', color: isOverCapacity ? '#f87171' : 'var(--text-muted)', fontWeight: isOverCapacity ? 700 : 400 }}>
+                {isOverCapacity ? '⚠️ Vượt số người' : 'Tú lơ khơ chuẩn'}
               </span>
             </div>
+
+            {isOverCapacity && (
+              <div style={{
+                background: 'rgba(239, 68, 68, 0.15)',
+                border: '1px solid rgba(239, 68, 68, 0.4)',
+                borderRadius: '10px',
+                padding: '10px 12px',
+                marginBottom: '10px',
+                fontSize: '0.8rem',
+                color: '#fca5a5',
+                fontWeight: 600,
+                lineHeight: 1.4,
+              }}>
+                ⚠️ Số vai trò đặc biệt ({wolfCount + totalSpecialCount}) vượt quá số người chơi ({players.length}). Vui lòng tắt bớt vai trò hoặc thêm người chơi để chia bài chính xác!
+              </div>
+            )}
 
             {/* Role counters */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
@@ -903,17 +920,20 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
           }}>
             <button
               onClick={handleShuffleAndDeal}
-              disabled={players.length < 4}
-              className="btn btn-primary pulse-animation"
+              disabled={players.length < 4 || isOverCapacity}
+              className={`btn ${isOverCapacity ? 'btn-ghost' : 'btn-primary pulse-animation'}`}
               style={{
                 width: '100%',
                 height: '56px',
                 fontSize: '1.08rem',
                 fontWeight: 800,
+                opacity: isOverCapacity ? 0.6 : 1,
               }}
             >
               <Shuffle size={20} />
-              Xào Bài & Chia Ngẫu Nhiên
+              {isOverCapacity
+                ? `Quá Số Lá Bài (${wolfCount + totalSpecialCount}/${players.length})`
+                : 'Xào Bài & Chia Ngẫu Nhiên'}
             </button>
           </div>
         </>

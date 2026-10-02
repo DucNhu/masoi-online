@@ -438,6 +438,7 @@ export const App: React.FC = () => {
                 onFinishNight={handleFinishNight}
                 onSetLovers={handleSetLovers}
                 privacyShield={gameState.privacyShield}
+                onPhaseChange={(newPhase) => setGameState(prev => ({ ...prev, phase: newPhase }))}
               />
             )}
 

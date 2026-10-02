@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Moon, Shield, Eye, Sparkles, Skull, ArrowRight, Check, Heart, VenetianMask } from 'lucide-react';
-import { GameState, NightStepAction } from '../types/game';
+import { GameState, NightStepAction, GamePhase } from '../types/game';
 import { ROLE_DEFINITIONS, MODERATOR_SCRIPTS } from '../data/roles';
 import { soundEffects } from '../utils/soundEffects';
 
@@ -9,16 +9,29 @@ interface Props {
   onUpdateNightAction: (actions: Partial<NightStepAction>) => void;
   onFinishNight: () => void;
   onSetLovers?: (loverAId: string, loverBId: string) => void;
+  onPhaseChange?: (phase: GamePhase) => void;
   privacyShield: boolean;
 }
 
 type NightSubStep = 'INTRO' | 'CUPID' | 'MINION' | 'BODYGUARD' | 'WEREWOLF' | 'WITCH' | 'SEER' | 'OUTRO';
+
+const STEP_TO_PHASE: Record<NightSubStep, GamePhase> = {
+  INTRO: 'NIGHT_START',
+  CUPID: 'NIGHT_CUPID',
+  MINION: 'NIGHT_MINION',
+  BODYGUARD: 'NIGHT_BODYGUARD',
+  WEREWOLF: 'NIGHT_WEREWOLF',
+  WITCH: 'NIGHT_WITCH',
+  SEER: 'NIGHT_SEER',
+  OUTRO: 'NIGHT_START',
+};
 
 export const NightPhaseView: React.FC<Props> = ({
   gameState,
   onUpdateNightAction,
   onFinishNight,
   onSetLovers,
+  onPhaseChange,
   privacyShield,
 }) => {
   const { round, players, currentNightAction, lastProtectedPlayerId, witchPotions } = gameState;
@@ -33,17 +46,34 @@ export const NightPhaseView: React.FC<Props> = ({
   const hasAliveSeer = players.some(p => p.roleId === 'SEER' && p.isAlive);
 
   // Xác định danh sách các bước cần gọi trong đêm này
-  const steps: NightSubStep[] = ['INTRO'];
-  if (hasAliveCupid && round === 1 && !gameState.cupidPaired) steps.push('CUPID');
-  if (hasAliveMinion && round === 1) steps.push('MINION');
-  if (hasAliveBodyguard) steps.push('BODYGUARD');
-  if (hasAliveWerewolf) steps.push('WEREWOLF');
-  if (hasAliveWitch) steps.push('WITCH');
-  if (hasAliveSeer) steps.push('SEER');
-  steps.push('OUTRO');
+  const steps: NightSubStep[] = React.useMemo(() => {
+    const list: NightSubStep[] = ['INTRO'];
+    if (hasAliveCupid && round === 1 && !gameState.cupidPaired) list.push('CUPID');
+    if (hasAliveMinion && round === 1) list.push('MINION');
+    if (hasAliveBodyguard) list.push('BODYGUARD');
+    if (hasAliveWerewolf) list.push('WEREWOLF');
+    if (hasAliveWitch) list.push('WITCH');
+    if (hasAliveSeer) list.push('SEER');
+    list.push('OUTRO');
+    return list;
+  }, [hasAliveCupid, round, gameState.cupidPaired, hasAliveMinion, hasAliveBodyguard, hasAliveWerewolf, hasAliveWitch, hasAliveSeer]);
 
-  const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
+  // Khởi tạo index từ phase hiện tại để không mất bước khi chuyển Tab
+  const [currentStepIndex, setCurrentStepIndex] = useState<number>(() => {
+    const matchedIdx = steps.findIndex(st => STEP_TO_PHASE[st] === gameState.phase);
+    return matchedIdx >= 0 ? matchedIdx : 0;
+  });
   const currentStep = steps[currentStepIndex];
+
+  // Đồng bộ phase lên Header khi khởi tạo hoặc thay đổi bước
+  React.useEffect(() => {
+    const targetStep = steps[currentStepIndex];
+    if (!targetStep) return;
+    const targetPhase = STEP_TO_PHASE[targetStep];
+    if (onPhaseChange && gameState.phase !== targetPhase) {
+      onPhaseChange(targetPhase);
+    }
+  }, [currentStepIndex, gameState.phase, onPhaseChange, steps]);
 
   // Thần tình yêu ghép đôi
   const [selectedLovers, setSelectedLovers] = useState<string[]>(gameState.lovers ? [...gameState.lovers] : []);
@@ -72,7 +102,12 @@ export const NightPhaseView: React.FC<Props> = ({
     soundEffects.triggerHaptic('light');
 
     if (currentStepIndex < steps.length - 1) {
-      setCurrentStepIndex(currentStepIndex + 1);
+      const nextIdx = currentStepIndex + 1;
+      setCurrentStepIndex(nextIdx);
+      const nextStep = steps[nextIdx];
+      if (onPhaseChange) {
+        onPhaseChange(STEP_TO_PHASE[nextStep]);
+      }
     } else {
       // Kết thúc đêm -> Sang Ngày
       soundEffects.playDawnChime();

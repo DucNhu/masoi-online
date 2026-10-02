@@ -31,6 +31,8 @@ export const Header: React.FC<Props> = ({
     switch (phase) {
       case 'SETUP': return 'Thiết Lập';
       case 'NIGHT_START': return `Đêm ${round}`;
+      case 'NIGHT_CUPID': return `Đêm ${round} • Thần Tình Yêu`;
+      case 'NIGHT_MINION': return `Đêm ${round} • Kẻ Bán Tơ`;
       case 'NIGHT_BODYGUARD': return `Đêm ${round} • Bảo Vệ`;
       case 'NIGHT_WEREWOLF': return `Đêm ${round} • Ma Sói`;
       case 'NIGHT_WITCH': return `Đêm ${round} • Phù Thủy`;
