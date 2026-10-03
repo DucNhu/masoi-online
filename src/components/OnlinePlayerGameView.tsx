@@ -21,6 +21,7 @@ import {
   Mic,
   MicOff
 } from 'lucide-react';
+import { EmotePicker } from './EmotePicker';
 
 interface Props {
   gameState: ClientGameState;
@@ -881,7 +882,23 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
         </div>
 
         {/* Ô nhập tin nhắn & nút Gửi */}
-        <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '8px' }}>
+        <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <EmotePicker
+            disabled={(effectiveChatTab === 'PUBLIC' && isNight) || (effectiveChatTab === 'PUBLIC' && !isAlive)}
+            onSelectEmote={(item) => {
+              try {
+                soundEffects.triggerHaptic('medium');
+                roomManager.sendChatMessage(
+                  gameState.roomId,
+                  gameState.myPlayerId,
+                  `${item.emoji} [${item.label}]`,
+                  effectiveChatTab
+                );
+              } catch {
+                // ignore
+              }
+            }}
+          />
           <input
             type="text"
             value={chatInputText}
@@ -918,6 +935,7 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              height: '40px',
             }}
           >
             <Send size={16} />

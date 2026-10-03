@@ -1,9 +1,31 @@
 import { NativeBridge } from './nativeBridge';
 
+const SOUND_STORAGE_KEY = 'masoi_sound_effects_enabled';
+
+export function isSoundEnabled(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const val = localStorage.getItem(SOUND_STORAGE_KEY);
+    return val === null ? true : val === 'true';
+  } catch {
+    return true;
+  }
+}
+
+export function setSoundEnabled(enabled: boolean): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(SOUND_STORAGE_KEY, String(enabled));
+  } catch {
+    // ignore
+  }
+}
+
 class SoundManager {
   private ctx: AudioContext | null = null;
 
   private initCtx() {
+    if (!isSoundEnabled()) return;
     if (!this.ctx && typeof window !== 'undefined') {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (AudioCtx) {
@@ -295,6 +317,34 @@ class SoundManager {
   }
 
   /**
+   * Tiếng gõ nhẹ khi bấm vote hoặc chọn biểu cảm
+   */
+  playVoteSound() {
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(200, this.ctx.currentTime + 0.06);
+
+      gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.06);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(this.ctx.currentTime);
+      osc.stop(this.ctx.currentTime + 0.06);
+    } catch (e) {
+      console.warn('Audio play failed', e);
+    }
+  }
+
+  /**
    * Haptic vibration feedback for mobile (Native Taptic Engine & Web fallback)
    */
   triggerHaptic(type: 'light' | 'medium' | 'heavy' = 'light') {
@@ -303,3 +353,11 @@ class SoundManager {
 }
 
 export const soundEffects = new SoundManager();
+
+export const playVoteSound = () => soundEffects.playVoteSound();
+export const playWolfHowl = () => soundEffects.playWolfHowl();
+export const playDeathBell = () => soundEffects.playDeathBell();
+export const playDawnChime = () => soundEffects.playDawnChime();
+export const playRoosterMorning = () => soundEffects.playRoosterMorning();
+export const playCourtGavel = () => soundEffects.playCourtGavel();
+

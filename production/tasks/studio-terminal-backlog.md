@@ -88,9 +88,19 @@
 
 | Task ID | Tên Task | Role | Trạng thái | Dependency | Ghi chú |
 |---|---|---|---|---|---|
-| TASK-701 | Bộ Âm Thanh Ma Mị Tự Nhiên (Synthesized Web Audio Engine: Tiếng Sói Hú, Chuông Tử Thần, Búa Phán Quyết) | Audio / Engine Dev | READY | SPRINT 7 | `src/utils/soundEffects.ts` không phụ thuộc file nặng bên ngoài |
-| TASK-702 | Hệ Thống Tương Tác Biểu Cảm Nhanh (In-Game Quick Emotes & Reaction Bubbles) | Frontend Lead | READY | TASK-701 | Bong bóng biểu cảm trên avatar người chơi khi thảo luận |
-| TASK-703 | Nâng Cấp Hiệu Ứng Bầu Trời & Chuyển Pha Trăng Máu (Atmosphere & Phase Transitions) | Creative / Frontend | READY | TASK-701 | Visual FX Đêm Trăng Rằm vs Trăng Máu, bình minh |
-| TASK-704 | QA Test Suite Sprint 8 & Pipeline Verification | QA Lead | READY | TASK-701..703 | `tests/sprint8AudioAndEmotes.test.mjs`, `npm run verify` |
+| TASK-701 | Bộ Âm Thanh Ma Mị Tự Nhiên (Synthesized Web Audio Engine: Tiếng Sói Hú, Chuông Tử Thần, Búa Phán Quyết) | Audio / Engine Dev | DONE | SPRINT 7 | `src/utils/soundEffects.ts` không phụ thuộc file nặng bên ngoài |
+| TASK-702 | Hệ Thống Tương Tác Biểu Cảm Nhanh (In-Game Quick Emotes & Reaction Bubbles) | Frontend Lead | DONE | TASK-701 | `src/components/EmotePicker.tsx`, tích hợp Chat & Thảo luận |
+| TASK-703 | Nâng Cấp Hiệu Ứng Bầu Trời & Chuyển Pha Trăng Máu (Atmosphere & Phase Transitions) | Creative / Frontend | DONE | TASK-701 | Haptic + Sound + Visual transition Đêm / Ngày |
+| TASK-704 | QA Test Suite Sprint 8 & Pipeline Verification | QA Lead | DONE | TASK-701..703 | `tests/sprint8AudioAndEmotes.test.mjs`, `npm run verify` |
+
+---
+
+## SPRINT 9: Chia Sẻ Phòng Nhanh (Share Invite Link), Nhật Ký Ván Đấu (Match History Replay) & Tối Ưu UX
+
+| Task ID | Tên Task | Role | Trạng thái | Dependency | Ghi chú |
+|---|---|---|---|---|---|
+| TASK-801 | Cơ Chế 1-Click Copy & Share Link Mời Bạn Bè (`?room=CODE` deep link) | Backend / Frontend | READY | SPRINT 8 | Hỗ trợ Web Share API & Clipboard fallback |
+| TASK-802 | Nhật Ký Ván Đấu Chi Tiết (Game Chronological Event Log Modal & Timeline) | Game Engine Dev | READY | TASK-801 | Xem lại diễn biến từng đêm / ngày của trận đấu |
+| TASK-803 | QA Test Suite Sprint 9 & Pipeline Verification | QA Lead | READY | TASK-801..802 | `tests/sprint9ShareAndHistory.test.mjs`, `npm run verify` |
 
 

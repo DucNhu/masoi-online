@@ -3,6 +3,7 @@ import { Timer, Play, Pause, RotateCcw, Plus, ArrowRight, Volume2 } from 'lucide
 import { GameState } from '../types/game';
 import { soundEffects } from '../utils/soundEffects';
 import { ConfirmModal } from './ConfirmModal';
+import { EmotePicker, EmoteItem } from './EmotePicker';
 
 interface Props {
   gameState: GameState;
@@ -22,6 +23,16 @@ export const DayDiscussionView: React.FC<Props> = ({
   const [secondsLeft, setSecondsLeft] = useState<number>(90);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
+  const [activeReactions, setActiveReactions] = useState<{ id: string; emoji: string; label: string }[]>([]);
+
+  const handleSelectEmote = (emote: EmoteItem) => {
+    const reaction = { id: `${Date.now()}_${Math.random()}`, emoji: emote.emoji, label: emote.label };
+    setActiveReactions(prev => [...prev.slice(-3), reaction]);
+    soundEffects.triggerHaptic('medium');
+    setTimeout(() => {
+      setActiveReactions(prev => prev.filter(r => r.id !== reaction.id));
+    }, 2800);
+  };
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
@@ -171,8 +182,38 @@ export const DayDiscussionView: React.FC<Props> = ({
           >
             <Volume2 size={18} />
           </button>
+
+          <EmotePicker onSelectEmote={handleSelectEmote} />
         </div>
       </div>
+
+      {/* Floating Reaction Badges */}
+      {activeReactions.length > 0 && (
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap', margin: '-4px 0 6px 0' }}>
+          {activeReactions.map((r) => (
+            <div
+              key={r.id}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'rgba(234, 179, 8, 0.2)',
+                border: '1px solid #eab308',
+                borderRadius: '9999px',
+                padding: '4px 12px',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                color: '#fef08a',
+                boxShadow: '0 4px 12px rgba(234, 179, 8, 0.25)',
+                animation: 'pulse 1s infinite alternate',
+              }}
+            >
+              <span style={{ fontSize: '1.2rem' }}>{r.emoji}</span>
+              <span>{r.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Alive players quick view */}
       <div className="card-glass">

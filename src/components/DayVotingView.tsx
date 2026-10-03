@@ -27,6 +27,7 @@ export const DayVotingView: React.FC<Props> = ({
 
   const handleAdjustVote = (playerId: string, delta: number) => {
     soundEffects.triggerHaptic('light');
+    soundEffects.playVoteSound();
     setVotes(prev => {
       const current = prev[playerId] || 0;
       const next = Math.max(0, current + delta);
@@ -54,12 +55,14 @@ export const DayVotingView: React.FC<Props> = ({
   const handleConfirmHanging = () => {
     if (targetPlayer) {
       soundEffects.triggerHaptic('heavy');
+      soundEffects.playCourtGavel();
       onExecuteHanging(targetPlayer.id);
     }
   };
 
   const handleSkipHanging = () => {
     soundEffects.triggerHaptic('medium');
+    soundEffects.playVoteSound();
     onExecuteHanging(null);
   };
 
