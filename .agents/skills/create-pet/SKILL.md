@@ -1,9 +1,10 @@
 ---
 name: create-pet
 description: "Tạo file hồ sơ thiết kế chi tiết (GDD specs, chỉ số, moveset, AI prompts copy-paste ready) cho một Pet/Pokemon dựa theo mô tả hoặc hình tượng."
-argument-hint: "[mô tả/hình tượng pet, ví dụ: 'pikachu hệ điện', 'charmander hệ lửa']"
-user-invocable: true
-allowed-tools: Read, Write, AskUserQuestion
+allowed-tools: "exec_command, apply_patch"
+metadata:
+  argument-hint: "[mô tả/hình tượng pet, ví dụ: 'pikachu hệ điện', 'charmander hệ lửa']"
+  user-invocable: "true"
 ---
 
 # /create-pet — Quy Trình Tự Động Tạo Hồ Sơ Pet Chuẩn Game Studio
@@ -17,6 +18,15 @@ File này đóng vai trò **Single Source of Truth** kết nối giữa:
 ---
 
 ## 1. Quy Trình Kích Hoạt & Thu Thập Dữ Liệu
+
+### Phạm vi, quyền ghi và công cụ
+
+- Đây là skill **thiết kế hồ sơ và prompt**, không tự generate ảnh, ghi asset hoặc import Unity. Đọc `production/session-state/active.md` trước khi lập kế hoạch; PM sở hữu file này, executor chỉ trả handoff.
+- Trước mutation, trình bày exact paths dự kiến và đối chiếu phê duyệt task hiện có: quyền chỉ bao phủ scope đã nêu; không hỏi lại phần đã duyệt, hỏi người dùng nếu thiếu quyền hoặc mở rộng scope. Yêu cầu prompt-only/read-only không cấp quyền lưu/sửa hồ sơ, asset, generate hay integrate.
+- Nếu Pet, stage, concept/source canonical hoặc scope chưa rõ, hỏi trước phần phụ thuộc; không tự regenerate, đổi canonical hay ghi đè. Giữ thay đổi của người dùng và các candidate khác.
+- Dùng `exec_command` để đọc/kiểm tra và `apply_patch` để sửa văn bản trong scope đã duyệt. `allowed-tools` chỉ là thông tin, không cấp quyền và không bảo đảm tool tồn tại. Kiểm tra capability trong phiên; thiếu input/tool cần thiết thì ghi `BLOCKED` cho bước phụ thuộc.
+- Hỏi bằng `functions.request_user_input_async` chỉ nếu được cung cấp trong phiên; `functions.request_user_input` chỉ dùng câu hỏi tùy chọn trong Plan mode. Khi tool hỏi không có hoặc cần approval, hỏi trực tiếp trong chat. App approval phải qua cơ chế hỗ trợ của ứng dụng, không giao người/agent khác bypass sandbox.
+- Thiếu source hoặc licensing cần thiết thì ghi `BLOCKED`; không retry GUI khi blocker chưa đổi, không cài tool hay dùng fallback trả phí. Các contract đã duyệt riêng cho Pet/stage là nguồn thông số; không đổi stats/frame/cell theo ví dụ chung bên dưới.
 
 Khi người dùng gọi `/create-pet [mô tả]` hoặc yêu cầu tạo pet theo hình tượng (ví dụ: `pikachu`, `rùa nước`, `sói bóng tối`):
 1. **Nhận diện Archetype & Bản Quyền (IP Protection)**:
@@ -87,3 +97,9 @@ Mỗi file MD sinh ra phải bao gồm 4 phần đầy đủ:
   - **Hồ sơ thiết kế:** `design/pets/<element>/<pet-id>.md` (ví dụ: `design/pets/fire/pet-fire-a.md`)
   - **Ảnh nguồn asset:** `design/assets/pets/<element>/<pet-id>/stage{1,2,3}/`
   - **Asset Unity:** `Assets/Art/Pokemons/<PetName>/...` và ScriptableObject `Assets/GameData/Pokemons/<PetName>.asset`.
+
+## 4. Gate và bàn giao bước tiếp theo
+
+Trả hồ sơ/prompt và verdict riêng từng gate `PASS / CONCERNS / FAIL / BLOCKED / NOT RUN`, kèm evidence thực tế; không gọi `Production Ready` từ hồ sơ khi import/runtime chưa kiểm chứng. Không tự tạo GIF preview.
+
+Kết thúc bằng handoff cho **PM**: exact output file `design/pets/<element>/<pet-id>.md` đã giải quyết thành path cụ thể (hoặc `không có file — trả trong chat` nếu chưa được duyệt lưu); owner bước tiếp theo; input hồ sơ/concept/stage; acceptance hồ sơ đủ bốn phần, tên Việt hoá và body–VFX/alpha contract; remaining gates asset generation/review/import/runtime cùng verdict. PM cập nhật `active.md` và quyết định dispatch; skill không tự mở follow-up, generate hay auto-import.

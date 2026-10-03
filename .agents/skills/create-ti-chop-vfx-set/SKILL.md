@@ -1,13 +1,24 @@
 ---
 name: create-ti-chop-vfx-set
 description: "Tạo, review và ghép trọn bộ bốn VFX kỹ năng riêng biệt cho Tí Chớp Stage 1. Dùng khi người dùng yêu cầu VFX, hiệu ứng chiêu, điện cầu, vòng điện, vệt lao hoặc thiên lôi của Tí Chớp; không dùng để tạo body animation."
-argument-hint: "[prompt-only | generate | review | integrate]"
-user-invocable: true
+allowed-tools: "exec_command, apply_patch, view_image, imagegen"
+metadata:
+  argument-hint: "[prompt-only | generate | review | integrate]"
+  user-invocable: "true"
 ---
 
 # /create-ti-chop-vfx-set — Bộ VFX kỹ năng Tí Chớp
 
 Tạo bốn bộ hiệu ứng điện độc lập cho Tí Chớp Stage 1 dựa trên moveset trong `design/pets/electric/pet-electric-a.md`. Cảm hứng cơ chế có thể đến từ fantasy electric mascot combat như lao nhanh, điện cầu, phóng điện diện rộng và gọi sét; tên gọi, silhouette, nhịp hiệu ứng và asset phải là thiết kế nguyên bản của Tí Chớp.
+
+## Phạm vi, quyền ghi và công cụ
+
+- Đọc `production/session-state/active.md` trước kế hoạch; PM sở hữu memory, executor chỉ trả handoff. Giữ nguyên sáu sheet/frame/FPS/trigger đã biết bên dưới; không tự redesign moveset/GDD.
+- Trước mutation, trình bày exact intended paths và kiểm tra approval task: chỉ scope đã nêu được phép ghi; không hỏi lại phần đã duyệt, hỏi nếu thiếu quyền/mở rộng scope. Prompt-only/read-only review không cho phép lưu/sửa GDD, generate, normalize hay integrate. Approval generate không tự bao phủ integration.
+- Nếu stage/concept/source hoặc mode chưa rõ, hỏi trước bước phụ thuộc; không tự regenerate/overwrite hoặc đổi canonical. Giữ candidate và thay đổi người dùng.
+- Dùng `exec_command` đọc/kiểm tra, `view_image` xem source local, `apply_patch` sửa văn bản đã duyệt, `imagegen` (tool `image_gen.imagegen` nếu phiên cung cấp) cho generation/edit ảnh được yêu cầu. Kiểm tra capability/source trước khi gọi; `allowed-tools` chỉ là thông tin, không cấp quyền hoặc bảo đảm tool tồn tại.
+- Hỏi bằng `functions.request_user_input_async` nếu phiên cung cấp; `functions.request_user_input` chỉ cho câu hỏi tùy chọn trong Plan mode. Không có tool hỏi hoặc cần approval thì hỏi trực tiếp trong chat. App approval chỉ qua cơ chế ứng dụng, không chuyển việc để bypass sandbox.
+- Thiếu generation tool/source/licensing thì bước phụ thuộc `BLOCKED`; không retry GUI khi blocker chưa đổi, không cài tool hoặc dùng fallback trả phí. Bàn giao prompt sẵn có không thay evidence asset/import/runtime.
 
 ## Phạm vi chuẩn
 
@@ -92,3 +103,7 @@ Không ghi đè source chưa duyệt. Dùng hậu tố `-v2`, `-v3`; chỉ chuy�
 - Xác minh đúng socket, pivot, sorting layer, timing, lifecycle và reference `MoveDataSO` bằng test hoặc Play Mode. Không báo `Production Ready` nếu chưa kiểm tra import/runtime thực tế.
 
 Bộ VFX hoàn tất khi đủ sáu source canonical ở trên, từng sheet qua review, prefab không rò rỉ object và cả bốn skill kích hoạt đúng frame body đã định nghĩa.
+
+## Bàn giao bước tiếp theo
+
+Báo từng gate source/frame/pivot/alpha/halo/separation/import/binding/trigger/lifecycle/runtime bằng `PASS / CONCERNS / FAIL / BLOCKED / NOT RUN`, kèm evidence. Kết thúc bằng handoff cho **PM**: exact output paths sáu sheet hoặc runtime/prefab đã tạo trong scope (nêu version thực, không chỉ thư mục; `không có file — prompt/review trong chat` khi read-only); owner bước tiếp theo; input GDD Tí Chớp Stage 1/source manifest; acceptance sáu sheet cho bốn skill, frame/FPS/pivot/trigger và cleanup đúng contract; remaining gates/blocker. PM cập nhật memory và quyết định dispatch; skill không tự mở follow-up hay auto-import.

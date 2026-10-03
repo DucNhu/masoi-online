@@ -1,0 +1,561 @@
+{
+  "version": 1,
+  "scope": "repository AI workflows only; not pet combat skills",
+  "date": "2026-10-02",
+  "counts": {
+    "total": 78,
+    "template": 73,
+    "project": 5,
+    "active": 31,
+    "manual": 29,
+    "dormant": 18
+  },
+  "skills": [
+    {
+      "name": "adopt",
+      "path": ".agents/skills/adopt/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/adopt/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "architecture-decision",
+      "path": ".agents/skills/architecture-decision/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/architecture-decision/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "architecture-review",
+      "path": ".agents/skills/architecture-review/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/architecture-review/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "art-bible",
+      "path": ".agents/skills/art-bible/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/art-bible/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "asset-audit",
+      "path": ".agents/skills/asset-audit/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/asset-audit/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "asset-spec",
+      "path": ".agents/skills/asset-spec/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/asset-spec/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "balance-check",
+      "path": ".agents/skills/balance-check/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/balance-check/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "brainstorm",
+      "path": ".agents/skills/brainstorm/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/brainstorm/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "bug-report",
+      "path": ".agents/skills/bug-report/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/bug-report/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "bug-triage",
+      "path": ".agents/skills/bug-triage/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/bug-triage/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "changelog",
+      "path": ".agents/skills/changelog/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/changelog/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "code-review",
+      "path": ".agents/skills/code-review/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/code-review/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "consistency-check",
+      "path": ".agents/skills/consistency-check/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/consistency-check/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "content-audit",
+      "path": ".agents/skills/content-audit/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/content-audit/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "create-architecture",
+      "path": ".agents/skills/create-architecture/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/create-architecture/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "create-control-manifest",
+      "path": ".agents/skills/create-control-manifest/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/create-control-manifest/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "create-epics",
+      "path": ".agents/skills/create-epics/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/create-epics/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "create-pet",
+      "path": ".agents/skills/create-pet/SKILL.md",
+      "kind": "project",
+      "target": ".agents/skills/create-pet/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "create-pet-animation-set",
+      "path": ".agents/skills/create-pet-animation-set/SKILL.md",
+      "kind": "project",
+      "target": ".agents/skills/create-pet-animation-set/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "create-skill",
+      "path": ".agents/skills/create-skill/SKILL.md",
+      "kind": "project",
+      "target": ".agents/skills/create-skill/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "create-stories",
+      "path": ".agents/skills/create-stories/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/create-stories/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "create-ti-chop-vfx-set",
+      "path": ".agents/skills/create-ti-chop-vfx-set/SKILL.md",
+      "kind": "project",
+      "target": ".agents/skills/create-ti-chop-vfx-set/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "day-one-patch",
+      "path": ".agents/skills/day-one-patch/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/day-one-patch/SKILL.md",
+      "trigger": "dormant"
+    },
+    {
+      "name": "design-review",
+      "path": ".agents/skills/design-review/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/design-review/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "design-system",
+      "path": ".agents/skills/design-system/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/design-system/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "dev-story",
+      "path": ".agents/skills/dev-story/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/dev-story/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "estimate",
+      "path": ".agents/skills/estimate/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/estimate/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "gate-check",
+      "path": ".agents/skills/gate-check/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/gate-check/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "help",
+      "path": ".agents/skills/help/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/help/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "hotfix",
+      "path": ".agents/skills/hotfix/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/hotfix/SKILL.md",
+      "trigger": "dormant"
+    },
+    {
+      "name": "launch-checklist",
+      "path": ".agents/skills/launch-checklist/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/launch-checklist/SKILL.md",
+      "trigger": "dormant"
+    },
+    {
+      "name": "localize",
+      "path": ".agents/skills/localize/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/localize/SKILL.md",
+      "trigger": "dormant"
+    },
+    {
+      "name": "map-systems",
+      "path": ".agents/skills/map-systems/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/map-systems/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "milestone-review",
+      "path": ".agents/skills/milestone-review/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/milestone-review/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "onboard",
+      "path": ".agents/skills/onboard/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/onboard/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "patch-notes",
+      "path": ".agents/skills/patch-notes/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/patch-notes/SKILL.md",
+      "trigger": "dormant"
+    },
+    {
+      "name": "perf-profile",
+      "path": ".agents/skills/perf-profile/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/perf-profile/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "playtest-report",
+      "path": ".agents/skills/playtest-report/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/playtest-report/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "project-stage-detect",
+      "path": ".agents/skills/project-stage-detect/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/project-stage-detect/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "propagate-design-change",
+      "path": ".agents/skills/propagate-design-change/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/propagate-design-change/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "prototype",
+      "path": ".agents/skills/prototype/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/prototype/SKILL.md",
+      "trigger": "dormant"
+    },
+    {
+      "name": "qa-plan",
+      "path": ".agents/skills/qa-plan/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/qa-plan/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "quick-design",
+      "path": ".agents/skills/quick-design/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/quick-design/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "regression-suite",
+      "path": ".agents/skills/regression-suite/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/regression-suite/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "release-checklist",
+      "path": ".agents/skills/release-checklist/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/release-checklist/SKILL.md",
+      "trigger": "dormant"
+    },
+    {
+      "name": "retrospective",
+      "path": ".agents/skills/retrospective/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/retrospective/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "reverse-document",
+      "path": ".agents/skills/reverse-document/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/reverse-document/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "review-all-gdds",
+      "path": ".agents/skills/review-all-gdds/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/review-all-gdds/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "review-art",
+      "path": ".agents/skills/review-art/SKILL.md",
+      "kind": "project",
+      "target": ".agents/skills/review-art/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "scope-check",
+      "path": ".agents/skills/scope-check/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/scope-check/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "security-audit",
+      "path": ".agents/skills/security-audit/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/security-audit/SKILL.md",
+      "trigger": "dormant"
+    },
+    {
+      "name": "setup-engine",
+      "path": ".agents/skills/setup-engine/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/setup-engine/SKILL.md",
+      "trigger": "dormant"
+    },
+    {
+      "name": "skill-improve",
+      "path": ".agents/skills/skill-improve/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/skill-improve/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "skill-test",
+      "path": ".agents/skills/skill-test/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/skill-test/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "smoke-check",
+      "path": ".agents/skills/smoke-check/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/smoke-check/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "soak-test",
+      "path": ".agents/skills/soak-test/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/soak-test/SKILL.md",
+      "trigger": "dormant"
+    },
+    {
+      "name": "sprint-plan",
+      "path": ".agents/skills/sprint-plan/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/sprint-plan/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "sprint-status",
+      "path": ".agents/skills/sprint-status/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/sprint-status/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "start",
+      "path": ".agents/skills/start/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/start/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "story-done",
+      "path": ".agents/skills/story-done/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/story-done/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "story-readiness",
+      "path": ".agents/skills/story-readiness/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/story-readiness/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "team-audio",
+      "path": ".agents/skills/team-audio/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/team-audio/SKILL.md",
+      "trigger": "dormant"
+    },
+    {
+      "name": "team-combat",
+      "path": ".agents/skills/team-combat/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/team-combat/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "team-level",
+      "path": ".agents/skills/team-level/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/team-level/SKILL.md",
+      "trigger": "dormant"
+    },
+    {
+      "name": "team-live-ops",
+      "path": ".agents/skills/team-live-ops/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/team-live-ops/SKILL.md",
+      "trigger": "dormant"
+    },
+    {
+      "name": "team-narrative",
+      "path": ".agents/skills/team-narrative/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/team-narrative/SKILL.md",
+      "trigger": "dormant"
+    },
+    {
+      "name": "team-polish",
+      "path": ".agents/skills/team-polish/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/team-polish/SKILL.md",
+      "trigger": "dormant"
+    },
+    {
+      "name": "team-qa",
+      "path": ".agents/skills/team-qa/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/team-qa/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "team-release",
+      "path": ".agents/skills/team-release/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/team-release/SKILL.md",
+      "trigger": "dormant"
+    },
+    {
+      "name": "team-ui",
+      "path": ".agents/skills/team-ui/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/team-ui/SKILL.md",
+      "trigger": "dormant"
+    },
+    {
+      "name": "tech-debt",
+      "path": ".agents/skills/tech-debt/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/tech-debt/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "test-evidence-review",
+      "path": ".agents/skills/test-evidence-review/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/test-evidence-review/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "test-flakiness",
+      "path": ".agents/skills/test-flakiness/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/test-flakiness/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "test-helpers",
+      "path": ".agents/skills/test-helpers/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/test-helpers/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "test-setup",
+      "path": ".agents/skills/test-setup/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/test-setup/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "ux-design",
+      "path": ".agents/skills/ux-design/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/ux-design/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "ux-review",
+      "path": ".agents/skills/ux-review/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/ux-review/SKILL.md",
+      "trigger": "manual"
+    },
+    {
+      "name": "vertical-slice",
+      "path": ".agents/skills/vertical-slice/SKILL.md",
+      "kind": "template",
+      "target": "Claude-Code-Game-Studios/.claude/skills/vertical-slice/SKILL.md",
+      "trigger": "dormant"
+    }
+  ]
+}

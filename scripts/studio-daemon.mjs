@@ -134,17 +134,18 @@ function runCycle() {
   // 2. Chạy bộ kiểm thử toàn diện
   console.log(`\n--- KIỂM TRA SỨC KHỎE HỆ THỐNG ---`);
   const lintRes = runStep('Kiểm tra Lint (oxlint)', 'npm run lint');
-  const testRes = runStep('Kiểm thử Game Engine (gameEngine.test.mjs)', 'npm test');
+  const aiRes = runStep('Kiểm tra AI Skills (scripts/verify-ai-skills.mjs)', 'npm run ai:verify');
+  const testRes = runStep('Kiểm thử Toàn Diện (18 Test Suites)', 'npm test');
   const buildRes = runStep('Kiểm thử Production Build (vite build)', 'npm run build');
 
-  const allPassed = lintRes.success && testRes.success && buildRes.success;
+  const allPassed = lintRes.success && aiRes.success && testRes.success && buildRes.success;
 
   if (allPassed) {
     console.log(`\n🟢 TRẠNG THÁI: TẤT CẢ HỆ THỐNG HOÀN TOÀN XANH! SẴN SÀNG VẬN HÀNH.`);
-    logHeartbeat('HEALTHY', `All checks passed (Lint, Tests, Build). Ready Tasks: ${backlogStats.readyTasks.length}`);
+    logHeartbeat('HEALTHY', `All checks passed (Lint, AI Skills, Tests, Build). Ready Tasks: ${backlogStats.readyTasks.length}`);
   } else {
     console.log(`\n🔴 CẢNH BÁO: CÓ LỖI XẢY RA TRONG CHU TRÌNH KIỂM THỬ!`);
-    logHeartbeat('DEGRADED', `Failure detected. Lint: ${lintRes.success}, Tests: ${testRes.success}, Build: ${buildRes.success}`);
+    logHeartbeat('DEGRADED', `Failure detected. Lint: ${lintRes.success}, AI: ${aiRes.success}, Tests: ${testRes.success}, Build: ${buildRes.success}`);
   }
 
   return { allPassed, backlogStats };
