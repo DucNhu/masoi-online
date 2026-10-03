@@ -11,9 +11,10 @@ import { LeaderboardModal } from './LeaderboardModal';
 import { HunterProfileModal } from './HunterProfileModal';
 import { WEREWOLF_AVATARS, WerewolfAvatar } from '../constants/avatars';
 import { soundEffects } from '../utils/soundEffects';
-import { Users, Crown, CheckCircle2, Clock, Copy, Check, ArrowLeft, Play, LogOut, ShieldAlert, Sliders, Sparkles, RefreshCw, KeyRound, Plus, ShieldCheck, Trophy, Award, Share2 } from 'lucide-react';
+import { Users, Crown, CheckCircle2, Clock, Copy, Check, ArrowLeft, Play, LogOut, ShieldAlert, Sliders, Sparkles, RefreshCw, KeyRound, Plus, ShieldCheck, Trophy, Award, Share2, Eye } from 'lucide-react';
 import { shareRoomInvite, extractRoomCodeFromUrl, clearRoomCodeFromUrl } from '../utils/shareInvite';
 import { NetworkStatusBadge } from './NetworkStatusBadge';
+import { SpectatorLiveView } from './SpectatorLiveView';
 
 interface Props {
   onBackToOffline: () => void;
@@ -32,7 +33,8 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState<boolean>(false);
   const [inputRoomCode, setInputRoomCode] = useState<string>('');
   const [tableNameInput, setTableNameInput] = useState<string>('');
-  const [activeView, setActiveView] = useState<'TABLES' | 'CREATE' | 'JOIN' | 'ROOM'>('TABLES');
+  const [activeView, setActiveView] = useState<'TABLES' | 'CREATE' | 'JOIN' | 'ROOM' | 'SPECTATOR'>('TABLES');
+  const [spectatorSession, setSpectatorSession] = useState<{ roomId: string; spectatorId: string } | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
   const [copiedShare, setCopiedShare] = useState<boolean>(false);
@@ -104,14 +106,17 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
     }
   }, [activeView]);
 
-  // Đăng ký lắng nghe thay đổi trạng thái phòng từ RoomManager
+  // Đăng ký lắng nghe thay đổi trạng thái phòng từ RoomManager (Cả người chơi và khán giả)
   useEffect(() => {
-    if (!currentSession) return;
+    const targetRoomId = currentSession?.roomId || spectatorSession?.roomId;
+    const targetId = currentSession?.playerId || spectatorSession?.spectatorId;
 
-    const unsubscribe = roomManager.subscribe(currentSession.roomId, (targetPlayerId, newState) => {
-      if (targetPlayerId === currentSession.playerId) {
+    if (!targetRoomId || !targetId) return;
+
+    const unsubscribe = roomManager.subscribe(targetRoomId, (notifiedPlayerId, newState) => {
+      if (notifiedPlayerId === targetId) {
         setGameState(newState);
-        if (newState.phase !== 'LOBBY' && onGameStarted) {
+        if (currentSession && newState.phase !== 'LOBBY' && onGameStarted) {
           onGameStarted(newState);
         }
       }
@@ -120,7 +125,29 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
     return () => {
       unsubscribe();
     };
-  }, [currentSession, onGameStarted]);
+  }, [currentSession, spectatorSession, onGameStarted]);
+
+  // Tham gia phòng với tư cách Khán Giả
+  const handleJoinAsSpectator = (targetRoomId: string) => {
+    try {
+      setErrorMessage(null);
+      const cleanRoomId = targetRoomId.trim().toUpperCase();
+      const res = roomManager.joinAsSpectator(
+        cleanRoomId,
+        playerName.trim() || 'Khán Giả',
+        selectedAvatarObj.emoji
+      );
+      setSpectatorSession({
+        roomId: cleanRoomId,
+        spectatorId: res.spectatorId,
+      });
+      setGameState(res.state);
+      setActiveView('SPECTATOR');
+      soundEffects.triggerHaptic('medium');
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Không thể vào xem trận đấu');
+    }
+  };
 
   // Thực thi vào phòng
   const executeJoinRoom = (targetRoomId: string) => {
@@ -667,32 +694,58 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
                       </div>
                     </div>
 
-                    {/* Action Button Vào Bàn */}
-                    <button
-                      onClick={() => handleJoinTableClick(table)}
-                      disabled={isFull || isPlaying}
-                      style={{
-                        width: '100%',
-                        minHeight: '44px',
-                        borderRadius: '10px',
-                        border: 'none',
-                        cursor: isFull || isPlaying ? 'not-allowed' : 'pointer',
-                        background: isFull || isPlaying
-                          ? 'rgba(255, 255, 255, 0.08)'
-                          : 'linear-gradient(135deg, #6366f1, #4338ca)',
-                        color: isFull || isPlaying ? '#64748b' : '#fff',
-                        fontWeight: 800,
-                        fontSize: '0.9rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px',
-                        transition: 'all 0.15s ease',
-                        boxShadow: isFull || isPlaying ? 'none' : '0 4px 14px rgba(99, 102, 241, 0.35)',
-                      }}
-                    >
-                      {isPlaying ? 'Trận Đấu Đang Diễn Ra' : isFull ? 'Bàn Chơi Đã Đầy' : '👉 Vào Bàn Chơi Ngay (1-Click)'}
-                    </button>
+                    {/* Action Button Vào Bàn hoặc Xem Trực Tiếp */}
+                    {isPlaying ? (
+                      <button
+                        onClick={() => handleJoinAsSpectator(table.roomId)}
+                        style={{
+                          width: '100%',
+                          minHeight: '44px',
+                          borderRadius: '10px',
+                          border: '1px solid rgba(168, 85, 247, 0.4)',
+                          cursor: 'pointer',
+                          background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.35), rgba(126, 34, 206, 0.5))',
+                          color: '#f3e8ff',
+                          fontWeight: 800,
+                          fontSize: '0.88rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          transition: 'all 0.15s ease',
+                          boxShadow: '0 4px 14px rgba(147, 51, 234, 0.25)',
+                        }}
+                      >
+                        <Eye size={16} color="#c084fc" />
+                        <span>Xem Trận Đấu Trực Tiếp {table.spectatorsCount ? `(${table.spectatorsCount} 👀)` : ''}</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleJoinTableClick(table)}
+                        disabled={isFull}
+                        style={{
+                          width: '100%',
+                          minHeight: '44px',
+                          borderRadius: '10px',
+                          border: 'none',
+                          cursor: isFull ? 'not-allowed' : 'pointer',
+                          background: isFull
+                            ? 'rgba(255, 255, 255, 0.08)'
+                            : 'linear-gradient(135deg, #6366f1, #4338ca)',
+                          color: isFull ? '#64748b' : '#fff',
+                          fontWeight: 800,
+                          fontSize: '0.9rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          transition: 'all 0.15s ease',
+                          boxShadow: isFull ? 'none' : '0 4px 14px rgba(99, 102, 241, 0.35)',
+                        }}
+                      >
+                        {isFull ? 'Bàn Chơi Đã Đầy' : '👉 Vào Bàn Chơi Ngay (1-Click)'}
+                      </button>
+                    )}
                   </div>
                 );
               })
@@ -1303,6 +1356,20 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
           </div>
         </div>
         )
+      )}
+
+      {/* VIEW 5: CHẾ ĐỘ KHÁN GIẢ (SPECTATOR LIVE VIEW) */}
+      {activeView === 'SPECTATOR' && gameState && spectatorSession && (
+        <SpectatorLiveView
+          gameState={gameState}
+          spectatorName={playerName.trim() || 'Khán Giả'}
+          onLeave={() => {
+            roomManager.leaveSpectator(spectatorSession.roomId, spectatorSession.spectatorId);
+            setSpectatorSession(null);
+            setGameState(null);
+            setActiveView('TABLES');
+          }}
+        />
       )}
 
       {/* Modal xác nhận rời phòng chờ */}

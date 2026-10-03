@@ -1,4 +1,4 @@
-import { ServerGameState, ClientGameState, RoomSettings, ChatMessage, VoiceSignalPayload, PublicTableInfo } from '../types/multiplayer';
+import { ServerGameState, ClientGameState, RoomSettings, ChatMessage, VoiceSignalPayload, PublicTableInfo, SpectatorInfo, LiveCheer } from '../types/multiplayer';
 import { RoleId } from '../types/game';
 import { generateRoomCode, maskGameStateForPlayer } from './roomProtocol';
 import { recordMatchResult, getHunterProfile } from '../utils/eloRating';
@@ -33,6 +33,7 @@ export class RoomManager {
         isPrivate: false,
         enableMayor: room.settings.enableMayor,
         allowExpansionRoles: room.settings.allowExpansionRoles,
+        spectatorsCount: room.spectators?.length || 0,
         createdAt: room.createdAt || Date.now(),
       });
     }
@@ -130,6 +131,8 @@ export class RoomManager {
       chatMessages: [],
       winner: null,
       historyLog: [`Phòng ${roomId} được tạo bởi ${hostName}`],
+      spectators: [],
+      liveCheers: [],
       createdAt: Date.now(),
     };
 
@@ -189,6 +192,80 @@ export class RoomManager {
       playerId,
       state: maskGameStateForPlayer(room, playerId),
     };
+  }
+
+  /**
+   * Tham gia phòng với tư cách Khán Giả (Spectator View)
+   * Không chiếm slot người chơi, có thể xem trực tiếp bất kỳ lúc nào.
+   */
+  public joinAsSpectator(
+    roomId: string,
+    spectatorName: string,
+    avatar: string
+  ): { spectatorId: string; state: ClientGameState } {
+    const cleanRoomId = roomId.trim().toUpperCase();
+    const room = this.rooms.get(cleanRoomId);
+
+    if (!room) {
+      throw new Error(`Phòng chơi "${cleanRoomId}" không tồn tại.`);
+    }
+
+    const spectatorId = `spec_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    if (!room.spectators) room.spectators = [];
+    if (!room.liveCheers) room.liveCheers = [];
+
+    const newSpectator: SpectatorInfo = {
+      id: spectatorId,
+      name: spectatorName.trim() || 'Khán Giả',
+      avatar: avatar || '👀',
+      joinedAt: Date.now(),
+    };
+    room.spectators.push(newSpectator);
+
+    room.historyLog.push(`👀 Khán giả ${newSpectator.name} đã vào khán đài theo dõi ván đấu.`);
+    this.broadcastState(cleanRoomId);
+
+    return {
+      spectatorId,
+      state: maskGameStateForPlayer(room, spectatorId),
+    };
+  }
+
+  /**
+   * Rời khỏi khán đài
+   */
+  public leaveSpectator(roomId: string, spectatorId: string): void {
+    const cleanRoomId = roomId.trim().toUpperCase();
+    const room = this.rooms.get(cleanRoomId);
+    if (!room || !room.spectators) return;
+
+    room.spectators = room.spectators.filter((s) => s.id !== spectatorId);
+    this.broadcastState(cleanRoomId);
+  }
+
+  /**
+   * Khán giả gửi phản ứng Cổ Vũ trực tiếp (Live Cheers)
+   */
+  public sendCheer(roomId: string, senderName: string, emoji: string): void {
+    const cleanRoomId = roomId.trim().toUpperCase();
+    const room = this.rooms.get(cleanRoomId);
+    if (!room) return;
+
+    if (!room.liveCheers) room.liveCheers = [];
+    const cheer: LiveCheer = {
+      id: `cheer_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      emoji,
+      senderName: senderName || 'Khán Giả',
+      timestamp: Date.now(),
+    };
+    room.liveCheers.push(cheer);
+
+    // Giữ tối đa 20 biểu cảm gần nhất
+    if (room.liveCheers.length > 20) {
+      room.liveCheers.shift();
+    }
+
+    this.broadcastState(cleanRoomId);
   }
 
   /**
@@ -666,36 +743,49 @@ export class RoomManager {
   }
 
   /**
-   * Gửi tin nhắn Chat phân quyền (PUBLIC / WOLF / DEAD)
+   * Gửi tin nhắn Chat phân quyền (PUBLIC / WOLF / DEAD / SPECTATOR)
    */
   public sendChatMessage(
     roomId: string,
     senderId: string,
     text: string,
-    channel: 'PUBLIC' | 'WOLF' | 'DEAD' = 'PUBLIC'
+    channel: 'PUBLIC' | 'WOLF' | 'DEAD' | 'SPECTATOR' = 'PUBLIC'
   ): void {
     const room = this.rooms.get(roomId);
     if (!room) return;
 
     const sender = room.players.find((p) => p.id === senderId);
-    if (!sender) return;
+    const spectator = (room.spectators || []).find((s) => s.id === senderId);
+
+    if (!sender && !spectator) return;
 
     const trimmed = text.trim();
     if (!trimmed) return;
 
+    const senderName = sender ? sender.name : (spectator ? spectator.name : 'Khán Giả');
+    const senderAvatar = sender ? sender.avatar : (spectator ? spectator.avatar : '👀');
+
     // Phân quyền kênh gửi
-    if (channel === 'WOLF') {
+    if (channel === 'SPECTATOR') {
+      // Khán giả và mọi người đều có thể trò chuyện ở khán đài
+    } else if (channel === 'WOLF') {
+      if (!sender) {
+        throw new Error('Khán giả không thể nhắn tin trong hang sói.');
+      }
       const isWolf = sender.role === 'WEREWOLF' || (sender.role === 'CURSED' && sender.cursedTurnedWolf);
       if (!isWolf) {
         throw new Error('Chỉ Ma Sói mới có thể truy cập kênh bàn mưu này.');
       }
     } else if (channel === 'DEAD') {
-      if (sender.isAlive) {
+      if (!sender || sender.isAlive) {
         throw new Error('Người sống không thể giao tiếp với thế giới âm ty.');
       }
     } else if (channel === 'PUBLIC') {
+      if (spectator) {
+        throw new Error('Khán giả vui lòng trò chuyện qua kênh Khán Đài hoặc gửi Cổ Vũ.');
+      }
       // Người chết không được nói chuyện ở kênh Làng để tránh spoil
-      if (!sender.isAlive) {
+      if (sender && !sender.isAlive) {
         throw new Error('Bạn đã hy sinh, linh hồn chỉ có thể trò chuyện ở cõi âm.');
       }
       // Ban đêm không được chat công khai
@@ -706,9 +796,9 @@ export class RoomManager {
 
     const message: ChatMessage = {
       id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-      senderId: sender.id,
-      senderName: sender.name,
-      senderAvatar: sender.avatar,
+      senderId,
+      senderName,
+      senderAvatar,
       channel,
       text: trimmed,
       timestamp: Date.now(),
@@ -825,6 +915,13 @@ export class RoomManager {
       const masked = maskGameStateForPlayer(room, p.id);
       set.forEach((listener) => listener(p.id, masked));
     });
+
+    if (room.spectators && room.spectators.length > 0) {
+      room.spectators.forEach((s) => {
+        const masked = maskGameStateForPlayer(room, s.id);
+        set.forEach((listener) => listener(s.id, masked));
+      });
+    }
   }
 
   /**

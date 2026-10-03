@@ -32,6 +32,7 @@ export interface PublicTableInfo {
   isPrivate: boolean;
   enableMayor?: boolean;
   allowExpansionRoles?: boolean;
+  spectatorsCount?: number;
   createdAt: number;
 }
 
@@ -59,12 +60,26 @@ export interface VoiceSignalPayload {
   timestamp: number;
 }
 
+export interface SpectatorInfo {
+  id: string;
+  name: string;
+  avatar: string;
+  joinedAt: number;
+}
+
+export interface LiveCheer {
+  id: string;
+  emoji: string;
+  senderName: string;
+  timestamp: number;
+}
+
 export interface ChatMessage {
   id: string;
   senderId: string;
   senderName: string;
   senderAvatar: string;
-  channel: 'PUBLIC' | 'WOLF' | 'DEAD';
+  channel: 'PUBLIC' | 'WOLF' | 'DEAD' | 'SPECTATOR';
   text: string;
   timestamp: number;
 }
@@ -96,6 +111,8 @@ export interface ServerGameState {
   chatMessages: ChatMessage[];
   winner: 'VILLAGERS' | 'WEREWOLVES' | 'LOVERS' | null;
   historyLog: string[];
+  spectators?: SpectatorInfo[];
+  liveCheers?: LiveCheer[];
   createdAt?: number;
 }
 
@@ -115,6 +132,9 @@ export interface ClientGameState {
   myPlayerId: string;
   myRole: RoleId;
   myCard?: PlayingCard;
+  isSpectator?: boolean;
+  spectatorsCount?: number;
+  liveCheers?: LiveCheer[];
   
   // Thông tin được tiết lộ có chọn lọc theo vai trò
   revealedRoles: Record<string, RoleId>; // Các vai trò đã chết công khai
@@ -136,10 +156,12 @@ export interface ClientGameState {
  */
 export type ClientAction =
   | { type: 'JOIN_ROOM'; payload: { roomId: string; playerName: string; avatar: string; sessionToken?: string } }
+  | { type: 'JOIN_SPECTATOR'; payload: { roomId: string; spectatorName: string; avatar: string } }
   | { type: 'CREATE_ROOM'; payload: { hostName: string; avatar: string; settings: RoomSettings } }
   | { type: 'TOGGLE_READY'; payload: { isReady: boolean } }
   | { type: 'START_GAME' }
   | { type: 'SUBMIT_NIGHT_ACTION'; payload: { targetId?: string; targetId2?: string; actionType: string } }
   | { type: 'CAST_VOTE'; payload: { targetId: string | null } }
   | { type: 'ASSIGN_MAYOR'; payload: { targetPlayerId: string } }
-  | { type: 'SEND_CHAT'; payload: { text: string; channel: 'PUBLIC' | 'WOLF' | 'DEAD' } };
+  | { type: 'SEND_CHAT'; payload: { text: string; channel: 'PUBLIC' | 'WOLF' | 'DEAD' | 'SPECTATOR' } }
+  | { type: 'SEND_CHEER'; payload: { emoji: string } };

@@ -1,45 +1,44 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-10-03 15:05 (Asia/Ho_Chi_Minh) — Autonomous Execution Sprint 10 DONE.
-- **Mục tiêu**: **Sprint 10: Tối Ưu Mobile Native Touch UX, Dynamic Island iPhone 16 Pro & Giám Sát Kết Nối Mạng (Network Health Ping) [COMPLETED]**.
-- **Quyết định định hướng**: Tối ưu trải nghiệm chạm trên điện thoại di động (iPhone 16 Pro, iOS/Android Capacitor), triệt tiêu độ trễ tương tác, chủ động phát hiện sự cố mạng và tự động khôi phục kết nối.
+- **Thời gian cập nhật**: 2026-10-03 15:13 (Asia/Ho_Chi_Minh) — Autonomous Execution Sprint 11 DONE.
+- **Mục tiêu**: **Sprint 11: Chế Độ Khán Giả (Spectator Mode / Xem Trực Tiếp) & Cổ Vũ Live Cheers [COMPLETED]**.
+- **Quyết định định hướng**: Mở rộng khả năng theo dõi giải đấu và ván đấu trực tiếp cho người đến sau mà không chiếm slot người chơi, đồng thời tuân thủ cơ chế Zero-Knowledge Masking tuyệt đối chống gian lận/soi vai trò.
 - **Nhánh làm việc**: `feature/ma-soi-online`.
 - **Mô hình vận hành**: Game Studio Hierarchy (PO → PM → Executor Roles: Game Engine Dev / Architect / Frontend / QA).
 
 ---
 
-## 1. Kết Quả Triển Khai Sprint 10 (Mobile Native Touch UX & Network Health)
-- **TASK-901 [DONE]**:
-  - `src/index.css`: Cập nhật `--safe-top: max(env(safe-area-inset-top, 0px), 12px)`, `--safe-bottom: max(env(safe-area-inset-bottom, 0px), 12px)`, `--safe-left`, `--safe-right` thích ứng hoàn hảo với Dynamic Island trên iPhone 16 Pro.
-  - Bổ sung `touch-action: manipulation` cho tất cả button, input, anchor chống trễ double-tap zoom 300ms.
-  - Đảm bảo kích thước tiếp xúc tối thiểu 44px (`min-height: 44px`) theo chuẩn Apple Human Interface Guidelines.
-- **TASK-902 [DONE]**:
-  - `src/utils/networkHealth.ts`: Class `NetworkHealthMonitor` tự động phát hiện trạng thái online/offline, đo Ping thời gian thực (loopback latency), phân hạng 4 mức độ (`EXCELLENT`, `GOOD`, `POOR`, `DISCONNECTED`) và cơ chế pub/sub listener.
-  - `src/components/NetworkStatusBadge.tsx`: Huy hiệu mini hiển thị Ping và chất lượng sóng trên Header kèm Floating Toast cảnh báo mất mạng có nút "Thử Lại" tức thì.
-  - Tích hợp vào thanh điều hướng của `OnlineLobby.tsx` và `OnlinePlayerGameView.tsx`.
-- **TASK-903 [DONE]**:
-  - `tests/sprint10MobileAndNetwork.test.mjs`: 4/4 test cases PASSED 100%.
-  - Toàn bộ **13 / 13 Test Suites PASS 100%** (48/48 test cases).
+## 1. Kết Quả Triển Khai Sprint 11 (Spectator Mode & Live Audience Cheers)
+- **TASK-1001 [DONE]**:
+  - `src/types/multiplayer.ts`: Bổ sung `SpectatorInfo`, `LiveCheer`, `channel: 'SPECTATOR'` trong `ChatMessage`, mở rộng `ServerGameState` và `ClientGameState` với `isSpectator`, `spectatorsCount`, `liveCheers`.
+  - `src/logic/roomProtocol.ts`: Nâng cấp `maskGameStateForPlayer()` với nguyên tắc bảo mật chống gian lận: Khán giả không được biết vai trò của bất kỳ người chơi còn sống nào trong khi ván đang diễn ra; chỉ tiết lộ người đã chết hoặc toàn bộ khi GAME_OVER.
+  - `src/logic/roomManager.ts`: Triển khai `joinAsSpectator()`, `leaveSpectator()`, `sendCheer()` và tích hợp phân quyền chat `SPECTATOR` channel.
+- **TASK-1002 [DONE]**:
+  - `src/components/SpectatorLiveView.tsx`: Màn hình khán đài thời gian thực với thanh Live Reactions cổ vũ (👏, ❤️, 🔥, 🐺, 🍿), hiệu ứng bay bồng bềnh `floatUpAndFade`, sơ đồ bàn tròn người chơi (chống soi role người sống), kênh chat khán đài và modal xem nhật ký.
+  - `src/components/OnlineLobby.tsx`: Bổ sung nút "👀 Xem Trận Đấu Trực Tiếp" nổi bật trên từng thẻ bàn chơi đang diễn ra, cho phép 1-click vào khán đài ngay lập tức.
+- **TASK-1003 [DONE]**:
+  - `tests/sprint11SpectatorMode.test.mjs`: 5/5 test cases PASSED 100%.
+  - Toàn bộ **14 / 14 Test Suites PASS 100%** (53/53 test cases).
   - Pipeline verification: `npm run verify` (`oxlint` + `npm test` + `npm run build`) và `npm run mobile:sync` (Capacitor iOS & Android) đều PASS 100%.
 
 ---
 
 ## 2. Trạng Thái Kỹ Thuật (System Health)
 - **Lint**: `oxlint` PASSED 100% (0 errors, 0 warnings).
-- **Unit & E2E Test Suite**: **13 / 13 Test Suites PASSED 100%** (48/48 test cases).
-- **Production Build**: Tối ưu siêu nhẹ **483KB**, PWA offline cache sẵn sàng.
+- **Unit & E2E Test Suite**: **14 / 14 Test Suites PASSED 100%** (53/53 test cases).
+- **Production Build**: Tối ưu siêu nhẹ **495KB**, PWA offline cache sẵn sàng.
 - **Mobile Native Shell**: Đồng bộ thành công dist -> ios & android qua `npm run mobile:sync`.
 - **Quy tắc Git**: Tuyệt đối không tự ý push lên remote repository khi chưa có lệnh tường minh từ PO.
 
 ---
 
-## 3. Hàng Đợi Sprint 11 Chuẩn Bị Thực Thi
-- **TASK-1001 [Game Engine / Architect]**: Hỗ trợ Chế độ Khán Giả (Spectator View): Người ngoài vào xem ván đấu không can thiệp kết quả, bảo mật vai trò chống gian lận.
-- **TASK-1002 [Frontend Dev]**: UI Khán Giả & Cổ Vũ (Spectator Cheers & Live Reactions): Khán đài xem trận đấu, thả tim/vỗ tay động viên người chơi.
-- **TASK-1003 [QA Lead]**: Test suite Sprint 11 & Release Candidate Audit.
+## 3. Hàng Đợi Sprint 12 Chuẩn Bị Thực Thi
+- **TASK-1101 [Game Engine Dev]**: AI Bot Engine (Hành vi phán đoán ban đêm & phản biện ban ngày của Bot Dân / Bot Sói).
+- **TASK-1102 [Frontend Dev]**: UI Chế Độ Tập Luyện Solo (Luyện kỹ năng Thợ Săn, Tiên Tri, Phù Thủy đối đầu Bot AI).
+- **TASK-1103 [QA Lead]**: Test suite Sprint 12 & Pipeline Verification.
 
 ---
 
 ## 4. Hành Động Tiếp Theo Của PM (Single Next Action)
-- Tạo local commit cho Sprint 10 (`feat(sprint-10): mobile native dynamic island optimization & network health monitor`).
-- Tự động tiếp tục triển khai Sprint 11 (Spectator Mode & Live Audience Cheers).
+- Tạo local commit cho Sprint 11 (`feat(sprint-11): spectator mode with zero-knowledge role masking & live audience cheers`).
+- Tự động tiếp tục điều phối Sprint 12 trong studio.

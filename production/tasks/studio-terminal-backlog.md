@@ -118,9 +118,18 @@
 ## SPRINT 11: Chế Độ Khán Giả (Spectator Mode / Xem Trực Tiếp) & Bộ Sưu Tập Kịch Bản Trăng Máu
 | Task ID | Tên Task | Role | Trạng thái | Dependency | Ghi chú |
 |---|---|---|---|---|---|
-| TASK-1001 | Hỗ Trợ Chế Độ Khán Giả (Spectator View): Người ngoài vào xem ván đấu không can thiệp kết quả | Game Engine / Architect | READY | SPRINT 10 | Che giấu vai trò bảo mật chống gian lận, chat khán giả |
-| TASK-1002 | UI Khán Giả & Cổ Vũ (Spectator Cheers & Live Reactions) | Frontend Dev | READY | TASK-1001 | Khán đài xem trận đấu, thả tim/vỗ tay động viên người chơi |
-| TASK-1003 | QA Test Suite Sprint 11 & Pipeline Verification | QA Lead | READY | TASK-1001..1002 | `tests/sprint11SpectatorMode.test.mjs`, `npm run verify` |
+| TASK-1001 | Hỗ Trợ Chế Độ Khán Giả (Spectator View): Người ngoài vào xem ván đấu không can thiệp kết quả | Game Engine / Architect | DONE | SPRINT 10 | Che giấu vai trò bảo mật chống gian lận, chat khán giả |
+| TASK-1002 | UI Khán Giả & Cổ Vũ (Spectator Cheers & Live Reactions) | Frontend Dev | DONE | TASK-1001 | Khán đài xem trận đấu, thả tim/vỗ tay động viên người chơi |
+| TASK-1003 | QA Test Suite Sprint 11 & Pipeline Verification | QA Lead | DONE | TASK-1001..1002 | `tests/sprint11SpectatorMode.test.mjs`, `npm run verify` |
+
+---
+
+## SPRINT 12: Chế Độ Tập Luyện Đêm Trăng (Solo Hunter Practice Mode Với AI Bots)
+| Task ID | Tên Task | Role | Trạng thái | Dependency | Ghi chú |
+|---|---|---|---|---|---|
+| TASK-1101 | AI Bot Engine (Hành vi phán đoán ban đêm & phản biện ban ngày của Bot Dân / Bot Sói) | Game Engine Dev | READY | SPRINT 11 | Thuật toán phán đoán suy luận cục bộ, không tốn tài nguyên |
+| TASK-1102 | UI Chế Độ Tập Luyện Solo (Luyện kỹ năng Thợ Săn, Tiên Tri, Phù Thủy đối đầu Bot) | Frontend Dev | READY | TASK-1101 | Giúp người mới làm quen luật chơi trước khi vào phòng người thật |
+| TASK-1103 | QA Test Suite Sprint 12 & Pipeline Verification | QA Lead | READY | TASK-1101..1102 | `tests/sprint12SoloPractice.test.mjs`, `npm run verify` |
 
 
 

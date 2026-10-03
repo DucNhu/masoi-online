@@ -38,11 +38,14 @@ export function maskGameStateForPlayer(
   playerId: string
 ): ClientGameState {
   const me = serverState.players.find((p) => p.id === playerId);
-  if (!me) {
-    throw new Error(`Người chơi với ID ${playerId} không tồn tại trong phòng`);
+  const spectator = (serverState.spectators || []).find((s) => s.id === playerId);
+
+  if (!me && !spectator) {
+    throw new Error(`Người chơi hoặc khán giả với ID ${playerId} không tồn tại trong phòng`);
   }
 
-  const myRole = me.role;
+  const isSpectator = Boolean(spectator && !me);
+  const myRole = me ? me.role : 'VILLAGER';
 
   // 1. Mask danh sách người chơi (xóa vai trò, lá bài, token bảo mật)
   const maskedPlayers: NetworkPlayer[] = serverState.players.map((p) => ({
@@ -63,7 +66,7 @@ export function maskGameStateForPlayer(
 
   // 2. Tính toán danh sách đồng đội Sói (chỉ mở cho Ma Sói hoặc Kẻ Bán Tơ)
   const teamMates: string[] = [];
-  const isWolfSide = myRole === 'WEREWOLF' || myRole === 'MINION' || (myRole === 'CURSED' && me.cursedTurnedWolf);
+  const isWolfSide = !isSpectator && (myRole === 'WEREWOLF' || myRole === 'MINION' || (myRole === 'CURSED' && me?.cursedTurnedWolf));
 
   if (isWolfSide) {
     serverState.players.forEach((p) => {
@@ -75,12 +78,12 @@ export function maskGameStateForPlayer(
   }
 
   // 3. Tính toán thông tin Người Yêu (nếu là cặp đôi của Cupid)
-  const couplePartnerId = me.isCoupleWith;
+  const couplePartnerId = me?.isCoupleWith;
 
   // 4. Kết quả soi của Tiên Tri
-  const seerScanResult = serverState.seerHistory[playerId];
+  const seerScanResult = me ? serverState.seerHistory[playerId] : undefined;
 
-  // 5. Danh sách các vai trò đã lộ diện hợp pháp (ví dụ: Kẻ Ngốc bị lật bài khi vote treo cổ)
+  // 5. Danh sách các vai trò đã lộ diện hợp pháp (chống gian lận cho Khán Giả)
   const revealedRoles: Record<string, RoleId> = {};
   serverState.players.forEach((p) => {
     if (p.idiotRevealed) {
@@ -89,10 +92,13 @@ export function maskGameStateForPlayer(
     // Nếu ván đấu kết thúc thì công khai toàn bộ vai trò
     if (serverState.phase === 'GAME_OVER') {
       revealedRoles[p.id] = p.role;
+    } else if (isSpectator && !p.isAlive) {
+      // Khán giả chỉ biết danh tính của những người đã hy sinh trong trận
+      revealedRoles[p.id] = p.role;
     }
   });
 
-  // 6. Tính tổng số phiếu công khai khi đang ở pha Bỏ Phiếu DAY_VOTING (Thị Trưởng tính 2 phiếu)
+  // 6. Tính tổng số phiếu công khai khi đang ở pha Bỏ Phiếu DAY_VOTING
   let voteTally: Record<string, number> | undefined;
   if (serverState.phase === 'DAY_VOTING') {
     voteTally = {};
@@ -103,13 +109,15 @@ export function maskGameStateForPlayer(
       }
     });
   }
-  const myVote = serverState.currentVotes[playerId] ?? null;
+  const myVote = isSpectator ? null : (serverState.currentVotes[playerId] ?? null);
 
   // 7. Lọc Chat Messages theo phân quyền nghiêm ngặt
   const filteredChat = (serverState.chatMessages || []).filter((msg) => {
     if (msg.channel === 'PUBLIC') return true;
+    if (msg.channel === 'SPECTATOR') return true;
+    if (isSpectator) return false;
     if (msg.channel === 'WOLF') return isWolfSide;
-    if (msg.channel === 'DEAD') return !me.isAlive;
+    if (msg.channel === 'DEAD') return me && !me.isAlive;
     return false;
   });
 
@@ -124,7 +132,10 @@ export function maskGameStateForPlayer(
     players: maskedPlayers,
     myPlayerId: playerId,
     myRole: myRole,
-    myCard: me.card,
+    myCard: me?.card,
+    isSpectator,
+    spectatorsCount: (serverState.spectators || []).length,
+    liveCheers: serverState.liveCheers || [],
     revealedRoles,
     teamMates,
     couplePartnerId,

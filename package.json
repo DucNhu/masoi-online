@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "test": "tsx tests/gameEngine.test.mjs && tsx tests/roomProtocol.test.mjs && tsx tests/roomManager.test.mjs && tsx tests/multiplayerE2E.test.mjs && tsx tests/fullOnlineMatch.test.mjs && tsx tests/voiceSignaling.test.mjs && tsx tests/offlineGameFlow.test.mjs && tsx tests/sprint5ExpandedRules.test.mjs && tsx tests/sprint6AntiBotAndTableLobby.test.mjs && tsx tests/sprint7LeaderboardAndProfile.test.mjs && tsx tests/sprint8AudioAndEmotes.test.mjs && tsx tests/sprint9ShareAndHistory.test.mjs && tsx tests/sprint10MobileAndNetwork.test.mjs",
+    "test": "tsx tests/gameEngine.test.mjs && tsx tests/roomProtocol.test.mjs && tsx tests/roomManager.test.mjs && tsx tests/multiplayerE2E.test.mjs && tsx tests/fullOnlineMatch.test.mjs && tsx tests/voiceSignaling.test.mjs && tsx tests/offlineGameFlow.test.mjs && tsx tests/sprint5ExpandedRules.test.mjs && tsx tests/sprint6AntiBotAndTableLobby.test.mjs && tsx tests/sprint7LeaderboardAndProfile.test.mjs && tsx tests/sprint8AudioAndEmotes.test.mjs && tsx tests/sprint9ShareAndHistory.test.mjs && tsx tests/sprint10MobileAndNetwork.test.mjs && tsx tests/sprint11SpectatorMode.test.mjs",
     "verify": "npm run lint && npm test && npm run build",
     "daemon": "node scripts/studio-daemon.mjs",
     "daemon:watch": "node scripts/studio-daemon.mjs --watch",
