@@ -1,44 +1,45 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-10-03 14:38 (Asia/Ho_Chi_Minh) — Autonomous Execution Sprint 9 DONE.
-- **Mục tiêu**: **Sprint 9: Chia Sẻ Phòng Nhanh (1-Click Deep Link `?room=CODE`) & Nhật Ký Ván Đấu Chi Tiết (Chronological Match History Log) [COMPLETED]**.
-- **Quyết định định hướng**: Tối ưu lan tỏa cộng đồng người chơi thật thông qua deep link 1-click mời bạn bè, cùng tính minh bạch công khai ván đấu qua lịch sử dòng thời gian sự kiện.
+- **Thời gian cập nhật**: 2026-10-03 15:05 (Asia/Ho_Chi_Minh) — Autonomous Execution Sprint 10 DONE.
+- **Mục tiêu**: **Sprint 10: Tối Ưu Mobile Native Touch UX, Dynamic Island iPhone 16 Pro & Giám Sát Kết Nối Mạng (Network Health Ping) [COMPLETED]**.
+- **Quyết định định hướng**: Tối ưu trải nghiệm chạm trên điện thoại di động (iPhone 16 Pro, iOS/Android Capacitor), triệt tiêu độ trễ tương tác, chủ động phát hiện sự cố mạng và tự động khôi phục kết nối.
 - **Nhánh làm việc**: `feature/ma-soi-online`.
 - **Mô hình vận hành**: Game Studio Hierarchy (PO → PM → Executor Roles: Game Engine Dev / Architect / Frontend / QA).
 
 ---
 
-## 1. Kết Quả Triển Khai Sprint 9 (Deep Link Invite & Match History)
-- **TASK-801 [DONE]**:
-  - `src/utils/shareInvite.ts`: Hàm `generateInviteUrl(roomId)`, `extractRoomCodeFromUrl()`, `clearRoomCodeFromUrl()`, `shareRoomInvite()` tích hợp Web Share API và Clipboard fallback.
-  - `src/components/OnlineLobby.tsx`: Tự động nhận diện tham số `?room=CODE` khi người chơi mở link mời để điền sẵn mã phòng, bổ sung nút "🔗 Chia Sẻ Link Mời" nổi bật bên cạnh "Sao Chép Mã".
-  - `src/types/multiplayer.ts` & `src/logic/roomProtocol.ts`: Bổ sung `tableName` an toàn vào `ClientGameState` để thông điệp chia sẻ hiển thị đúng tên bàn chơi.
-- **TASK-802 [DONE]**:
-  - `src/components/MatchHistoryModal.tsx`: Modal xem lại toàn bộ dòng sự kiện diễn biến ván đấu (tạo phòng, ai vào ghế, bắt đầu đêm, ai hy sinh, làng thảo luận, ai bị xử tử, phe chiến thắng vinh danh) với timeline trực quan.
-  - `src/components/OnlinePlayerGameView.tsx`: Tích hợp nút "📜 Nhật Ký" trực tiếp trên thanh điều hướng đầu trận.
-- **TASK-803 [DONE]**:
-  - `tests/sprint9ShareAndHistory.test.mjs`: 4/4 test cases PASSED 100%.
-  - Toàn bộ **12 / 12 Test Suites PASS 100%**.
-  - Pipeline verification: `npm run verify` (`oxlint` + `npm test` + `npm run build`) và `npm run mobile:sync` đều PASS 100%.
+## 1. Kết Quả Triển Khai Sprint 10 (Mobile Native Touch UX & Network Health)
+- **TASK-901 [DONE]**:
+  - `src/index.css`: Cập nhật `--safe-top: max(env(safe-area-inset-top, 0px), 12px)`, `--safe-bottom: max(env(safe-area-inset-bottom, 0px), 12px)`, `--safe-left`, `--safe-right` thích ứng hoàn hảo với Dynamic Island trên iPhone 16 Pro.
+  - Bổ sung `touch-action: manipulation` cho tất cả button, input, anchor chống trễ double-tap zoom 300ms.
+  - Đảm bảo kích thước tiếp xúc tối thiểu 44px (`min-height: 44px`) theo chuẩn Apple Human Interface Guidelines.
+- **TASK-902 [DONE]**:
+  - `src/utils/networkHealth.ts`: Class `NetworkHealthMonitor` tự động phát hiện trạng thái online/offline, đo Ping thời gian thực (loopback latency), phân hạng 4 mức độ (`EXCELLENT`, `GOOD`, `POOR`, `DISCONNECTED`) và cơ chế pub/sub listener.
+  - `src/components/NetworkStatusBadge.tsx`: Huy hiệu mini hiển thị Ping và chất lượng sóng trên Header kèm Floating Toast cảnh báo mất mạng có nút "Thử Lại" tức thì.
+  - Tích hợp vào thanh điều hướng của `OnlineLobby.tsx` và `OnlinePlayerGameView.tsx`.
+- **TASK-903 [DONE]**:
+  - `tests/sprint10MobileAndNetwork.test.mjs`: 4/4 test cases PASSED 100%.
+  - Toàn bộ **13 / 13 Test Suites PASS 100%** (48/48 test cases).
+  - Pipeline verification: `npm run verify` (`oxlint` + `npm test` + `npm run build`) và `npm run mobile:sync` (Capacitor iOS & Android) đều PASS 100%.
 
 ---
 
 ## 2. Trạng Thái Kỹ Thuật (System Health)
 - **Lint**: `oxlint` PASSED 100% (0 errors, 0 warnings).
-- **Unit & E2E Test Suite**: **12 / 12 Test Suites PASSED 100%** (44/44 test cases).
-- **Production Build**: Tối ưu siêu nhẹ **478KB**, PWA offline cache sẵn sàng.
+- **Unit & E2E Test Suite**: **13 / 13 Test Suites PASSED 100%** (48/48 test cases).
+- **Production Build**: Tối ưu siêu nhẹ **483KB**, PWA offline cache sẵn sàng.
 - **Mobile Native Shell**: Đồng bộ thành công dist -> ios & android qua `npm run mobile:sync`.
 - **Quy tắc Git**: Tuyệt đối không tự ý push lên remote repository khi chưa có lệnh tường minh từ PO.
 
 ---
 
-## 3. Hàng Đợi Sprint 10 Chuẩn Bị Thực Thi
-- **TASK-901 [Mobile / Frontend]**: Tối ưu an toàn Viewport, Safe Area Inset & Dynamic Island cho iPhone 16 Pro & Mobile Touch UX.
-- **TASK-902 [Engine / Frontend]**: Bảng thông báo trạng thái kết nối & độ trễ mạng (Network Health Ping & Reconnect Toast).
-- **TASK-903 [QA Lead]**: Test suite Sprint 10 & Release Candidate Audit.
+## 3. Hàng Đợi Sprint 11 Chuẩn Bị Thực Thi
+- **TASK-1001 [Game Engine / Architect]**: Hỗ trợ Chế độ Khán Giả (Spectator View): Người ngoài vào xem ván đấu không can thiệp kết quả, bảo mật vai trò chống gian lận.
+- **TASK-1002 [Frontend Dev]**: UI Khán Giả & Cổ Vũ (Spectator Cheers & Live Reactions): Khán đài xem trận đấu, thả tim/vỗ tay động viên người chơi.
+- **TASK-1003 [QA Lead]**: Test suite Sprint 11 & Release Candidate Audit.
 
 ---
 
 ## 4. Hành Động Tiếp Theo Của PM (Single Next Action)
-- Tạo local commit cho Sprint 9 (`feat(sprint-9): 1-click invite deep link & chronological match history modal`).
-- Tự động tiếp tục điều phối Sprint 10 theo mô hình studio tự quản.
+- Tạo local commit cho Sprint 10 (`feat(sprint-10): mobile native dynamic island optimization & network health monitor`).
+- Tự động tiếp tục triển khai Sprint 11 (Spectator Mode & Live Audience Cheers).

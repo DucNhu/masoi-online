@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { EmotePicker } from './EmotePicker';
 import { MatchHistoryModal } from './MatchHistoryModal';
+import { NetworkStatusBadge } from './NetworkStatusBadge';
 
 interface Props {
   gameState: ClientGameState;
@@ -163,7 +164,8 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
         <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 700 }}>
           PHÒNG: <strong style={{ color: '#38bdf8' }}>{gameState.roomId}</strong> • BẠN: <strong style={{ color: '#fff' }}>{me?.name}</strong> {isHost && '👑'}
         </span>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <NetworkStatusBadge />
           {/* Nút Điều Khiển Micro */}
           <button
             onClick={handleToggleMic}

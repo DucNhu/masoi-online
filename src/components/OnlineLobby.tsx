@@ -13,6 +13,7 @@ import { WEREWOLF_AVATARS, WerewolfAvatar } from '../constants/avatars';
 import { soundEffects } from '../utils/soundEffects';
 import { Users, Crown, CheckCircle2, Clock, Copy, Check, ArrowLeft, Play, LogOut, ShieldAlert, Sliders, Sparkles, RefreshCw, KeyRound, Plus, ShieldCheck, Trophy, Award, Share2 } from 'lucide-react';
 import { shareRoomInvite, extractRoomCodeFromUrl, clearRoomCodeFromUrl } from '../utils/shareInvite';
+import { NetworkStatusBadge } from './NetworkStatusBadge';
 
 interface Props {
   onBackToOffline: () => void;
@@ -308,9 +309,12 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
         >
           <ArrowLeft size={16} /> {activeView === 'ROOM' ? 'Rời Phòng' : 'Về Chế Độ Offline'}
         </button>
-        <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600, letterSpacing: '1px' }}>
-          MULTI-PLAYER ONLINE
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <NetworkStatusBadge />
+          <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600, letterSpacing: '1px' }}>
+            ONLINE
+          </span>
+        </div>
       </div>
 
       {errorMessage && (

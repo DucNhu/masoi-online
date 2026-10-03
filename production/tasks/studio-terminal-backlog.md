@@ -109,8 +109,18 @@
 
 | Task ID | Tên Task | Role | Trạng thái | Dependency | Ghi chú |
 |---|---|---|---|---|---|
-| TASK-901 | Tối Ưu An Toàn Viewport & Dynamic Island cho iPhone 16 Pro & Mobile Touch UX | Mobile / Frontend | READY | SPRINT 9 | `safe-area-inset`, chống double tap zoom, touch target >= 44px |
-| TASK-902 | Bảng Thông Báo Trạng Thái Kết Nối & Độ Trễ Mạng (Network Health Ping & Reconnect Toast) | Engine / Frontend | READY | TASK-901 | Hiển thị Ping thời gian thực và tự động khôi phục kết nối |
-| TASK-903 | QA Test Suite Sprint 10 & Release Candidate Audit | QA Lead | READY | TASK-901..902 | `tests/sprint10MobileAndNetwork.test.mjs`, `npm run verify` |
+| TASK-901 | Tối Ưu An Toàn Viewport & Dynamic Island cho iPhone 16 Pro & Mobile Touch UX | Mobile / Frontend | DONE | SPRINT 9 | `safe-area-inset`, chống double tap zoom, touch target >= 44px |
+| TASK-902 | Bảng Thông Báo Trạng Thái Kết Nối & Độ Trễ Mạng (Network Health Ping & Reconnect Toast) | Engine / Frontend | DONE | TASK-901 | Hiển thị Ping thời gian thực và tự động khôi phục kết nối |
+| TASK-903 | QA Test Suite Sprint 10 & Release Candidate Audit | QA Lead | DONE | TASK-901..902 | `tests/sprint10MobileAndNetwork.test.mjs`, `npm run verify` |
+
+---
+
+## SPRINT 11: Chế Độ Khán Giả (Spectator Mode / Xem Trực Tiếp) & Bộ Sưu Tập Kịch Bản Trăng Máu
+| Task ID | Tên Task | Role | Trạng thái | Dependency | Ghi chú |
+|---|---|---|---|---|---|
+| TASK-1001 | Hỗ Trợ Chế Độ Khán Giả (Spectator View): Người ngoài vào xem ván đấu không can thiệp kết quả | Game Engine / Architect | READY | SPRINT 10 | Che giấu vai trò bảo mật chống gian lận, chat khán giả |
+| TASK-1002 | UI Khán Giả & Cổ Vũ (Spectator Cheers & Live Reactions) | Frontend Dev | READY | TASK-1001 | Khán đài xem trận đấu, thả tim/vỗ tay động viên người chơi |
+| TASK-1003 | QA Test Suite Sprint 11 & Pipeline Verification | QA Lead | READY | TASK-1001..1002 | `tests/sprint11SpectatorMode.test.mjs`, `npm run verify` |
+
 
 
