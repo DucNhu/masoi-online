@@ -1,6 +1,7 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { werewolfRoomServerPlugin } from './src/server/roomServerPlugin.ts'
 
 const basePath = process.env.BASE_PATH || (process.env.GITHUB_ACTIONS ? '/masoi-online/' : '/ma-soi-offline/');
 
@@ -8,6 +9,7 @@ const basePath = process.env.BASE_PATH || (process.env.GITHUB_ACTIONS ? '/masoi-
 export default defineConfig({
   base: basePath,
   plugins: [
+    werewolfRoomServerPlugin(),
     react(),
     VitePWA({
       registerType: 'autoUpdate',

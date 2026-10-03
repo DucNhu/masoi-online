@@ -140,6 +140,16 @@
 | TASK-1202 | Hệ Thống Chủ Đề Bàn Đấu VIP (Rừng Đen Trăng Máu, Lâu Đài Gothic, Đầm Lầy Sương Mù) | Frontend Lead | DONE | TASK-1201 | Cài đặt theme trong RoomSettings, background atmosphere theo bàn |
 | TASK-1203 | QA Test Suite Sprint 13 & Pipeline Verification | QA Lead | DONE | TASK-1201..1202 | `tests/sprint13SpatialAudioAndThemes.test.mjs`, `npm run verify` |
 
+---
+
+## SPRINT 14: Realtime Server Relay & Cross-Browser Synchronization (Safari <-> Chrome <-> Incognito)
+| Task ID | Tên Task | Role | Trạng thái | Dependency | Ghi chú |
+|---|---|---|---|---|---|
+| TASK-1301 | Vite Server Relay Plugin & Server-Sent Events (SSE) Stream | Backend Architect | DONE | SPRINT 13 | Endpoint `/api/werewolf/rooms/*` & SSE stream kết nối mọi browser |
+| TASK-1302 | Nâng cấp RoomManager Hybrid Network Sync (BroadcastChannel + HTTP Server Relay) | Game Engine Dev | DONE | TASK-1301 | `ensureRoomSynced`, `syncPublicTablesFromRemote`, tự động sync tức thì |
+| TASK-1303 | QA Test Suite Sprint 14 & Pipeline Verification | QA Lead | DONE | TASK-1301..1302 | `tests/sprint14CrossBrowserSync.test.mjs`, `npm run verify` |
+
+
 
 
 

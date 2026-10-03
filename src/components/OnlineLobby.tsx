@@ -79,9 +79,10 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
   const [gameState, setGameState] = useState<ClientGameState | null>(null);
 
   // Làm mới danh sách bàn chơi
-  const refreshTables = useCallback(() => {
+  const refreshTables = useCallback(async () => {
     setIsRefreshingTables(true);
     try {
+      await roomManager.syncPublicTablesFromRemote();
       const tables = roomManager.listPublicTables();
       setPublicTables(tables);
     } catch (err) {
@@ -104,9 +105,12 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
   // Tự động load và refresh bàn chơi
   useEffect(() => {
     if (activeView === 'TABLES') {
-      const interval = setInterval(() => {
+      const syncAndRefresh = async () => {
+        await roomManager.syncPublicTablesFromRemote();
         setPublicTables(roomManager.listPublicTables());
-      }, 3000);
+      };
+      syncAndRefresh();
+      const interval = setInterval(syncAndRefresh, 2500);
       return () => clearInterval(interval);
     }
   }, [activeView]);
@@ -133,10 +137,12 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
   }, [currentSession, spectatorSession, onGameStarted]);
 
   // Tham gia phòng với tư cách Khán Giả
-  const handleJoinAsSpectator = (targetRoomId: string) => {
+  const handleJoinAsSpectator = async (targetRoomId: string) => {
     try {
       setErrorMessage(null);
       const cleanRoomId = targetRoomId.trim().toUpperCase();
+      await roomManager.ensureRoomSynced(cleanRoomId);
+
       const res = roomManager.joinAsSpectator(
         cleanRoomId,
         playerName.trim() || 'Khán Giả',
@@ -216,9 +222,12 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
   };
 
   // Thực thi vào phòng
-  const executeJoinRoom = (targetRoomId: string) => {
+  const executeJoinRoom = async (targetRoomId: string) => {
     try {
       const cleanRoomId = targetRoomId.trim().toUpperCase();
+      // Đảm bảo dữ liệu phòng được đồng bộ từ Server Relay nếu tạo từ tab/browser khác
+      await roomManager.ensureRoomSynced(cleanRoomId);
+
       const res = roomManager.joinRoom(cleanRoomId, playerName.trim(), selectedAvatarObj.emoji);
       try {
         localStorage.setItem('masoi_player_name', playerName.trim());

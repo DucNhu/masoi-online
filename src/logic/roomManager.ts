@@ -10,6 +10,145 @@ export class RoomManager {
   private rooms: Map<string, ServerGameState> = new Map();
   private listeners: Map<string, Set<StateListener>> = new Map();
   private voiceListeners: Map<string, Set<VoiceSignalListener>> = new Map();
+  private channel: BroadcastChannel | null = null;
+  private sseSource: EventSource | null = null;
+  private activeSseRoomId: string | null = null;
+
+  constructor() {
+    this.initCrossTabMesh();
+  }
+
+  private initCrossTabMesh() {
+    if (typeof window !== 'undefined' && typeof window.BroadcastChannel !== 'undefined') {
+      try {
+        this.channel = new BroadcastChannel('masoi_online_mesh');
+        this.channel.onmessage = (event) => {
+          if (event.data?.type === 'ROOM_SYNC' && event.data.room) {
+            this.handleIncomingRemoteRoom(event.data.room);
+          }
+        };
+      } catch {
+        // Fallback
+      }
+    }
+  }
+
+  /**
+   * Đẩy dữ liệu phòng lên Realtime Server Relay và BroadcastChannel
+   */
+  public async syncRoomToRemote(room: ServerGameState): Promise<void> {
+    if (this.channel) {
+      try {
+        this.channel.postMessage({ type: 'ROOM_SYNC', room });
+      } catch {}
+    }
+
+    if (typeof window !== 'undefined' && typeof window.fetch !== 'undefined') {
+      try {
+        await fetch('/api/werewolf/rooms/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ room }),
+        });
+      } catch {
+        // Offline fallback
+      }
+    }
+  }
+
+  /**
+   * Đảm bảo phòng được đồng bộ từ Server Relay về RAM cục bộ trước khi Join
+   */
+  public async ensureRoomSynced(roomId: string): Promise<boolean> {
+    const cleanId = roomId.trim().toUpperCase();
+    if (this.rooms.has(cleanId)) return true;
+
+    if (typeof window !== 'undefined' && typeof window.fetch !== 'undefined') {
+      try {
+        const res = await fetch(`/api/werewolf/rooms/${cleanId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.room) {
+            this.rooms.set(cleanId, data.room);
+            return true;
+          }
+        }
+      } catch {}
+    }
+    return this.rooms.has(cleanId);
+  }
+
+  /**
+   * Đồng bộ toàn bộ danh sách bàn chơi từ Server Relay
+   */
+  public async syncPublicTablesFromRemote(): Promise<void> {
+    if (typeof window !== 'undefined' && typeof window.fetch !== 'undefined') {
+      try {
+        const res = await fetch('/api/werewolf/rooms');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.rooms)) {
+            for (const r of data.rooms) {
+              if (r?.roomId) {
+                const cleanId = r.roomId.toUpperCase();
+                const existing = this.rooms.get(cleanId);
+                if (!existing || (r.createdAt && existing.createdAt && r.createdAt >= existing.createdAt)) {
+                  this.rooms.set(cleanId, r);
+                }
+              }
+            }
+          }
+        }
+      } catch {}
+    }
+  }
+
+  private connectSseForRoom(roomId: string) {
+    if (typeof window === 'undefined' || typeof window.EventSource === 'undefined') return;
+    if (this.activeSseRoomId === roomId && this.sseSource) return;
+
+    try {
+      if (this.sseSource) {
+        this.sseSource.close();
+        this.sseSource = null;
+      }
+
+      this.activeSseRoomId = roomId;
+      const es = new EventSource(`/api/werewolf/rooms/events?roomId=${roomId}`);
+      this.sseSource = es;
+
+      es.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === 'ROOM_UPDATE' && msg.room && msg.roomId === roomId) {
+            this.handleIncomingRemoteRoom(msg.room);
+          }
+        } catch {}
+      };
+    } catch {}
+  }
+
+  private handleIncomingRemoteRoom(remoteRoom: ServerGameState) {
+    if (!remoteRoom?.roomId) return;
+    const cleanId = remoteRoom.roomId.toUpperCase();
+    this.rooms.set(cleanId, remoteRoom);
+
+    const room = this.rooms.get(cleanId);
+    const set = this.listeners.get(cleanId);
+    if (!room || !set || set.size === 0) return;
+
+    room.players.forEach((p) => {
+      const masked = maskGameStateForPlayer(room, p.id);
+      set.forEach((listener) => listener(p.id, masked));
+    });
+
+    if (room.spectators && room.spectators.length > 0) {
+      room.spectators.forEach((s) => {
+        const masked = maskGameStateForPlayer(room, s.id);
+        set.forEach((listener) => listener(s.id, masked));
+      });
+    }
+  }
 
   /**
    * Khởi tạo và lấy danh sách các bàn chơi công khai (Public Tables)
@@ -140,6 +279,7 @@ export class RoomManager {
 
     this.rooms.set(roomId, serverState);
     this.listeners.set(roomId, new Set());
+    this.syncRoomToRemote(serverState);
 
     const clientState = maskGameStateForPlayer(serverState, hostId);
     return { roomId, sessionToken, playerId: hostId, state: clientState };
@@ -821,12 +961,16 @@ export class RoomManager {
    * Đăng ký lắng nghe thay đổi trạng thái theo phòng
    */
   public subscribe(roomId: string, listener: StateListener): () => void {
-    let set = this.listeners.get(roomId);
+    const cleanId = roomId.trim().toUpperCase();
+    let set = this.listeners.get(cleanId);
     if (!set) {
       set = new Set();
-      this.listeners.set(roomId, set);
+      this.listeners.set(cleanId, set);
     }
     set.add(listener);
+
+    // Mở kết nối SSE theo dõi phòng thời gian thực
+    this.connectSseForRoom(cleanId);
 
     return () => {
       set?.delete(listener);
@@ -910,20 +1054,25 @@ export class RoomManager {
    */
   private broadcastState(roomId: string): void {
     const room = this.rooms.get(roomId);
+    if (!room) return;
+
     const set = this.listeners.get(roomId);
-    if (!room || !set || set.size === 0) return;
-
-    room.players.forEach((p) => {
-      const masked = maskGameStateForPlayer(room, p.id);
-      set.forEach((listener) => listener(p.id, masked));
-    });
-
-    if (room.spectators && room.spectators.length > 0) {
-      room.spectators.forEach((s) => {
-        const masked = maskGameStateForPlayer(room, s.id);
-        set.forEach((listener) => listener(s.id, masked));
+    if (set && set.size > 0) {
+      room.players.forEach((p) => {
+        const masked = maskGameStateForPlayer(room, p.id);
+        set.forEach((listener) => listener(p.id, masked));
       });
+
+      if (room.spectators && room.spectators.length > 0) {
+        room.spectators.forEach((s) => {
+          const masked = maskGameStateForPlayer(room, s.id);
+          set.forEach((listener) => listener(s.id, masked));
+        });
+      }
     }
+
+    // Đẩy cập nhật mới lên Server Relay và Mesh
+    this.syncRoomToRemote(room);
   }
 
   /**

@@ -1,44 +1,49 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-10-03 16:00 (Asia/Ho_Chi_Minh) — Autonomous Heartbeat Iteration 29 Verified.
-- **Mục tiêu**: **Sprint 13: Âm Thanh Không Gian Bàn Tròn 3D & Chủ Đề Bàn Đấu VIP [COMPLETED]**.
-- **Quyết định định hướng**: Tích hợp thuật toán tính góc Stereo Pan `StereoPannerNode` theo số thứ tự ghế bàn tròn và bộ 4 Chủ Đề Bàn Đấu VIP (Đêm Trăng Máu, Lâu Đài Gothic, Đầm Lầy Sương Mù, Rừng Rậm Thần Thoại).
+- **Thời gian cập nhật**: 2026-10-03 16:18 (Asia/Ho_Chi_Minh) — Autonomous Execution Sprint 14 DONE.
+- **Mục tiêu**: **Sprint 14: Realtime Server Relay & Cross-Browser Synchronization (Safari <-> Chrome <-> Incognito) [COMPLETED]**.
+- **Quyết định định hướng**: Giải quyết triệt để vấn đề "phòng không tồn tại" khi người chơi mở trên hai trình duyệt khác nhau (Safari và Chrome ẩn danh) bằng kiến trúc Server Relay tập trung tích hợp trong Vite Dev/Preview Server kết hợp BroadcastChannel Mesh và Server-Sent Events (SSE).
 - **Nhánh làm việc**: `feature/ma-soi-online`.
-- **Mô hình vận hành**: Game Studio Hierarchy (PO → PM → Executor Roles: Audio/Engine Dev / Frontend Lead / QA Lead).
+- **Mô hình vận hành**: Game Studio Hierarchy (PO → PM → Executor Roles: Backend Architect / Game Engine Dev / QA Lead).
 
 ---
 
-## 1. Kết Quả Triển Khai Sprint 13 (3D Spatial Audio & VIP Arena Themes)
-- **TASK-1201 [DONE]**:
-  - `src/utils/soundEffects.ts`:
-    - Thuật toán `calculateSpatialPan(sourceSeat, listenerSeat, totalSeats)`: Ánh xạ chuẩn độ lệch góc trên vòng tròn ghế ngồi sang hệ tọa độ `[-1.0, 1.0]` của `StereoPannerNode`.
-    - Phương thức `playSpatialSound(soundType, sourceSeat, listenerSeat, totalSeats)` hỗ trợ các loại âm thanh định hướng: `vote`, `wolf`, `gavel`.
-- **TASK-1202 [DONE]**:
-  - `src/constants/arenaThemes.ts`: Thiết lập 4 bộ phong cách đấu trường danh giá (`BLOOD_MOON`, `GOTHIC_CASTLE`, `MISTY_SWAMP`, `ENCHANTED_FOREST`) với gradient huyền ảo, viền neon, accent glow và huy hiệu VIP.
-  - `src/types/multiplayer.ts`, `src/logic/roomProtocol.ts`, `src/logic/roomManager.ts`: Mở rộng cấu hình phòng và cơ chế Zero-Knowledge Masking chuyển giao `arenaTheme` bảo mật cho người chơi và khán giả.
-  - `src/components/OnlineLobby.tsx`: Bộ chọn 4 Arena Themes trực quan trong form Tạo Bàn, hiển thị Theme Badge cho từng bàn trong Table Lobby.
-  - `src/components/OnlinePlayerGameView.tsx` & `src/components/SpectatorLiveView.tsx`: Đồng bộ background atmosphere, header badge và kích hoạt âm thanh không gian 3D khi vote / cắn đêm.
-- **TASK-1203 [DONE]**:
-  - `tests/sprint13SpatialAudioAndThemes.test.mjs`: 4/4 test cases PASSED 100%.
-  - Toàn bộ **16 / 16 Test Suites PASS 100%** (62/62 test cases).
-  - Pipeline verification: `npm run verify` (`oxlint` + `npm test` + `npm run build`) và `npm run mobile:sync` (Capacitor iOS & Android) đều PASS 100%.
+## 1. Kết Quả Triển Khai Sprint 14 (Cross-Browser Realtime Sync)
+- **TASK-1301 [DONE]**:
+  - `src/server/roomServerPlugin.ts`: Vite Plugin `werewolfRoomServerPlugin` tích hợp trực tiếp vào Node.js dev server:
+    - `GET /api/werewolf/rooms`: Danh sách bàn chơi tập trung liên trình duyệt.
+    - `GET /api/werewolf/rooms/:roomId`: Trả về dữ liệu phòng cho các trình duyệt khác tìm thấy ngay.
+    - `POST /api/werewolf/rooms/sync`: Đồng bộ dữ liệu phòng tức thời khi có người tạo bàn, vào bàn hoặc đổi state.
+    - `GET /api/werewolf/rooms/events`: Server-Sent Events (SSE) đẩy cập nhật realtime tức thì tới Safari, Chrome, Tab ẩn danh.
+  - `vite.config.ts`: Đăng ký `werewolfRoomServerPlugin()`.
+- **TASK-1302 [DONE]**:
+  - `src/logic/roomManager.ts`:
+    - Tích hợp `BroadcastChannel('masoi_online_mesh')` cho các tab cùng trình duyệt.
+    - `ensureRoomSynced(roomId)`: Tự động pull phòng từ Server Relay nếu tạo từ trình duyệt khác (Safari tìm thấy phòng `AHQB47` tạo từ Chrome ngay lập tức).
+    - `syncPublicTablesFromRemote()`: Đồng bộ danh sách bàn chơi từ máy chủ mỗi 2.5s.
+    - `connectSseForRoom(roomId)`: Lắng nghe luồng SSE để cập nhật state phòng không độ trễ.
+  - `src/components/OnlineLobby.tsx`: `executeJoinRoom` và `handleJoinAsSpectator` chuyển sang async tự động sync trước khi join.
+- **TASK-1303 [DONE]**:
+  - `tests/sprint14CrossBrowserSync.test.mjs`: 3/3 test cases PASSED 100%.
+  - Toàn bộ **17 / 17 Test Suites PASS 100%** (65/65 test cases).
+  - Pipeline verification: `npm run verify` (`oxlint` + `npm test` + `npm run build`) và `npm run mobile:sync` đều PASS 100%.
 
 ---
 
 ## 2. Trạng Thái Kỹ Thuật (System Health)
 - **Lint**: `oxlint` PASSED 100% (0 errors, 0 warnings).
-- **Unit & E2E Test Suite**: **16 / 16 Test Suites PASSED 100%** (62/62 test cases).
-- **Production Build**: Tối ưu siêu nhẹ **512KB**, PWA offline cache sẵn sàng.
+- **Unit & E2E Test Suite**: **17 / 17 Test Suites PASSED 100%** (65/65 test cases).
+- **Production Build**: Tối ưu siêu nhẹ **514KB**, PWA offline cache sẵn sàng.
 - **Mobile Native Shell**: Đồng bộ thành công dist -> ios & android qua `npm run mobile:sync`.
 - **Quy tắc Git**: Tuyệt đối không tự ý push lên remote repository khi chưa có lệnh tường minh từ PO.
 
 ---
 
 ## 3. Hàng Đợi Sprint Tiếp Theo
-- Đã hoàn tất 13 Sprints tính năng trọn vẹn: Toàn bộ hệ thống Ma Sói Online, Trợ lý Quản trò Offline, Chống Bot Khung Giờ Vàng, Bảng Xếp Hạng Elo, Âm Thanh Web Audio 3D Spatial Panning, Deep Link 1-Click, iPhone 16 Pro Dynamic Island Safe Area, Chế Độ Khán Giả Spectator, Chế Độ Luyện Tập Solo AI & Chủ Đề Bàn Đấu VIP.
+- Đã hoàn tất 14 Sprints: Hệ thống Ma Sói Online, Trợ lý Quản trò Tú Lơ Khơ Offline, Sảnh Bàn Chơi Khung Giờ Vàng, Bảng Xếp Hạng Elo, Âm Thanh 3D Spatial Panning, Chế Độ Khán Giả, Chế Độ Solo AI, Chủ Đề VIP Arena và Realtime Server Relay Đa Trình Duyệt.
 
 ---
 
 ## 4. Hành Động Tiếp Theo Của PM (Single Next Action)
-- Tạo local commit cho Sprint 13 (`feat(sprint-13): 3D spatial audio panning and VIP arena themes`).
-- Thông báo báo cáo sẵn sàng cho PO và chờ lệnh chỉ đạo tiếp theo.
+- Tạo local commit cho Sprint 14 (`feat(sprint-14): realtime server relay and cross-browser synchronization`).
+- Giải thích nguyên nhân kỹ thuật và hướng dẫn người dùng thử lại ngay trên Safari & Chrome ẩn danh.
