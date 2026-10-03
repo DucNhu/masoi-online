@@ -1,7 +1,7 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-10-03 13:10 (Asia/Ho_Chi_Minh) — Sprint 5 Completed & Verified.
-- **Mục tiêu**: Hoàn tất Sprint 5: Vai trò Mở rộng (Thị Trưởng x2 phiếu & di chúc kế vị, Kẻ Ngốc lật bài tha chết), Tùy chỉnh Timer Ngày/Đêm và Bộ sưu tập Avatar Ma Sói Huyền Bí.
+- **Thời gian cập nhật**: 2026-10-03 13:30 (Asia/Ho_Chi_Minh) — Autonomous Heartbeat Iteration 23 Verified.
+- **Mục tiêu**: Sprint 5 (Vai Trò Mở Rộng, Timer Tùy Chỉnh, 12 Avatar Ma Sói) đã hoàn tất và kiểm chứng 100%. Sẵn sàng tiếp nhận định hướng Sprint 6 hoặc đóng gói Native App.
 - **Quyết định định hướng**: Nền tảng **React + TypeScript + Capacitor** (Thẻ bài / Bàn tròn / Avatar ma mị, siêu nhẹ, hỗ trợ cả Web + iOS + Android).
 - **Nhánh làm việc**: `feature/ma-soi-online`.
 - **Quy trình áp dụng**: Game Studio Hierarchy (BA → PM → Executor → QA) + Autonomous Day & Night Engine.
