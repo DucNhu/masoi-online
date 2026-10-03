@@ -149,7 +149,12 @@
 | TASK-1302 | Nâng cấp RoomManager Hybrid Network Sync (BroadcastChannel + HTTP Server Relay) | Game Engine Dev | DONE | TASK-1301 | `ensureRoomSynced`, `syncPublicTablesFromRemote`, tự động sync tức thì |
 | TASK-1303 | QA Test Suite Sprint 14 & Pipeline Verification | QA Lead | DONE | TASK-1301..1302 | `tests/sprint14CrossBrowserSync.test.mjs`, `npm run verify` |
 
+---
 
-
-
-
+## SPRINT 15: WebRTC Peer-to-Peer Mesh Cho Nền Tảng Tĩnh Serverless (GitHub Pages Multiplayer)
+| Task ID | Tên Task | Role | Trạng thái | Dependency | Ghi chú |
+|---|---|---|---|---|---|
+| TASK-1401 | Tích Hợp PeerJS Engine (`P2PRoomHost` & `P2PRoomClient`) | System Architect | DONE | SPRINT 14 | STUN Google miễn phí, WebRTC DataChannel không cần backend server |
+| TASK-1402 | Tích Hợp Hybrid Fallback Trong RoomManager & OnlineLobby | Game Engine / Frontend | DONE | TASK-1401 | Tự động route local/server relay khi chạy dev và WebRTC P2P khi chạy GitHub Pages |
+| TASK-1403 | Zero-Knowledge State Masking & Bảo Mật P2P Mesh | Security Lead | DONE | TASK-1401..1402 | Host mask dữ liệu trước khi gửi qua DataChannel, ngăn soi vai trò đối thủ |
+| TASK-1404 | QA Test Suite Sprint 15 & Pipeline Verification (Mobile Sync) | QA Lead | DONE | TASK-1401..1403 | `tests/sprint15WebRTCPeerMesh.test.mjs`, `npm run verify`, `npm run mobile:sync` |

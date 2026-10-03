@@ -1,49 +1,50 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-10-03 16:30 (Asia/Ho_Chi_Minh) — Autonomous Heartbeat Iteration 30 Verified.
-- **Mục tiêu**: **Sprint 14: Realtime Server Relay & Cross-Browser Synchronization (Safari <-> Chrome <-> Incognito) [COMPLETED]**.
-- **Quyết định định hướng**: Giải quyết triệt để vấn đề "phòng không tồn tại" khi người chơi mở trên hai trình duyệt khác nhau (Safari và Chrome ẩn danh) bằng kiến trúc Server Relay tập trung tích hợp trong Vite Dev/Preview Server kết hợp BroadcastChannel Mesh và Server-Sent Events (SSE).
+- **Thời gian cập nhật**: 2026-10-03 16:55 (Asia/Ho_Chi_Minh) — Sprint 15 WebRTC P2P Serverless Multiplayer Verified.
+- **Mục tiêu**: **Sprint 15: WebRTC Peer-to-Peer Mesh Cho Nền Tảng Tĩnh Serverless (GitHub Pages Multiplayer) [COMPLETED]**.
+- **Quyết định định hướng**: Triển khai giải pháp **Phương án 1 (WebRTC P2P Mesh qua PeerJS & Google STUN)** theo phê duyệt của PO:
+  - Cho phép người chơi tạo và tham gia phòng chơi online trực tiếp máy-tới-máy (Peer-to-Peer DataChannel) khi ứng dụng được host trên các máy chủ tĩnh không có Node.js server 24/7 (như GitHub Pages `github.io`).
+  - Zero-Knowledge Security: Host authority mã hóa / che giấu vai trò (mask) trước khi gửi qua WebRTC DataChannel, ngăn chặn đối thủ soi bài.
+  - Hybrid Architecture: Chạy local dev server ưu tiên Server Relay (`/api/werewolf/rooms/*`), khi deploy GitHub Pages tự động fallback WebRTC P2P.
 - **Nhánh làm việc**: `feature/ma-soi-online`.
-- **Mô hình vận hành**: Game Studio Hierarchy (PO → PM → Executor Roles: Backend Architect / Game Engine Dev / QA Lead).
+- **Mô hình vận hành**: Game Studio Hierarchy (PO → PM → Executor Roles: System Architect / Game Engine Dev / QA Lead).
 
 ---
 
-## 1. Kết Quả Triển Khai Sprint 14 (Cross-Browser Realtime Sync)
-- **TASK-1301 [DONE]**:
-  - `src/server/roomServerPlugin.ts`: Vite Plugin `werewolfRoomServerPlugin` tích hợp trực tiếp vào Node.js dev server:
-    - `GET /api/werewolf/rooms`: Danh sách bàn chơi tập trung liên trình duyệt.
-    - `GET /api/werewolf/rooms/:roomId`: Trả về dữ liệu phòng cho các trình duyệt khác tìm thấy ngay.
-    - `POST /api/werewolf/rooms/sync`: Đồng bộ dữ liệu phòng tức thời khi có người tạo bàn, vào bàn hoặc đổi state.
-    - `GET /api/werewolf/rooms/events`: Server-Sent Events (SSE) đẩy cập nhật realtime tức thì tới Safari, Chrome, Tab ẩn danh.
-  - `vite.config.ts`: Đăng ký `werewolfRoomServerPlugin()`.
-- **TASK-1302 [DONE]**:
+## 1. Kết Quả Triển Khai Sprint 15 (WebRTC P2P for GitHub Pages)
+- **TASK-1401 [DONE]**:
+  - `src/logic/webrtcPeerMesh.ts`:
+    - `P2PRoomHost`: Tạo host node với Peer ID `masoi-v1-${roomId}`, bắt tay qua STUN servers của Google (`stun.l.google.com:19302`), xử lý `JOIN_REQUEST`, `CLIENT_ACTION`, phát sóng `STATE_UPDATE`.
+    - `P2PRoomClient`: Client node kết nối trực tiếp DataChannel tới Host bằng mã phòng, chuyển tiếp các hành động `NIGHT_ACTION`, `VOTE`, `CHAT`, `CHEER`, `LEAVE`.
+- **TASK-1402 [DONE]**:
   - `src/logic/roomManager.ts`:
-    - Tích hợp `BroadcastChannel('masoi_online_mesh')` cho các tab cùng trình duyệt.
-    - `ensureRoomSynced(roomId)`: Tự động pull phòng từ Server Relay nếu tạo từ trình duyệt khác (Safari tìm thấy phòng `AHQB47` tạo từ Chrome ngay lập tức).
-    - `syncPublicTablesFromRemote()`: Đồng bộ danh sách bàn chơi từ máy chủ mỗi 2.5s.
-    - `connectSseForRoom(roomId)`: Lắng nghe luồng SSE để cập nhật state phòng không độ trễ.
-  - `src/components/OnlineLobby.tsx`: `executeJoinRoom` và `handleJoinAsSpectator` chuyển sang async tự động sync trước khi join.
-- **TASK-1303 [DONE]**:
-  - `tests/sprint14CrossBrowserSync.test.mjs`: 3/3 test cases PASSED 100%.
-  - Toàn bộ **17 / 17 Test Suites PASS 100%** (65/65 test cases).
+    - Tích hợp `P2PRoomHost` tự động kích hoạt khi tạo phòng trên môi trường web.
+    - Cập nhật các action methods (`toggleReady`, `startGame`, `submitNightAction`, `castVote`, `sendChatMessage`, `sendCheer`, `leaveRoom`, `leaveSpectator`) tự động chuyển tiếp qua P2P client khi phòng ở xa.
+  - `src/components/OnlineLobby.tsx`:
+    - `executeJoinRoom` & `handleJoinAsSpectator`: Tự động fallback sang WebRTC P2P DataChannel nếu phòng không có trên Server Relay (khi chơi qua link GitHub Pages).
+- **TASK-1403 [DONE]**:
+  - Zero-Knowledge State Masking: Khách P2P chỉ nhận được `ClientGameState` đã che giấu vai trò, hoàn toàn ngăn chặn hack soi vai trò đối thủ trong inspector/network tool.
+- **TASK-1404 [DONE]**:
+  - `tests/sprint15WebRTCPeerMesh.test.mjs`: 4/4 test cases PASSED 100%.
+  - Toàn bộ **18 Test Suites PASS 100%**.
   - Pipeline verification: `npm run verify` (`oxlint` + `npm test` + `npm run build`) và `npm run mobile:sync` đều PASS 100%.
 
 ---
 
 ## 2. Trạng Thái Kỹ Thuật (System Health)
 - **Lint**: `oxlint` PASSED 100% (0 errors, 0 warnings).
-- **Unit & E2E Test Suite**: **17 / 17 Test Suites PASSED 100%** (65/65 test cases).
-- **Production Build**: Tối ưu siêu nhẹ **514KB**, PWA offline cache sẵn sàng.
+- **Unit & E2E Test Suite**: **18 Test Suites PASSED 100%** (69/69 test cases).
+- **Production Build**: Tối ưu siêu nhẹ **609KB** (gồm cả WebRTC DataChannel engine), PWA offline cache sẵn sàng.
 - **Mobile Native Shell**: Đồng bộ thành công dist -> ios & android qua `npm run mobile:sync`.
 - **Quy tắc Git**: Tuyệt đối không tự ý push lên remote repository khi chưa có lệnh tường minh từ PO.
 
 ---
 
 ## 3. Hàng Đợi Sprint Tiếp Theo
-- Đã hoàn tất 14 Sprints: Hệ thống Ma Sói Online, Trợ lý Quản trò Tú Lơ Khơ Offline, Sảnh Bàn Chơi Khung Giờ Vàng, Bảng Xếp Hạng Elo, Âm Thanh 3D Spatial Panning, Chế Độ Khán Giả, Chế Độ Solo AI, Chủ Đề VIP Arena và Realtime Server Relay Đa Trình Duyệt.
+- Đã hoàn tất 15 Sprints: Hệ thống Ma Sói Online, Trợ lý Quản trò Tú Lơ Khơ Offline, Sảnh Bàn Chơi Khung Giờ Vàng, Bảng Xếp Hạng Elo, Âm Thanh 3D Spatial Panning, Chế Độ Khán Giả, Chế Độ Solo AI, Chủ Đề VIP Arena, Realtime Server Relay Đa Trình Duyệt và WebRTC P2P Serverless Multiplayer cho GitHub Pages.
 
 ---
 
 ## 4. Hành Động Tiếp Theo Của PM (Single Next Action)
-- Tạo local commit cho Sprint 14 (`feat(sprint-14): realtime server relay and cross-browser synchronization`).
-- Giải thích nguyên nhân kỹ thuật và hướng dẫn người dùng thử lại ngay trên Safari & Chrome ẩn danh.
+- Tạo local commit cho Sprint 15 (`feat(sprint-15): webrtc p2p serverless multiplayer for github pages`).
+- Báo cáo cho PO cơ chế hoạt động trên GitHub Pages và sẵn sàng triển khai.

@@ -143,18 +143,35 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
       const cleanRoomId = targetRoomId.trim().toUpperCase();
       await roomManager.ensureRoomSynced(cleanRoomId);
 
-      const res = roomManager.joinAsSpectator(
-        cleanRoomId,
-        playerName.trim() || 'Khán Giả',
-        selectedAvatarObj.emoji
-      );
-      setSpectatorSession({
-        roomId: cleanRoomId,
-        spectatorId: res.spectatorId,
-      });
-      setGameState(res.state);
-      setActiveView('SPECTATOR');
-      soundEffects.triggerHaptic('medium');
+      if (roomManager.hasRoom(cleanRoomId)) {
+        const res = roomManager.joinAsSpectator(
+          cleanRoomId,
+          playerName.trim() || 'Khán Giả',
+          selectedAvatarObj.emoji
+        );
+        setSpectatorSession({
+          roomId: cleanRoomId,
+          spectatorId: res.spectatorId,
+        });
+        setGameState(res.state);
+        setActiveView('SPECTATOR');
+        soundEffects.triggerHaptic('medium');
+      } else {
+        // Fallback WebRTC P2P cho GitHub Pages
+        const p2pRes = await roomManager.joinRoomViaP2P(
+          cleanRoomId,
+          playerName.trim() || 'Khán Giả',
+          selectedAvatarObj.emoji,
+          true
+        );
+        setSpectatorSession({
+          roomId: cleanRoomId,
+          spectatorId: p2pRes.playerId,
+        });
+        setGameState(p2pRes.state);
+        setActiveView('SPECTATOR');
+        soundEffects.triggerHaptic('medium');
+      }
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Không thể vào xem trận đấu');
     }
@@ -225,22 +242,50 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
   const executeJoinRoom = async (targetRoomId: string) => {
     try {
       const cleanRoomId = targetRoomId.trim().toUpperCase();
+      setErrorMessage(null);
+
       // Đảm bảo dữ liệu phòng được đồng bộ từ Server Relay nếu tạo từ tab/browser khác
       await roomManager.ensureRoomSynced(cleanRoomId);
 
-      const res = roomManager.joinRoom(cleanRoomId, playerName.trim(), selectedAvatarObj.emoji);
-      try {
-        localStorage.setItem('masoi_player_name', playerName.trim());
-      } catch {}
+      if (roomManager.hasRoom(cleanRoomId)) {
+        const res = roomManager.joinRoom(cleanRoomId, playerName.trim(), selectedAvatarObj.emoji);
+        try {
+          localStorage.setItem('masoi_player_name', playerName.trim());
+        } catch {}
 
-      setCurrentSession({
-        roomId: cleanRoomId,
-        playerId: res.playerId,
-        sessionToken: res.sessionToken,
-      });
-      setGameState(res.state);
-      setActiveView('ROOM');
-      soundEffects.triggerHaptic('medium');
+        setCurrentSession({
+          roomId: cleanRoomId,
+          playerId: res.playerId,
+          sessionToken: res.sessionToken,
+        });
+        setGameState(res.state);
+        setActiveView('ROOM');
+        soundEffects.triggerHaptic('medium');
+      } else {
+        // Fallback kết nối WebRTC P2P Mesh trên GitHub Pages (Serverless)
+        try {
+          const p2pRes = await roomManager.joinRoomViaP2P(
+            cleanRoomId,
+            playerName.trim(),
+            selectedAvatarObj.emoji,
+            false
+          );
+          try {
+            localStorage.setItem('masoi_player_name', playerName.trim());
+          } catch {}
+
+          setCurrentSession({
+            roomId: cleanRoomId,
+            playerId: p2pRes.playerId,
+            sessionToken: p2pRes.sessionToken,
+          });
+          setGameState(p2pRes.state);
+          setActiveView('ROOM');
+          soundEffects.triggerHaptic('medium');
+        } catch {
+          throw new Error(`Phòng chơi "${cleanRoomId}" không tồn tại trên máy chủ hoặc mạng P2P.`);
+        }
+      }
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Không thể tham gia bàn chơi');
     }
@@ -382,6 +427,11 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
 
   // Rời phòng
   const handleLeaveRoom = () => {
+    if (currentSession) {
+      try {
+        roomManager.leaveRoom(currentSession.roomId, currentSession.playerId);
+      } catch {}
+    }
     setCurrentSession(null);
     setGameState(null);
     setActiveView('TABLES');

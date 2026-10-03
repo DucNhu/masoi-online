@@ -2,6 +2,7 @@ import { ServerGameState, ClientGameState, RoomSettings, ChatMessage, VoiceSigna
 import { RoleId } from '../types/game';
 import { generateRoomCode, maskGameStateForPlayer } from './roomProtocol';
 import { recordMatchResult, getHunterProfile } from '../utils/eloRating';
+import { P2PRoomHost, P2PRoomClient } from './webrtcPeerMesh';
 
 export type StateListener = (playerId: string, state: ClientGameState) => void;
 export type VoiceSignalListener = (signal: VoiceSignalPayload) => void;
@@ -13,6 +14,8 @@ export class RoomManager {
   private channel: BroadcastChannel | null = null;
   private sseSource: EventSource | null = null;
   private activeSseRoomId: string | null = null;
+  private p2pHosts: Map<string, P2PRoomHost> = new Map();
+  private p2pClient: P2PRoomClient | null = null;
 
   constructor() {
     this.initCrossTabMesh();
@@ -151,6 +154,115 @@ export class RoomManager {
   }
 
   /**
+   * Kiểm tra xem phòng có tồn tại trong bộ nhớ máy này không
+   */
+  public hasRoom(roomId: string): boolean {
+    return this.rooms.has(roomId.trim().toUpperCase());
+  }
+
+  /**
+   * Khởi động WebRTC P2P Host khi người chơi tạo phòng trên nền tảng Serverless (GitHub Pages)
+   */
+  private startP2PHost(roomId: string) {
+    if (typeof window === 'undefined' || typeof window.RTCPeerConnection === 'undefined') return;
+    try {
+      const cleanId = roomId.trim().toUpperCase();
+      const host = new P2PRoomHost(
+        cleanId,
+        (senderId, actionType, payload) => {
+          this.handleClientActionFromP2P(cleanId, senderId, actionType, payload);
+        },
+        (playerName, avatar, isSpectator) => {
+          try {
+            if (isSpectator) {
+              const res = this.joinAsSpectator(cleanId, playerName, avatar);
+              return { playerId: res.spectatorId, sessionToken: `spectator_${res.spectatorId}` };
+            } else {
+              const res = this.joinRoom(cleanId, playerName, avatar);
+              return { playerId: res.playerId, sessionToken: res.sessionToken };
+            }
+          } catch {
+            return null;
+          }
+        },
+        (playerId) => {
+          try {
+            return this.getMaskedState(cleanId, playerId);
+          } catch {
+            return null;
+          }
+        }
+      );
+      host.start().catch(() => {});
+      this.p2pHosts.set(cleanId, host);
+    } catch {}
+  }
+
+  /**
+   * Phân giải các hành động gửi từ Client P2P tới Host
+   */
+  private handleClientActionFromP2P(roomId: string, senderId: string, actionType: string, payload: any) {
+    try {
+      if (actionType === 'TOGGLE_READY') {
+        this.toggleReady(roomId, senderId, Boolean(payload?.isReady));
+      } else if (actionType === 'START_GAME') {
+        this.startGame(roomId, senderId);
+      } else if (actionType === 'VOTE') {
+        this.castVote(roomId, senderId, payload?.targetPlayerId ?? null);
+      } else if (actionType === 'NIGHT_ACTION') {
+        this.submitNightAction(roomId, senderId, payload);
+      } else if (actionType === 'CHAT') {
+        this.sendChatMessage(roomId, senderId, payload?.text, payload?.channel);
+      } else if (actionType === 'CHEER') {
+        this.sendCheer(roomId, payload?.senderName, payload?.emoji);
+      } else if (actionType === 'LEAVE') {
+        this.leaveRoom(roomId, senderId);
+      }
+    } catch (e) {
+      console.warn('[P2P] Error handling client action:', e);
+    }
+  }
+
+  /**
+   * Tham gia phòng chơi thông qua WebRTC P2P (Hoàn toàn Serverless trên GitHub Pages)
+   */
+  public async joinRoomViaP2P(
+    roomId: string,
+    playerName: string,
+    avatar: string,
+    isSpectator: boolean = false
+  ): Promise<{ playerId: string; sessionToken: string; state: ClientGameState }> {
+    const cleanId = roomId.trim().toUpperCase();
+    if (this.p2pClient) {
+      this.p2pClient.disconnect();
+    }
+
+    const client = new P2PRoomClient(
+      cleanId,
+      (newState) => {
+        // Nhận state mới từ Host qua WebRTC DataChannel
+        const listeners = this.listeners.get(cleanId);
+        if (listeners) {
+          listeners.forEach((l) => l(newState.myPlayerId, newState));
+        }
+      },
+      () => {
+        console.warn('[P2P] Mất kết nối tới Host phòng');
+      }
+    );
+
+    const res = await client.connect(playerName, avatar, isSpectator);
+    this.p2pClient = client;
+
+    // Đăng ký listener rỗng để sẵn sàng nhận callback
+    if (!this.listeners.has(cleanId)) {
+      this.listeners.set(cleanId, new Set());
+    }
+
+    return res;
+  }
+
+  /**
    * Khởi tạo và lấy danh sách các bàn chơi công khai (Public Tables)
    * 100% người thật, cho phép người chơi 1-Click Join Table ngay lập tức.
    */
@@ -280,6 +392,7 @@ export class RoomManager {
     this.rooms.set(roomId, serverState);
     this.listeners.set(roomId, new Set());
     this.syncRoomToRemote(serverState);
+    this.startP2PHost(roomId);
 
     const clientState = maskGameStateForPlayer(serverState, hostId);
     return { roomId, sessionToken, playerId: hostId, state: clientState };
@@ -374,10 +487,49 @@ export class RoomManager {
   }
 
   /**
+   * Người chơi rời khỏi phòng
+   */
+  public leaveRoom(roomId: string, playerId: string): void {
+    const cleanRoomId = roomId.trim().toUpperCase();
+    if (!this.rooms.has(cleanRoomId) && this.p2pClient) {
+      this.p2pClient.sendAction(playerId, 'LEAVE', {});
+      this.p2pClient.disconnect();
+      this.p2pClient = null;
+      return;
+    }
+
+    const room = this.rooms.get(cleanRoomId);
+    if (!room) return;
+
+    room.players = room.players.filter((p) => p.id !== playerId);
+    if (room.players.length === 0) {
+      this.rooms.delete(cleanRoomId);
+      const host = this.p2pHosts.get(cleanRoomId);
+      if (host) {
+        host.destroy();
+        this.p2pHosts.delete(cleanRoomId);
+      }
+    } else {
+      if (!room.players.some((p) => p.isHost)) {
+        room.players[0].isHost = true;
+        room.historyLog.push(`👑 ${room.players[0].name} đã trở thành Chủ phòng mới.`);
+      }
+      this.broadcastState(cleanRoomId);
+    }
+  }
+
+  /**
    * Rời khỏi khán đài
    */
   public leaveSpectator(roomId: string, spectatorId: string): void {
     const cleanRoomId = roomId.trim().toUpperCase();
+    if (!this.rooms.has(cleanRoomId) && this.p2pClient) {
+      this.p2pClient.sendAction(spectatorId, 'LEAVE', {});
+      this.p2pClient.disconnect();
+      this.p2pClient = null;
+      return;
+    }
+
     const room = this.rooms.get(cleanRoomId);
     if (!room || !room.spectators) return;
 
@@ -390,6 +542,11 @@ export class RoomManager {
    */
   public sendCheer(roomId: string, senderName: string, emoji: string): void {
     const cleanRoomId = roomId.trim().toUpperCase();
+    if (!this.rooms.has(cleanRoomId) && this.p2pClient) {
+      this.p2pClient.sendAction('spectator', 'CHEER', { senderName, emoji });
+      return;
+    }
+
     const room = this.rooms.get(cleanRoomId);
     if (!room) return;
 
@@ -439,6 +596,11 @@ export class RoomManager {
    * Sẵn sàng / Hủy sẵn sàng
    */
   public toggleReady(roomId: string, playerId: string, isReady: boolean): void {
+    if (!this.rooms.has(roomId) && this.p2pClient) {
+      this.p2pClient.sendAction(playerId, 'TOGGLE_READY', { isReady });
+      return;
+    }
+
     const room = this.rooms.get(roomId);
     if (!room || room.phase !== 'LOBBY') return;
 
@@ -453,7 +615,13 @@ export class RoomManager {
    * Bắt đầu ván đấu & Chia vai trò ngẫu nhiên
    */
   public startGame(roomId: string, hostPlayerId: string): void {
-    const room = this.rooms.get(roomId);
+    const cleanRoomId = roomId.trim().toUpperCase();
+    if (!this.rooms.has(cleanRoomId) && this.p2pClient) {
+      this.p2pClient.sendAction(hostPlayerId, 'START_GAME', {});
+      return;
+    }
+
+    const room = this.rooms.get(cleanRoomId);
     if (!room) throw new Error('Phòng không tồn tại');
 
     const host = room.players.find((p) => p.id === hostPlayerId);
@@ -527,7 +695,13 @@ export class RoomManager {
     playerId: string,
     action: { actionType: string; targetId?: string; targetId2?: string }
   ): void {
-    const room = this.rooms.get(roomId);
+    const cleanRoomId = roomId.trim().toUpperCase();
+    if (!this.rooms.has(cleanRoomId) && this.p2pClient) {
+      this.p2pClient.sendAction(playerId, 'NIGHT_ACTION', action);
+      return;
+    }
+
+    const room = this.rooms.get(cleanRoomId);
     if (!room || room.phase !== 'NIGHT') return;
 
     const player = room.players.find((p) => p.id === playerId);
@@ -671,7 +845,13 @@ export class RoomManager {
    * Bỏ phiếu treo cổ
    */
   public castVote(roomId: string, voterId: string, targetId: string | null): void {
-    const room = this.rooms.get(roomId);
+    const cleanRoomId = roomId.trim().toUpperCase();
+    if (!this.rooms.has(cleanRoomId) && this.p2pClient) {
+      this.p2pClient.sendAction(voterId, 'VOTE', { targetPlayerId: targetId });
+      return;
+    }
+
+    const room = this.rooms.get(cleanRoomId);
     if (!room || room.phase !== 'DAY_VOTING') return;
 
     const voter = room.players.find((p) => p.id === voterId);
@@ -893,7 +1073,13 @@ export class RoomManager {
     text: string,
     channel: 'PUBLIC' | 'WOLF' | 'DEAD' | 'SPECTATOR' = 'PUBLIC'
   ): void {
-    const room = this.rooms.get(roomId);
+    const cleanRoomId = roomId.trim().toUpperCase();
+    if (!this.rooms.has(cleanRoomId) && this.p2pClient) {
+      this.p2pClient.sendAction(senderId, 'CHAT', { text, channel });
+      return;
+    }
+
+    const room = this.rooms.get(cleanRoomId);
     if (!room) return;
 
     const sender = room.players.find((p) => p.id === senderId);
@@ -1073,6 +1259,12 @@ export class RoomManager {
 
     // Đẩy cập nhật mới lên Server Relay và Mesh
     this.syncRoomToRemote(room);
+
+    // Đẩy cập nhật P2P WebRTC tới các client kết nối từ xa trên GitHub Pages
+    const p2pHost = this.p2pHosts.get(roomId.toUpperCase());
+    if (p2pHost && p2pHost.isReady) {
+      p2pHost.broadcastState(room);
+    }
   }
 
   /**
