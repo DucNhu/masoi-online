@@ -1,6 +1,6 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-10-03 16:18 (Asia/Ho_Chi_Minh) — Autonomous Execution Sprint 14 DONE.
+- **Thời gian cập nhật**: 2026-10-03 16:30 (Asia/Ho_Chi_Minh) — Autonomous Heartbeat Iteration 30 Verified.
 - **Mục tiêu**: **Sprint 14: Realtime Server Relay & Cross-Browser Synchronization (Safari <-> Chrome <-> Incognito) [COMPLETED]**.
 - **Quyết định định hướng**: Giải quyết triệt để vấn đề "phòng không tồn tại" khi người chơi mở trên hai trình duyệt khác nhau (Safari và Chrome ẩn danh) bằng kiến trúc Server Relay tập trung tích hợp trong Vite Dev/Preview Server kết hợp BroadcastChannel Mesh và Server-Sent Events (SSE).
 - **Nhánh làm việc**: `feature/ma-soi-online`.
