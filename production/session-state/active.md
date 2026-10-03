@@ -1,6 +1,6 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-10-03 00:09 (Asia/Ho_Chi_Minh) — Autonomous Heartbeat Iteration 11 Verified.
+- **Thời gian cập nhật**: 2026-10-03 09:07 (Asia/Ho_Chi_Minh) — Autonomous Heartbeat Iteration 12 Verified.
 - **Mục tiêu**: Bổ sung hộp thoại xác nhận (Confirm Dialog / Modal) cho toàn bộ các nút Hủy, Reset, Xóa, Rời phòng/trận và Hành động sinh tử (treo cổ, bắn hạ, sang ngày).
 - **Quyết định định hướng**: Nền tảng **React + TypeScript + Capacitor** (Thẻ bài / Bàn tròn / Avatar ma mị, siêu nhẹ, hỗ trợ cả Web + iOS + Android).
 - **Nhánh làm việc**: `feature/ma-soi-online`.
