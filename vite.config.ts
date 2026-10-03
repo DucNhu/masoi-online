@@ -13,9 +13,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'og-image.jpg', 'og-image.png'],
       manifest: {
-        name: 'Ma Sói Offline (Tú Lơ Khơ)',
+        name: 'Ma Sói Online & Offline',
         short_name: 'Ma Sói',
-        description: 'Trợ lý Quản trò Ma Sói Offline bằng bộ bài Tú lơ khơ',
+        description: 'Chơi Ma Sói Online realtime nhiều người hoặc Trợ lý Quản trò Offline bằng bộ bài Tú lơ khơ',
         theme_color: '#090a10',
         background_color: '#090a10',
         display: 'standalone',
