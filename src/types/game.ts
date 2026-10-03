@@ -17,6 +17,7 @@ export type RoleId =
   | 'ELDER'      // Già Làng (Mở rộng: 7)
   | 'IDIOT'      // Kẻ Ngốc / Thằng Khờ (Mở rộng: 6)
   | 'CURSED'     // Bán Sói (Mở rộng: 5)
+  | 'MAYOR'      // Thị Trưởng / Trưởng Làng (Mở rộng: 4)
   | 'VILLAGER';  // Dân Làng (Mặc định: 2..9)
 
 export type TeamSide = 'WEREWOLF' | 'VILLAGE' | 'LOVERS';
@@ -54,6 +55,7 @@ export interface Player {
   elderLivesRemaining?: number; // Già Làng: 2 mạng trước đòn cắn của Sói
   isIdiotRevealed?: boolean;    // Kẻ Ngốc: đã lật bài thoát chết treo cổ
   isCursedTurned?: boolean;     // Bán Sói: đã bị cắn và thức tỉnh thành Ma Sói
+  isMayor?: boolean;            // Thị Trưởng: phiếu biểu quyết tính x2
 }
 
 export type GamePhase = 

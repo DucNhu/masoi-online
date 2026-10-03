@@ -26,9 +26,12 @@ export class RoomManager {
       maxPlayers: 12,
       discussionTimeSeconds: 60,
       votingTimeSeconds: 30,
+      nightActionTimeSeconds: 25,
       allowExpansionRoles: false,
       activeExpansionRoles: [],
       isPrivate: false,
+      enableMayor: false,
+      enableFoolImmunity: true,
       ...customSettings,
     };
 
@@ -38,6 +41,7 @@ export class RoomManager {
       settings: defaultSettings,
       dayNumber: 0,
       timerSeconds: 0,
+      mayorPlayerId: null,
       players: [
         {
           id: hostId,
@@ -191,6 +195,15 @@ export class RoomManager {
     if (playerCount >= 6) rolesToDeal.push('WITCH');
     if (playerCount >= 8) rolesToDeal.push('HUNTER');
 
+    // Nếu cho phép các vai trò mở rộng
+    if (room.settings.allowExpansionRoles && room.settings.activeExpansionRoles?.length > 0) {
+      for (const expRole of room.settings.activeExpansionRoles) {
+        if (rolesToDeal.length < playerCount) {
+          rolesToDeal.push(expRole);
+        }
+      }
+    }
+
     // Các vị trí còn lại là Dân Làng
     while (rolesToDeal.length < playerCount) {
       rolesToDeal.push('VILLAGER');
@@ -208,11 +221,18 @@ export class RoomManager {
       player.isAlive = true;
       player.hasActedNight = false;
       player.hasVoted = false;
+      player.idiotRevealed = false;
     });
+
+    // Chỉ định Thị Trưởng ban đầu nếu bật luật Thị Trưởng
+    if (room.settings.enableMayor) {
+      room.mayorPlayerId = hostPlayerId;
+      room.historyLog.push(`👑 ${host.name} đã được chỉ định nhậm chức Thị Trưởng làng!`);
+    }
 
     room.phase = 'NIGHT';
     room.dayNumber = 1;
-    room.timerSeconds = 45;
+    room.timerSeconds = room.settings.nightActionTimeSeconds || 25;
     room.historyLog.push(`=== ĐÊM THỨ 1 BẮT ĐẦU ===`);
 
     this.broadcastState(roomId);
@@ -309,6 +329,18 @@ export class RoomManager {
       }
     });
 
+    // Di chúc Thị Trưởng nếu Thị Trưởng hy sinh trong đêm
+    if (room.mayorPlayerId && deadThisNight.includes(room.mayorPlayerId)) {
+      const deadMayor = room.players.find((p) => p.id === room.mayorPlayerId);
+      const livingSuccessors = room.players.filter((p) => p.isAlive);
+      if (livingSuccessors.length > 0) {
+        room.mayorPlayerId = livingSuccessors[0].id;
+        room.historyLog.push(`👑 Thị Trưởng ${deadMayor?.name} hy sinh trong đêm, huy hiệu quyền lực được truyền lại cho ${livingSuccessors[0].name}!`);
+      } else {
+        room.mayorPlayerId = null;
+      }
+    }
+
     if (deadThisNight.length === 0) {
       room.historyLog.push(`✨ Đêm bình yên trôi qua, không có ai hy sinh!`);
     }
@@ -392,9 +424,10 @@ export class RoomManager {
     if (!room || room.phase !== 'DAY_VOTING') return;
 
     const voteCounts: Record<string, number> = {};
-    Object.values(room.currentVotes).forEach((targetId) => {
+    Object.entries(room.currentVotes).forEach(([voterId, targetId]) => {
       if (targetId) {
-        voteCounts[targetId] = (voteCounts[targetId] || 0) + 1;
+        const weight = voterId === room.mayorPlayerId ? 2 : 1;
+        voteCounts[targetId] = (voteCounts[targetId] || 0) + weight;
       }
     });
 
@@ -416,12 +449,23 @@ export class RoomManager {
       const victim = room.players.find((p) => p.id === highestTargetId);
       if (victim && victim.isAlive) {
         // Kẻ Ngốc lật bài thoát chết treo cổ
-        if (victim.role === 'IDIOT' && !victim.idiotRevealed) {
+        if (victim.role === 'IDIOT' && !victim.idiotRevealed && room.settings.enableFoolImmunity !== false) {
           victim.idiotRevealed = true;
-          room.historyLog.push(`🃏 ${victim.name} là Kẻ Ngốc! Lật bài công khai và được tha chết, nhưng mất quyền vote.`);
+          room.historyLog.push(`🃏 ${victim.name} là Kẻ Ngốc! Lật bài công khai và được làng tha mạng, nhưng bị tước quyền bỏ phiếu từ nay!`);
         } else {
           victim.isAlive = false;
           room.historyLog.push(`🪢 Làng đã quyết định xử tử ${victim.name} (${highestCount} phiếu).`);
+
+          // Di chúc Thị Trưởng nếu Thị Trưởng bị xử tử
+          if (room.mayorPlayerId === victim.id) {
+            const livingSuccessors = room.players.filter((p) => p.isAlive && p.id !== victim.id);
+            if (livingSuccessors.length > 0) {
+              room.mayorPlayerId = livingSuccessors[0].id;
+              room.historyLog.push(`👑 Thị Trưởng ${victim.name} trước khi chết đã di chúc truyền lại huy hiệu cho ${livingSuccessors[0].name}!`);
+            } else {
+              room.mayorPlayerId = null;
+            }
+          }
 
           // Nếu có người yêu thì chết theo
           if (victim.isCoupleWith) {
@@ -444,7 +488,7 @@ export class RoomManager {
       // Chuyển sang Đêm kế tiếp
       room.phase = 'NIGHT';
       room.dayNumber += 1;
-      room.timerSeconds = 45;
+      room.timerSeconds = room.settings.nightActionTimeSeconds || 25;
       room.historyLog.push(`=== ĐÊM THỨ ${room.dayNumber} BUÔNG XUỐNG ===`);
 
       room.players.forEach((p) => {
@@ -453,6 +497,30 @@ export class RoomManager {
       });
       room.currentVotes = {};
     }
+
+    this.broadcastState(roomId);
+  }
+
+  /**
+   * Chỉ định hoặc Chuyển giao chức vị Thị Trưởng
+   */
+  public assignMayor(roomId: string, targetPlayerId: string, assignerPlayerId?: string): void {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+
+    if (assignerPlayerId && room.mayorPlayerId && assignerPlayerId !== room.mayorPlayerId) {
+      const assigner = room.players.find((p) => p.id === assignerPlayerId);
+      if (!assigner?.isHost) {
+        throw new Error('Chỉ Thị Trưởng hiện tại hoặc Host mới có quyền chuyển giao chức vị.');
+      }
+    }
+
+    const target = room.players.find((p) => p.id === targetPlayerId && p.isAlive);
+    if (!target) throw new Error('Người nhận chức vị Thị Trưởng phải còn sống.');
+
+    const oldMayor = room.players.find((p) => p.id === room.mayorPlayerId);
+    room.mayorPlayerId = target.id;
+    room.historyLog.push(`👑 ${oldMayor ? oldMayor.name : 'Làng'} đã trao lại Huy hiệu Thị Trưởng cho ${target.name}!`);
 
     this.broadcastState(roomId);
   }

@@ -55,6 +55,8 @@ export function maskGameStateForPlayer(
     seatNumber: p.seatNumber,
     hasVoted: p.hasVoted,
     hasActedNight: p.hasActedNight,
+    isMayor: serverState.mayorPlayerId === p.id,
+    idiotRevealed: Boolean(p.idiotRevealed),
     isSpeaking: p.isSpeaking,
     isMuted: p.isMuted,
   }));
@@ -90,13 +92,14 @@ export function maskGameStateForPlayer(
     }
   });
 
-  // 6. Tính tổng số phiếu công khai khi đang ở pha Bỏ Phiếu DAY_VOTING
+  // 6. Tính tổng số phiếu công khai khi đang ở pha Bỏ Phiếu DAY_VOTING (Thị Trưởng tính 2 phiếu)
   let voteTally: Record<string, number> | undefined;
   if (serverState.phase === 'DAY_VOTING') {
     voteTally = {};
-    Object.values(serverState.currentVotes).forEach((targetId) => {
+    Object.entries(serverState.currentVotes).forEach(([voterId, targetId]) => {
       if (targetId) {
-        voteTally![targetId] = (voteTally![targetId] || 0) + 1;
+        const weight = voterId === serverState.mayorPlayerId ? 2 : 1;
+        voteTally![targetId] = (voteTally![targetId] || 0) + weight;
       }
     });
   }
@@ -116,6 +119,7 @@ export function maskGameStateForPlayer(
     subPhase: serverState.subPhase,
     dayNumber: serverState.dayNumber,
     timerSeconds: serverState.timerSeconds,
+    mayorPlayerId: serverState.mayorPlayerId ?? null,
     players: maskedPlayers,
     myPlayerId: playerId,
     myRole: myRole,

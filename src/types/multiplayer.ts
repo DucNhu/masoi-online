@@ -12,9 +12,12 @@ export interface RoomSettings {
   maxPlayers: number;
   discussionTimeSeconds: number;
   votingTimeSeconds: number;
+  nightActionTimeSeconds?: number;
   allowExpansionRoles: boolean;
   activeExpansionRoles: RoleId[];
   isPrivate: boolean;
+  enableMayor?: boolean;
+  enableFoolImmunity?: boolean;
 }
 
 export interface NetworkPlayer {
@@ -27,6 +30,8 @@ export interface NetworkPlayer {
   seatNumber: number;
   hasVoted: boolean;
   hasActedNight: boolean;
+  isMayor?: boolean;
+  idiotRevealed?: boolean;
   isSpeaking?: boolean;
   isMuted?: boolean;
 }
@@ -60,6 +65,7 @@ export interface ServerGameState {
   settings: RoomSettings;
   dayNumber: number;
   timerSeconds: number;
+  mayorPlayerId?: string | null;
   players: (NetworkPlayer & {
     role: RoleId;
     card?: PlayingCard;
@@ -87,6 +93,7 @@ export interface ClientGameState {
   subPhase?: string;
   dayNumber: number;
   timerSeconds: number;
+  mayorPlayerId?: string | null;
   players: NetworkPlayer[];
   myPlayerId: string;
   myRole: RoleId;
@@ -117,4 +124,5 @@ export type ClientAction =
   | { type: 'START_GAME' }
   | { type: 'SUBMIT_NIGHT_ACTION'; payload: { targetId?: string; targetId2?: string; actionType: string } }
   | { type: 'CAST_VOTE'; payload: { targetId: string | null } }
+  | { type: 'ASSIGN_MAYOR'; payload: { targetPlayerId: string } }
   | { type: 'SEND_CHAT'; payload: { text: string; channel: 'PUBLIC' | 'WOLF' | 'DEAD' } };

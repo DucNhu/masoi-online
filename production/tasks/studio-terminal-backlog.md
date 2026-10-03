@@ -40,7 +40,7 @@
 
 ---
 
-## SPRINT 4: WebRTC Voice Chat Trực Tuyến & Âm Thanh Không Gian (Spatial Audio Immersion)
+## SPRINT 4: WebRTC Voice Chat Trực Tuyến & Âm Thanh Không Gian (Spatial Audio Immersion) — ĐÃ HOÀN THÀNH
 
 | Task ID | Tên Task | Role | Trạng thái | Dependency | Ghi chú |
 |---|---|---|---|---|---|
@@ -48,4 +48,16 @@
 | TASK-302 | Xây dựng UI Voice Indicator & Bộ Điều Khiển Mic (Mute/Unmute, Speaking Waves) | Frontend Dev | DONE | TASK-301 | Hiệu ứng sóng âm khi người chơi phát biểu, icon mic nhấp nháy theo nhịp |
 | TASK-303 | Nâng cấp Hệ thống Âm thanh Không Gian & Sound FX Ma Mị (Sói hú, Gà gáy, Tòa án) | Audio/Frontend Lead | DONE | TASK-301 | Web Audio API synthesizer/procedural sound, không phụ thuộc file ngoài nặng |
 | TASK-304 | QA Test Suite kiểm thử tích hợp Voice Signaling & Audio Permissions | QA Lead | DONE | TASK-301..303 | Đảm bảo không rò rỉ âm thanh ban đêm và an toàn tín hiệu P2P |
+
+---
+
+## SPRINT 5: Vai Trò Mở Rộng (Thị Trưởng, Kẻ Ngốc), Tùy Chỉnh Timer Ngày/Đêm & Bộ Sưu Tập Avatar Ma Sói — ĐÃ HOÀN THÀNH
+
+| Task ID | Tên Task | Role | Trạng thái | Dependency | Ghi chú |
+|---|---|---|---|---|---|
+| TASK-401 | Cập nhật Game Engine & Room Protocol: Vai trò Thị Trưởng (2 phiếu vote, di chúc), Kẻ Ngốc lật bài thoát chết & Cấu hình Timer | Game Engine / Architect | DONE | SPRINT 4 | Mayor x2 vote weight, Idiot reveal immunity, custom phase durations |
+| TASK-402 | Xây dựng Bộ Sưu Tập Avatar Ma Sói Huyền Bí & Avatar Picker Modal | Frontend Lead | DONE | SPRINT 4 | 12+ Avatar ma mị, khung viền Neon, aura Glow, lưu LocalStorage |
+| TASK-403 | Xây dựng UI Cài Đặt Phòng/Trận Đấu Nâng Cao & Huy Hiệu Thị Trưởng, Kẻ Ngốc trên Bàn Chơi | Frontend Dev | DONE | TASK-401, 402 | Custom timer picker, badge 👑 Thị Trưởng, badge 🃏 Kẻ Ngốc trên bàn tròn |
+| TASK-404 | QA Test Suite Sprint 5: Kiểm thử Thị Trưởng x2 vote, Di chúc, Kẻ Ngốc thoát chết, Timer tùy chỉnh | QA Lead | DONE | TASK-401..403 | 100% test coverage cho luật mở rộng Sprint 5 (tests/sprint5ExpandedRules.test.mjs) |
+
 

@@ -1,25 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { roomManager } from '../logic/roomManager';
-import { ClientGameState } from '../types/multiplayer';
+import { ClientGameState, RoomSettings } from '../types/multiplayer';
+import { RoleId } from '../types/game';
 import { OnlinePlayerGameView } from './OnlinePlayerGameView';
 import { ConfirmModal } from './ConfirmModal';
-import { Users, Crown, CheckCircle2, Clock, Copy, Check, ArrowLeft, Play, LogOut, ShieldAlert } from 'lucide-react';
+import { AvatarPickerModal } from './AvatarPickerModal';
+import { WEREWOLF_AVATARS, WerewolfAvatar } from '../constants/avatars';
+import { Users, Crown, CheckCircle2, Clock, Copy, Check, ArrowLeft, Play, LogOut, ShieldAlert, Sliders, Sparkles } from 'lucide-react';
 
 interface Props {
   onBackToOffline: () => void;
   onGameStarted?: (state: ClientGameState) => void;
 }
 
-const AVATARS = ['🐺', '🧙', '🔮', '🛡️', '🏹', '👑', '🎭', '🧛', '🦊', '⚡'];
-
 export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted }) => {
   const [playerName, setPlayerName] = useState<string>('');
-  const [selectedAvatar, setSelectedAvatar] = useState<string>('🐺');
+  const [selectedAvatarObj, setSelectedAvatarObj] = useState<WerewolfAvatar>(WEREWOLF_AVATARS[0]);
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState<boolean>(false);
   const [inputRoomCode, setInputRoomCode] = useState<string>('');
   const [activeView, setActiveView] = useState<'SELECT' | 'CREATE' | 'JOIN' | 'ROOM'>('SELECT');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
   const [showLeaveRoomConfirm, setShowLeaveRoomConfirm] = useState<boolean>(false);
+
+  // Cấu hình phòng chơi nâng cao (Host Settings)
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState<boolean>(false);
+  const [discussionTime, setDiscussionTime] = useState<number>(60);
+  const [votingTime, setVotingTime] = useState<number>(30);
+  const [nightTime, setNightTime] = useState<number>(25);
+  const [enableMayor, setEnableMayor] = useState<boolean>(true);
+  const [enableFoolImmunity, setEnableFoolImmunity] = useState<boolean>(true);
+  const [activeExpRoles, setActiveExpRoles] = useState<RoleId[]>(['IDIOT', 'CURSED', 'ELDER']);
 
   // Trạng thái phiên hiện tại trong phòng
   const [currentSession, setCurrentSession] = useState<{
@@ -58,7 +69,17 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
     setErrorMessage(null);
 
     try {
-      const res = roomManager.createRoom(playerName.trim(), selectedAvatar);
+      const customSettings: Partial<RoomSettings> = {
+        discussionTimeSeconds: discussionTime,
+        votingTimeSeconds: votingTime,
+        nightActionTimeSeconds: nightTime,
+        enableMayor,
+        enableFoolImmunity,
+        allowExpansionRoles: activeExpRoles.length > 0,
+        activeExpansionRoles: activeExpRoles,
+      };
+
+      const res = roomManager.createRoom(playerName.trim(), selectedAvatarObj.emoji, customSettings);
       setCurrentSession({
         roomId: res.roomId,
         playerId: res.playerId,
@@ -85,7 +106,7 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
     setErrorMessage(null);
 
     try {
-      const res = roomManager.joinRoom(inputRoomCode.trim().toUpperCase(), playerName.trim(), selectedAvatar);
+      const res = roomManager.joinRoom(inputRoomCode.trim().toUpperCase(), playerName.trim(), selectedAvatarObj.emoji);
       setCurrentSession({
         roomId: inputRoomCode.trim().toUpperCase(),
         playerId: res.playerId,
@@ -293,25 +314,185 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
             }}
           />
 
-          <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '8px' }}>Chọn Avatar:</label>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
-            {AVATARS.map((av) => (
-              <button
-                key={av}
-                type="button"
-                onClick={() => setSelectedAvatar(av)}
-                style={{
-                  fontSize: '1.5rem',
-                  padding: '8px 12px',
-                  background: selectedAvatar === av ? 'rgba(99, 102, 241, 0.3)' : 'rgba(255,255,255,0.05)',
-                  border: selectedAvatar === av ? '2px solid #818cf8' : '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                }}
-              >
-                {av}
-              </button>
-            ))}
+          <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '8px' }}>Avatar của bạn:</label>
+          <div
+            onClick={() => setIsAvatarModalOpen(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              background: 'rgba(255,255,255,0.04)',
+              border: `1.5px solid ${selectedAvatarObj.auraColor}60`,
+              borderRadius: '12px',
+              padding: '10px 14px',
+              cursor: 'pointer',
+              marginBottom: '16px',
+              boxShadow: `0 0 16px ${selectedAvatarObj.glow}`,
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <div style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '50%',
+              backgroundColor: '#1e1e2d',
+              border: `2px solid ${selectedAvatarObj.auraColor}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '1.6rem',
+              flexShrink: 0,
+            }}>
+              {selectedAvatarObj.emoji}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, color: selectedAvatarObj.auraColor, fontSize: '0.95rem' }}>
+                {selectedAvatarObj.name}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                Bấm để mở kho 12 Avatar Ma Sói ✨
+              </div>
+            </div>
+            <Sparkles size={18} color={selectedAvatarObj.auraColor} />
+          </div>
+
+          {/* Cụm Cài Đặt Phòng Nâng Cao */}
+          <div style={{ marginBottom: '20px' }}>
+            <button
+              type="button"
+              onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
+              style={{
+                width: '100%',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '10px',
+                padding: '10px 14px',
+                color: '#cbd5e1',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Sliders size={16} color="#818cf8" /> Cài Đặt Luật & Thời Gian Ván Đấu
+              </span>
+              <span style={{ fontSize: '0.8rem', color: '#818cf8' }}>
+                {showAdvancedSettings ? 'Thu gọn ▲' : 'Mở rộng ▼'}
+              </span>
+            </button>
+
+            {showAdvancedSettings && (
+              <div style={{
+                marginTop: '10px',
+                background: '#161626',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '12px',
+                padding: '14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+              }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                  <div>
+                    <label style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Thảo luận Ngày</label>
+                    <select
+                      value={discussionTime}
+                      onChange={(e) => setDiscussionTime(Number(e.target.value))}
+                      style={{ width: '100%', padding: '6px', background: '#1e1e2f', color: '#fff', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', fontSize: '0.8rem' }}
+                    >
+                      <option value={30}>30s (Nhanh)</option>
+                      <option value={60}>60s (Chuẩn)</option>
+                      <option value={90}>90s</option>
+                      <option value={120}>120s (Dài)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Bỏ phiếu Treo cổ</label>
+                    <select
+                      value={votingTime}
+                      onChange={(e) => setVotingTime(Number(e.target.value))}
+                      style={{ width: '100%', padding: '6px', background: '#1e1e2f', color: '#fff', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', fontSize: '0.8rem' }}
+                    >
+                      <option value={15}>15s (Nhanh)</option>
+                      <option value={30}>30s (Chuẩn)</option>
+                      <option value={45}>45s</option>
+                      <option value={60}>60s</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Lượt Đêm</label>
+                    <select
+                      value={nightTime}
+                      onChange={(e) => setNightTime(Number(e.target.value))}
+                      style={{ width: '100%', padding: '6px', background: '#1e1e2f', color: '#fff', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', fontSize: '0.8rem' }}
+                    >
+                      <option value={15}>15s</option>
+                      <option value={25}>25s (Chuẩn)</option>
+                      <option value={40}>40s (Dài)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: '#e2e8f0', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={enableMayor}
+                      onChange={(e) => setEnableMayor(e.target.checked)}
+                    />
+                    <span>👑 <strong>Bật chức vị Thị Trưởng</strong> (Phiếu x2 & di chúc khi hy sinh)</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: '#e2e8f0', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={enableFoolImmunity}
+                      onChange={(e) => setEnableFoolImmunity(e.target.checked)}
+                    />
+                    <span>🃏 <strong>Kẻ Ngốc lật bài tha chết</strong> (Nếu bị vote treo cổ)</span>
+                  </label>
+                </div>
+
+                <div style={{ paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '6px' }}>Vai trò mở rộng tham gia:</div>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {(['IDIOT', 'CURSED', 'ELDER', 'CUPID', 'MINION'] as RoleId[]).map((rId) => {
+                      const isIncluded = activeExpRoles.includes(rId);
+                      return (
+                        <button
+                          key={rId}
+                          type="button"
+                          onClick={() => {
+                            if (isIncluded) {
+                              setActiveExpRoles(activeExpRoles.filter((r) => r !== rId));
+                            } else {
+                              setActiveExpRoles([...activeExpRoles, rId]);
+                            }
+                          }}
+                          style={{
+                            background: isIncluded ? 'rgba(99, 102, 241, 0.25)' : 'rgba(255,255,255,0.05)',
+                            border: isIncluded ? '1px solid #818cf8' : '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '6px',
+                            padding: '3px 8px',
+                            fontSize: '0.72rem',
+                            color: isIncluded ? '#c7d2fe' : '#94a3b8',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {rId === 'IDIOT' && '🃏 Kẻ Ngốc'}
+                          {rId === 'CURSED' && '🩸 Bán Sói'}
+                          {rId === 'ELDER' && '👴 Già Làng'}
+                          {rId === 'CUPID' && '💘 Cupid'}
+                          {rId === 'MINION' && '🎭 Bán Tơ'}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'flex', gap: '10px' }}>
@@ -381,25 +562,46 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
             }}
           />
 
-          <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '8px' }}>Chọn Avatar:</label>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
-            {AVATARS.map((av) => (
-              <button
-                key={av}
-                type="button"
-                onClick={() => setSelectedAvatar(av)}
-                style={{
-                  fontSize: '1.5rem',
-                  padding: '8px 12px',
-                  background: selectedAvatar === av ? 'rgba(99, 102, 241, 0.3)' : 'rgba(255,255,255,0.05)',
-                  border: selectedAvatar === av ? '2px solid #818cf8' : '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                }}
-              >
-                {av}
-              </button>
-            ))}
+          <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '8px' }}>Avatar của bạn:</label>
+          <div
+            onClick={() => setIsAvatarModalOpen(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              background: 'rgba(255,255,255,0.04)',
+              border: `1.5px solid ${selectedAvatarObj.auraColor}60`,
+              borderRadius: '12px',
+              padding: '10px 14px',
+              cursor: 'pointer',
+              marginBottom: '20px',
+              boxShadow: `0 0 16px ${selectedAvatarObj.glow}`,
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <div style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '50%',
+              backgroundColor: '#1e1e2d',
+              border: `2px solid ${selectedAvatarObj.auraColor}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '1.6rem',
+              flexShrink: 0,
+            }}>
+              {selectedAvatarObj.emoji}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, color: selectedAvatarObj.auraColor, fontSize: '0.95rem' }}>
+                {selectedAvatarObj.name}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                Bấm để mở kho 12 Avatar Ma Sói ✨
+              </div>
+            </div>
+            <Sparkles size={18} color={selectedAvatarObj.auraColor} />
           </div>
 
           <div style={{ display: 'flex', gap: '10px' }}>
@@ -541,6 +743,29 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
             ))}
           </div>
 
+          {/* Thanh Thông Tin Luật Phòng Chơi */}
+          {gameState && (
+            <div style={{
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: '10px',
+              padding: '8px 12px',
+              marginBottom: '16px',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '12px',
+              fontSize: '0.75rem',
+              color: '#94a3b8',
+              justifyContent: 'center',
+            }}>
+              <span>⏱️ Thảo luận: <strong style={{ color: '#f1f5f9' }}>{discussionTime}s</strong></span>
+              <span>🗳️ Bỏ phiếu: <strong style={{ color: '#f1f5f9' }}>{votingTime}s</strong></span>
+              <span>🌙 Lượt Đêm: <strong style={{ color: '#f1f5f9' }}>{nightTime}s</strong></span>
+              <span>👑 Thị Trưởng: <strong style={{ color: enableMayor ? '#facc15' : '#64748b' }}>{enableMayor ? 'Bật' : 'Tắt'}</strong></span>
+              <span>🃏 Kẻ Ngốc: <strong style={{ color: enableFoolImmunity ? '#06b6d4' : '#64748b' }}>{enableFoolImmunity ? 'Bật' : 'Tắt'}</strong></span>
+            </div>
+          )}
+
           {/* Action Bar dưới cùng */}
           <div style={{
             position: 'sticky',
@@ -636,6 +861,14 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
           handleLeaveRoom();
         }}
         onCancel={() => setShowLeaveRoomConfirm(false)}
+      />
+
+      {/* Modal chọn Avatar Ma Sói Huyền Bí */}
+      <AvatarPickerModal
+        isOpen={isAvatarModalOpen}
+        selectedAvatarId={selectedAvatarObj.id}
+        onSelect={(avatar) => setSelectedAvatarObj(avatar)}
+        onClose={() => setIsAvatarModalOpen(false)}
       />
     </div>
   );

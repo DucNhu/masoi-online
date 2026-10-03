@@ -632,8 +632,47 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
           <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '8px', color: '#fb923c' }}>
             <Vote size={20} /> Tòa Án Bỏ Phiếu Treo Cổ
           </h3>
+          
+          {gameState.mayorPlayerId === gameState.myPlayerId && isAlive && (
+            <div style={{
+              background: 'rgba(250, 204, 21, 0.15)',
+              border: '1px solid #facc15',
+              borderRadius: '8px',
+              padding: '6px 12px',
+              fontSize: '0.8rem',
+              color: '#fef08a',
+              fontWeight: 700,
+              marginBottom: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}>
+              👑 BẠN LÀ THỊ TRƯỞNG: Lá phiếu của bạn có giá trị GẤP ĐÔI (x2 phiếu)!
+            </div>
+          )}
+
+          {me?.idiotRevealed && (
+            <div style={{
+              background: 'rgba(6, 182, 212, 0.15)',
+              border: '1px solid #06b6d4',
+              borderRadius: '8px',
+              padding: '6px 12px',
+              fontSize: '0.8rem',
+              color: '#67e8f9',
+              fontWeight: 700,
+              marginBottom: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}>
+              🃏 BẠN LÀ KẺ NGỐC: Đã lật bài tha chết, bạn bị tước quyền bỏ phiếu!
+            </div>
+          )}
+
           <p style={{ fontSize: '0.85rem', color: '#cbd5e1', margin: '0 0 14px 0' }}>
-            {isAlive 
+            {me?.idiotRevealed
+              ? 'Bạn bị tước quyền biểu quyết và chỉ có thể chứng kiến tòa án.'
+              : isAlive 
               ? 'Chọn 1 người mà bạn nghi ngờ là Ma Sói để xử tử, hoặc Bỏ Phiếu Trắng:' 
               : 'Bạn đã hy sinh, không thể tham gia bỏ phiếu.'}
           </p>
@@ -948,8 +987,35 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
                     )}
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: isDead ? '#94a3b8' : '#f8fafc', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span>#{p.seatNumber} {p.name} {isMe && '(Bạn)'} {p.isHost && '👑'}</span>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: isDead ? '#94a3b8' : '#f8fafc', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      <span>#{p.seatNumber} {p.name} {isMe && '(Bạn)'}</span>
+                      {p.isHost && <span style={{ color: '#f59e0b', fontSize: '0.75rem' }}>👑 Host</span>}
+                      {(gameState.mayorPlayerId === p.id || p.isMayor) && (
+                        <span style={{
+                          background: 'rgba(250, 204, 21, 0.2)',
+                          color: '#facc15',
+                          border: '1px solid rgba(250, 204, 21, 0.4)',
+                          borderRadius: '6px',
+                          padding: '1px 6px',
+                          fontSize: '0.68rem',
+                          fontWeight: 800,
+                        }}>
+                          👑 Thị Trưởng (2 phiếu)
+                        </span>
+                      )}
+                      {p.idiotRevealed && (
+                        <span style={{
+                          background: 'rgba(6, 182, 212, 0.2)',
+                          color: '#06b6d4',
+                          border: '1px solid rgba(6, 182, 212, 0.4)',
+                          borderRadius: '6px',
+                          padding: '1px 6px',
+                          fontSize: '0.68rem',
+                          fontWeight: 800,
+                        }}>
+                          🃏 Kẻ Ngốc (Lật Bài)
+                        </span>
+                      )}
                       {p.isSpeaking && (
                         <span style={{ fontSize: '0.68rem', color: '#4ade80', fontWeight: 800 }}>
                           [Đang Nói 🎙️]
@@ -968,7 +1034,7 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
                   </div>
                 </div>
 
-                {revealedRole && (
+                {revealedRole && !p.idiotRevealed && (
                   <span style={{
                     fontSize: '0.75rem',
                     background: 'rgba(255,255,255,0.1)',
