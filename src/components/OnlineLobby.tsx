@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { roomManager } from '../logic/roomManager';
-import { ClientGameState, RoomSettings } from '../types/multiplayer';
+import { ClientGameState, RoomSettings, PublicTableInfo } from '../types/multiplayer';
 import { RoleId } from '../types/game';
 import { OnlinePlayerGameView } from './OnlinePlayerGameView';
 import { ConfirmModal } from './ConfirmModal';
 import { AvatarPickerModal } from './AvatarPickerModal';
+import { GoldenHourBanner } from './GoldenHourBanner';
+import { HumanVerifyModal } from './HumanVerifyModal';
 import { WEREWOLF_AVATARS, WerewolfAvatar } from '../constants/avatars';
-import { Users, Crown, CheckCircle2, Clock, Copy, Check, ArrowLeft, Play, LogOut, ShieldAlert, Sliders, Sparkles } from 'lucide-react';
+import { soundEffects } from '../utils/soundEffects';
+import { Users, Crown, CheckCircle2, Clock, Copy, Check, ArrowLeft, Play, LogOut, ShieldAlert, Sliders, Sparkles, RefreshCw, KeyRound, Plus, ShieldCheck } from 'lucide-react';
 
 interface Props {
   onBackToOffline: () => void;
@@ -14,14 +17,34 @@ interface Props {
 }
 
 export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted }) => {
-  const [playerName, setPlayerName] = useState<string>('');
+  const [playerName, setPlayerName] = useState<string>(() => {
+    try {
+      return localStorage.getItem('masoi_player_name') || '';
+    } catch {
+      return '';
+    }
+  });
   const [selectedAvatarObj, setSelectedAvatarObj] = useState<WerewolfAvatar>(WEREWOLF_AVATARS[0]);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState<boolean>(false);
   const [inputRoomCode, setInputRoomCode] = useState<string>('');
-  const [activeView, setActiveView] = useState<'SELECT' | 'CREATE' | 'JOIN' | 'ROOM'>('SELECT');
+  const [tableNameInput, setTableNameInput] = useState<string>('');
+  const [activeView, setActiveView] = useState<'TABLES' | 'CREATE' | 'JOIN' | 'ROOM'>('TABLES');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
   const [showLeaveRoomConfirm, setShowLeaveRoomConfirm] = useState<boolean>(false);
+
+  // Danh sách bàn chơi trực tuyến & Anti-Bot Verification
+  const [publicTables, setPublicTables] = useState<PublicTableInfo[]>(() => {
+    try {
+      return roomManager.listPublicTables();
+    } catch {
+      return [];
+    }
+  });
+  const [isRefreshingTables, setIsRefreshingTables] = useState<boolean>(false);
+  const [isHumanVerified, setIsHumanVerified] = useState<boolean>(false);
+  const [isHumanModalOpen, setIsHumanModalOpen] = useState<boolean>(false);
+  const [pendingJoinTable, setPendingJoinTable] = useState<PublicTableInfo | null>(null);
 
   // Cấu hình phòng chơi nâng cao (Host Settings)
   const [showAdvancedSettings, setShowAdvancedSettings] = useState<boolean>(false);
@@ -41,6 +64,29 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
 
   const [gameState, setGameState] = useState<ClientGameState | null>(null);
 
+  // Làm mới danh sách bàn chơi
+  const refreshTables = useCallback(() => {
+    setIsRefreshingTables(true);
+    try {
+      const tables = roomManager.listPublicTables();
+      setPublicTables(tables);
+    } catch (err) {
+      console.error('Lỗi khi lấy danh sách bàn:', err);
+    } finally {
+      setTimeout(() => setIsRefreshingTables(false), 400);
+    }
+  }, []);
+
+  // Tự động load và refresh bàn chơi
+  useEffect(() => {
+    if (activeView === 'TABLES') {
+      const interval = setInterval(() => {
+        setPublicTables(roomManager.listPublicTables());
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [activeView]);
+
   // Đăng ký lắng nghe thay đổi trạng thái phòng từ RoomManager
   useEffect(() => {
     if (!currentSession) return;
@@ -59,6 +105,68 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
     };
   }, [currentSession, onGameStarted]);
 
+  // Thực thi vào phòng
+  const executeJoinRoom = (targetRoomId: string) => {
+    try {
+      const cleanRoomId = targetRoomId.trim().toUpperCase();
+      const res = roomManager.joinRoom(cleanRoomId, playerName.trim(), selectedAvatarObj.emoji);
+      try {
+        localStorage.setItem('masoi_player_name', playerName.trim());
+      } catch {}
+
+      setCurrentSession({
+        roomId: cleanRoomId,
+        playerId: res.playerId,
+        sessionToken: res.sessionToken,
+      });
+      setGameState(res.state);
+      setActiveView('ROOM');
+      soundEffects.triggerHaptic('medium');
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Không thể tham gia bàn chơi');
+    }
+  };
+
+  // Click vào bàn từ danh sách Table Lobby
+  const handleJoinTableClick = (table: PublicTableInfo) => {
+    if (!playerName.trim()) {
+      setErrorMessage('Vui lòng nhập tên thợ săn của bạn ở phía trên trước khi vào bàn!');
+      soundEffects.triggerHaptic('heavy');
+      return;
+    }
+    setErrorMessage(null);
+
+    // Kiểm tra bàn đã đầy hoặc đang chơi chưa
+    if (table.currentPlayers >= table.maxPlayers) {
+      setErrorMessage('Bàn chơi này đã đủ người!');
+      return;
+    }
+
+    if (table.phase !== 'LOBBY') {
+      setErrorMessage('Bàn chơi này trận đấu đã bắt đầu!');
+      return;
+    }
+
+    // Nếu chưa xác minh người thật -> Mở modal kiểm tra chống bot
+    if (!isHumanVerified) {
+      setPendingJoinTable(table);
+      setIsHumanModalOpen(true);
+      return;
+    }
+
+    executeJoinRoom(table.roomId);
+  };
+
+  // Vượt qua xác thực người thật
+  const handleHumanVerifySuccess = () => {
+    setIsHumanVerified(true);
+    setIsHumanModalOpen(false);
+    if (pendingJoinTable) {
+      executeJoinRoom(pendingJoinTable.roomId);
+      setPendingJoinTable(null);
+    }
+  };
+
   // Xử lý tạo phòng
   const handleCreateRoom = (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +177,12 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
     setErrorMessage(null);
 
     try {
+      try {
+        localStorage.setItem('masoi_player_name', playerName.trim());
+      } catch {}
+
       const customSettings: Partial<RoomSettings> = {
+        tableName: tableNameInput.trim() || undefined,
         discussionTimeSeconds: discussionTime,
         votingTimeSeconds: votingTime,
         nightActionTimeSeconds: nightTime,
@@ -87,12 +200,13 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
       });
       setGameState(res.state);
       setActiveView('ROOM');
+      soundEffects.triggerHaptic('medium');
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Có lỗi khi tạo phòng');
     }
   };
 
-  // Xử lý vào phòng
+  // Xử lý vào phòng bằng mã thủ công
   const handleJoinRoom = (e: React.FormEvent) => {
     e.preventDefault();
     if (!playerName.trim()) {
@@ -104,19 +218,7 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
       return;
     }
     setErrorMessage(null);
-
-    try {
-      const res = roomManager.joinRoom(inputRoomCode.trim().toUpperCase(), playerName.trim(), selectedAvatarObj.emoji);
-      setCurrentSession({
-        roomId: inputRoomCode.trim().toUpperCase(),
-        playerId: res.playerId,
-        sessionToken: res.sessionToken,
-      });
-      setGameState(res.state);
-      setActiveView('ROOM');
-    } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : 'Không thể vào phòng');
-    }
+    executeJoinRoom(inputRoomCode.trim().toUpperCase());
   };
 
   // Sao chép mã phòng
@@ -151,7 +253,7 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
   const handleLeaveRoom = () => {
     setCurrentSession(null);
     setGameState(null);
-    setActiveView('SELECT');
+    setActiveView('TABLES');
   };
 
   const isHost = gameState?.players.find((p) => p.id === currentSession?.playerId)?.isHost;
@@ -201,90 +303,320 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
         </div>
       )}
 
-      {/* VIEW 1: Chọn Tạo Phòng hoặc Vào Phòng */}
-      {activeView === 'SELECT' && (
+      {/* VIEW 1: SẢNH BÀN CHƠI TRỰC TUYẾN (JOIN TABLE LOBBY & CHỐNG BOT) */}
+      {activeView === 'TABLES' && (
         <div>
-          <div style={{ textAlign: 'center', padding: '24px 0' }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '8px' }}>🐺🌕</div>
-            <h1 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '0 0 6px 0', color: '#f8fafc' }}>
-              MA SÓI TRỰC TUYẾN
-            </h1>
-            <p style={{ fontSize: '0.9rem', color: '#94a3b8', margin: 0 }}>
-              Tạo phòng thi đấu nhiều người chơi hoặc tham gia cùng bạn bè
-            </p>
-          </div>
+          {/* Banner Khung Giờ Vàng Hội Tụ Thợ Săn Chống Bot */}
+          <GoldenHourBanner />
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '14px', marginTop: '10px' }}>
-            <button
-              onClick={() => setActiveView('CREATE')}
+          {/* Thanh Profile Thợ Săn & Chọn Avatar */}
+          <div
+            className="card-glass"
+            style={{
+              padding: '12px 16px',
+              borderRadius: '16px',
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              background: 'rgba(255, 255, 255, 0.04)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+            }}
+          >
+            <div
+              onClick={() => setIsAvatarModalOpen(true)}
               style={{
-                background: 'linear-gradient(135deg, #4f46e5, #3730a3)',
-                border: '1px solid rgba(129, 140, 248, 0.3)',
-                color: '#fff',
-                padding: '20px',
-                borderRadius: '16px',
-                textAlign: 'left',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '16px',
-                boxShadow: '0 8px 24px rgba(79, 70, 229, 0.25)',
-              }}
-            >
-              <div style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '12px',
-                background: 'rgba(255,255,255,0.15)',
+                width: '46px',
+                height: '46px',
+                borderRadius: '50%',
+                backgroundColor: '#1e1e2d',
+                border: `2px solid ${selectedAvatarObj.auraColor}`,
+                boxShadow: `0 0 12px ${selectedAvatarObj.glow}`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '1.5rem',
-              }}>
-                👑
+                fontSize: '1.6rem',
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+              title="Đổi Avatar Ma Sói"
+            >
+              {selectedAvatarObj.emoji}
+            </div>
+
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <ShieldCheck size={12} color="#818cf8" /> Thợ Săn Người Thật:
               </div>
-              <div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>Tạo Phòng Chơi Mới</div>
-                <div style={{ fontSize: '0.8rem', color: '#c7d2fe', marginTop: '2px' }}>
-                  Làm Chủ phòng, nhận mã 6 số và mời bạn bè tham gia
-                </div>
-              </div>
+              <input
+                type="text"
+                value={playerName}
+                onChange={(e) => {
+                  setPlayerName(e.target.value);
+                  try {
+                    localStorage.setItem('masoi_player_name', e.target.value);
+                  } catch {}
+                }}
+                placeholder="Nhập tên của bạn để vào bàn..."
+                maxLength={18}
+                style={{
+                  width: '100%',
+                  background: 'rgba(0, 0, 0, 0.25)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  padding: '6px 10px',
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+
+            <button
+              onClick={() => setIsAvatarModalOpen(true)}
+              style={{
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                color: '#cbd5e1',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+            >
+              Đổi Avatar
+            </button>
+          </div>
+
+          {/* Thanh Công Cụ: Tạo Bàn & Mã Riêng & Refresh */}
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+            <button
+              onClick={() => setActiveView('CREATE')}
+              style={{
+                flex: 1,
+                background: 'linear-gradient(135deg, #4f46e5, #3730a3)',
+                border: '1px solid rgba(129, 140, 248, 0.4)',
+                color: '#fff',
+                padding: '10px 14px',
+                borderRadius: '12px',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
+              }}
+            >
+              <Plus size={16} /> Tạo Bàn Mới
             </button>
 
             <button
               onClick={() => setActiveView('JOIN')}
               style={{
-                background: 'linear-gradient(135deg, #0f172a, #1e293b)',
-                border: '1px solid rgba(255,255,255,0.15)',
-                color: '#fff',
-                padding: '20px',
-                borderRadius: '16px',
-                textAlign: 'left',
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                color: '#cbd5e1',
+                padding: '10px 14px',
+                borderRadius: '12px',
+                fontWeight: 600,
+                fontSize: '0.85rem',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '16px',
+                gap: '6px',
               }}
+              title="Nhập mã 6 ký tự để vào bàn riêng"
             >
-              <div style={{
-                width: '48px',
-                height: '48px',
+              <KeyRound size={16} /> Nhập Mã
+            </button>
+
+            <button
+              onClick={refreshTables}
+              style={{
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                color: '#cbd5e1',
+                padding: '10px 12px',
                 borderRadius: '12px',
-                background: 'rgba(255,255,255,0.08)',
+                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '1.5rem',
-              }}>
-                🔑
-              </div>
-              <div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>Vào Phòng Bằng Mã</div>
-                <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '2px' }}>
-                  Nhập mã phòng 6 ký tự được bạn bè chia sẻ
-                </div>
-              </div>
+              }}
+              title="Làm mới danh sách bàn chơi"
+            >
+              <RefreshCw size={16} className={isRefreshingTables ? 'spin-icon' : ''} />
             </button>
+          </div>
+
+          {/* Tiêu đề Danh Sách Bàn */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Users size={16} color="#818cf8" />
+              <span>SẢNH BÀN CHƠI TRỰC TUYẾN</span>
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>({publicTables.length} bàn)</span>
+            </div>
+            <span style={{ fontSize: '0.72rem', color: '#34d399', fontWeight: 700 }}>
+              ● 100% Người Thật
+            </span>
+          </div>
+
+          {/* Danh Sách Các Bàn Đang Mở */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {publicTables.length === 0 ? (
+              <div
+                style={{
+                  padding: '32px 16px',
+                  textAlign: 'center',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  borderRadius: '16px',
+                  border: '1px dashed rgba(255, 255, 255, 0.15)',
+                }}
+              >
+                <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🌙</div>
+                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#e2e8f0', marginBottom: '4px' }}>
+                  Chưa có bàn chơi nào đang mở
+                </div>
+                <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '0 0 16px 0' }}>
+                  Hãy là người đầu tiên tạo bàn và mời thợ săn cùng hội tụ!
+                </p>
+                <button
+                  onClick={() => setActiveView('CREATE')}
+                  className="btn btn-primary"
+                  style={{ fontSize: '0.85rem', padding: '8px 16px' }}
+                >
+                  <Plus size={16} /> Tạo Bàn Đầu Tiên
+                </button>
+              </div>
+            ) : (
+              publicTables.map((table) => {
+                const isFull = table.currentPlayers >= table.maxPlayers;
+                const isPlaying = table.phase !== 'LOBBY';
+
+                return (
+                  <div
+                    key={table.roomId}
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(30, 27, 75, 0.6), rgba(17, 24, 39, 0.8))',
+                      border: '1px solid rgba(129, 140, 248, 0.25)',
+                      borderRadius: '16px',
+                      padding: '14px 16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px',
+                      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)',
+                    }}
+                  >
+                    {/* Top Row: Tên bàn & Trạng thái */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: '1rem', color: '#f8fafc' }}>
+                          {table.tableName}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                          <span>Chủ bàn: {table.hostAvatar} {table.hostName}</span>
+                          <span>•</span>
+                          <span style={{ fontFamily: 'monospace', color: '#818cf8' }}>Mã: {table.roomId}</span>
+                        </div>
+                      </div>
+
+                      {/* Badge trạng thái */}
+                      <div>
+                        {isPlaying ? (
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '12px',
+                            background: 'rgba(239, 68, 68, 0.2)',
+                            color: '#f87171',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            border: '1px solid rgba(239, 68, 68, 0.35)',
+                          }}>
+                            🔴 Đang Chiến
+                          </span>
+                        ) : isFull ? (
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '12px',
+                            background: 'rgba(245, 158, 11, 0.2)',
+                            color: '#fbbf24',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            border: '1px solid rgba(245, 158, 11, 0.35)',
+                          }}>
+                            ⚠️ Đã Đủ Người
+                          </span>
+                        ) : (
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '12px',
+                            background: 'rgba(16, 185, 129, 0.2)',
+                            color: '#34d399',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            border: '1px solid rgba(16, 185, 129, 0.35)',
+                          }}>
+                            🟢 Chờ Người ({table.maxPlayers - table.currentPlayers} Ghế Trống)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Middle Row: Thông tin số người & Luật chơi */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem', color: '#cbd5e1' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}>
+                          <Users size={14} color="#818cf8" />
+                          {table.currentPlayers} / {table.maxPlayers} Người
+                        </span>
+                        {table.enableMayor && (
+                          <span style={{ padding: '2px 6px', borderRadius: '6px', background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', fontSize: '0.7rem' }}>
+                            👑 Thị Trưởng
+                          </span>
+                        )}
+                        {table.allowExpansionRoles && (
+                          <span style={{ padding: '2px 6px', borderRadius: '6px', background: 'rgba(139, 92, 246, 0.15)', color: '#c084fc', fontSize: '0.7rem' }}>
+                            🃏 Mở Rộng
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Action Button Vào Bàn */}
+                    <button
+                      onClick={() => handleJoinTableClick(table)}
+                      disabled={isFull || isPlaying}
+                      style={{
+                        width: '100%',
+                        minHeight: '44px',
+                        borderRadius: '10px',
+                        border: 'none',
+                        cursor: isFull || isPlaying ? 'not-allowed' : 'pointer',
+                        background: isFull || isPlaying
+                          ? 'rgba(255, 255, 255, 0.08)'
+                          : 'linear-gradient(135deg, #6366f1, #4338ca)',
+                        color: isFull || isPlaying ? '#64748b' : '#fff',
+                        fontWeight: 800,
+                        fontSize: '0.9rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        transition: 'all 0.15s ease',
+                        boxShadow: isFull || isPlaying ? 'none' : '0 4px 14px rgba(99, 102, 241, 0.35)',
+                      }}
+                    >
+                      {isPlaying ? 'Trận Đấu Đang Diễn Ra' : isFull ? 'Bàn Chơi Đã Đầy' : '👉 Vào Bàn Chơi Ngay (1-Click)'}
+                    </button>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       )}
@@ -292,8 +624,28 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
       {/* VIEW 2: Form Tạo Phòng */}
       {activeView === 'CREATE' && (
         <form onSubmit={handleCreateRoom} style={{ background: '#12121e', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 16px 0' }}>👑 Tạo Phòng Mới</h2>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 16px 0' }}>👑 Tạo Bàn Chơi Mới</h2>
           
+          <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '6px' }}>Tên Bàn Chơi (Tùy chọn):</label>
+          <input
+            type="text"
+            value={tableNameInput}
+            onChange={(e) => setTableNameInput(e.target.value)}
+            placeholder="Ví dụ: Bàn Săn Sói Hà Nội #01"
+            maxLength={30}
+            style={{
+              width: '100%',
+              padding: '12px',
+              background: '#1e1e2f',
+              border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: '10px',
+              color: '#fff',
+              fontSize: '1rem',
+              marginBottom: '16px',
+              boxSizing: 'border-box',
+            }}
+          />
+
           <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '6px' }}>Tên của bạn:</label>
           <input
             type="text"
@@ -498,10 +850,10 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
           <div style={{ display: 'flex', gap: '10px' }}>
             <button
               type="button"
-              onClick={() => setActiveView('SELECT')}
+              onClick={() => setActiveView('TABLES')}
               style={{ flex: 1, padding: '12px', background: 'rgba(255,255,255,0.08)', border: 'none', color: '#e2e8f0', borderRadius: '10px', cursor: 'pointer' }}
             >
-              Hủy
+              Quay Lại Sảnh Bàn
             </button>
             <button
               type="submit"
@@ -607,10 +959,10 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
           <div style={{ display: 'flex', gap: '10px' }}>
             <button
               type="button"
-              onClick={() => setActiveView('SELECT')}
+              onClick={() => setActiveView('TABLES')}
               style={{ flex: 1, padding: '12px', background: 'rgba(255,255,255,0.08)', border: 'none', color: '#e2e8f0', borderRadius: '10px', cursor: 'pointer' }}
             >
-              Hủy
+              Quay Lại Sảnh Bàn
             </button>
             <button
               type="submit"
@@ -869,6 +1221,16 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
         selectedAvatarId={selectedAvatarObj.id}
         onSelect={(avatar) => setSelectedAvatarObj(avatar)}
         onClose={() => setIsAvatarModalOpen(false)}
+      />
+
+      {/* Modal xác thực người thật chống bot tự động */}
+      <HumanVerifyModal
+        isOpen={isHumanModalOpen}
+        onSuccess={handleHumanVerifySuccess}
+        onCancel={() => {
+          setIsHumanModalOpen(false);
+          setPendingJoinTable(null);
+        }}
       />
     </div>
   );

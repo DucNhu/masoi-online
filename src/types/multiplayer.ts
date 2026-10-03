@@ -9,6 +9,7 @@ export type RoomPhase =
   | 'GAME_OVER';
 
 export interface RoomSettings {
+  tableName?: string;
   maxPlayers: number;
   discussionTimeSeconds: number;
   votingTimeSeconds: number;
@@ -18,6 +19,20 @@ export interface RoomSettings {
   isPrivate: boolean;
   enableMayor?: boolean;
   enableFoolImmunity?: boolean;
+}
+
+export interface PublicTableInfo {
+  roomId: string;
+  tableName: string;
+  hostName: string;
+  hostAvatar: string;
+  currentPlayers: number;
+  maxPlayers: number;
+  phase: RoomPhase;
+  isPrivate: boolean;
+  enableMayor?: boolean;
+  allowExpansionRoles?: boolean;
+  createdAt: number;
 }
 
 export interface NetworkPlayer {
@@ -81,6 +96,7 @@ export interface ServerGameState {
   chatMessages: ChatMessage[];
   winner: 'VILLAGERS' | 'WEREWOLVES' | 'LOVERS' | null;
   historyLog: string[];
+  createdAt?: number;
 }
 
 /**

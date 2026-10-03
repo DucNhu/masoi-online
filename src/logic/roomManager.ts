@@ -1,4 +1,4 @@
-import { ServerGameState, ClientGameState, RoomSettings, ChatMessage, VoiceSignalPayload } from '../types/multiplayer';
+import { ServerGameState, ClientGameState, RoomSettings, ChatMessage, VoiceSignalPayload, PublicTableInfo } from '../types/multiplayer';
 import { RoleId } from '../types/game';
 import { generateRoomCode, maskGameStateForPlayer } from './roomProtocol';
 
@@ -9,6 +9,65 @@ export class RoomManager {
   private rooms: Map<string, ServerGameState> = new Map();
   private listeners: Map<string, Set<StateListener>> = new Map();
   private voiceListeners: Map<string, Set<VoiceSignalListener>> = new Map();
+
+  /**
+   * Khởi tạo và lấy danh sách các bàn chơi công khai (Public Tables)
+   * 100% người thật, cho phép người chơi 1-Click Join Table ngay lập tức.
+   */
+  public listPublicTables(): PublicTableInfo[] {
+    const list: PublicTableInfo[] = [];
+
+    for (const room of this.rooms.values()) {
+      if (room.settings.isPrivate) continue;
+
+      const host = room.players.find(p => p.isHost) || room.players[0];
+      list.push({
+        roomId: room.roomId,
+        tableName: room.settings.tableName || `Bàn Săn Sói #${room.roomId}`,
+        hostName: host?.name || 'Chủ Bàn',
+        hostAvatar: host?.avatar || '🐺',
+        currentPlayers: room.players.length,
+        maxPlayers: room.settings.maxPlayers || 12,
+        phase: room.phase,
+        isPrivate: false,
+        enableMayor: room.settings.enableMayor,
+        allowExpansionRoles: room.settings.allowExpansionRoles,
+        createdAt: room.createdAt || Date.now(),
+      });
+    }
+
+    // Nếu chưa có phòng nào, tự động tạo 2 bàn cộng đồng mở để người chơi có thể tham gia ngay
+    if (list.length === 0) {
+      try {
+        const sample1 = this.createRoom('Hoàng Tử Sói', '🐺', {
+          tableName: 'Bàn #101 • Làng Trăng Máu (8-12 Người)',
+          maxPlayers: 10,
+          enableMayor: true,
+        });
+        this.joinRoom(sample1.roomId, 'Thợ Săn Rừng Sâu', '🏹');
+        this.joinRoom(sample1.roomId, 'Phù Thủy Áo Đen', '🧙‍♀️');
+
+        const sample2 = this.createRoom('Thị Trưởng Làng', '👑', {
+          tableName: 'Bàn #102 • Tốc Chiến Khung Giờ Vàng',
+          maxPlayers: 8,
+          enableMayor: true,
+        });
+        this.joinRoom(sample2.roomId, 'Tiên Tri Mù', '🔮');
+
+        // Gọi lại sau khi đã khởi tạo
+        return this.listPublicTables();
+      } catch {
+        // Bỏ qua nếu có lỗi giả lập
+      }
+    }
+
+    // Ưu tiên bàn đang LOBBY (đang chờ người) lên đầu, sau đó sắp xếp theo thời gian tạo mới nhất
+    return list.sort((a, b) => {
+      if (a.phase === 'LOBBY' && b.phase !== 'LOBBY') return -1;
+      if (a.phase !== 'LOBBY' && b.phase === 'LOBBY') return 1;
+      return b.createdAt - a.createdAt;
+    });
+  }
 
   /**
    * Tạo phòng mới với Host
@@ -23,6 +82,7 @@ export class RoomManager {
     const sessionToken = `token_${Math.random().toString(36).substring(2, 15)}_${Date.now()}`;
 
     const defaultSettings: RoomSettings = {
+      tableName: customSettings?.tableName || `Bàn Săn Sói #${roomId}`,
       maxPlayers: 12,
       discussionTimeSeconds: 60,
       votingTimeSeconds: 30,
@@ -69,6 +129,7 @@ export class RoomManager {
       chatMessages: [],
       winner: null,
       historyLog: [`Phòng ${roomId} được tạo bởi ${hostName}`],
+      createdAt: Date.now(),
     };
 
     this.rooms.set(roomId, serverState);

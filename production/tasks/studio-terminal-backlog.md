@@ -60,4 +60,15 @@
 | TASK-403 | Xây dựng UI Cài Đặt Phòng/Trận Đấu Nâng Cao & Huy Hiệu Thị Trưởng, Kẻ Ngốc trên Bàn Chơi | Frontend Dev | DONE | TASK-401, 402 | Custom timer picker, badge 👑 Thị Trưởng, badge 🃏 Kẻ Ngốc trên bàn tròn |
 | TASK-404 | QA Test Suite Sprint 5: Kiểm thử Thị Trưởng x2 vote, Di chúc, Kẻ Ngốc thoát chết, Timer tùy chỉnh | QA Lead | DONE | TASK-401..403 | 100% test coverage cho luật mở rộng Sprint 5 (tests/sprint5ExpandedRules.test.mjs) |
 
+---
+
+## SPRINT 6: Game Ma Sói Thực Thụ — Sảnh Bàn Chơi (Join Table) & Chống Bot Khung Giờ Vàng (Zero-Bot Golden Hours) — ĐÃ HOÀN THÀNH
+
+| Task ID | Tên Task | Role | Trạng thái | Dependency | Ghi chú |
+|---|---|---|---|---|---|
+| TASK-501 | Schema PublicTableInfo, API listPublicTables(), joinTable() & Golden Hours Calculation Engine | System Architect / Backend | DONE | SPRINT 5 | `src/types/multiplayer.ts`, `src/utils/goldenHours.ts`, `src/logic/roomManager.ts` |
+| TASK-502 | Xây dựng UI Sảnh Bàn Chơi (Table Lobby), Banner Khung Giờ Vàng & Modal Xác Thực Người Thật | Frontend Lead | DONE | TASK-501 | `src/components/OnlineLobby.tsx`, `TableLobbyView`, `GoldenHourBanner`, `HumanVerifyModal` |
+| TASK-503 | Đổi tên nhận diện sang Game Ma Sói Thực Thụ, thay thế bài Tú Lơ Khơ bằng Thẻ Bài Ma Sói | Creative / Frontend | DONE | TASK-501 | `src/components/Header.tsx`, `src/App.tsx`, `index.html`, Role Cards |
+| TASK-504 | QA Test Suite Sprint 6 & Pipeline Verification | QA Lead | DONE | TASK-501..503 | `tests/sprint6AntiBotAndTableLobby.test.mjs`, `npm run verify` |
+
 

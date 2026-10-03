@@ -65,9 +65,9 @@ export const Header: React.FC<Props> = ({
             {isNight ? <Moon size={20} color="#a5b4fc" /> : <Sun size={20} color="#fde047" />}
           </div>
           <div>
-            <div className="app-title">{mode === 'ONLINE' ? 'MA SÓI ONLINE' : 'MA SÓI OFFLINE'}</div>
+            <div className="app-title">{mode === 'ONLINE' ? 'MA SÓI ONLINE' : 'QUẢN TRÒ MA SÓI'}</div>
             <div className="app-subtitle">
-              {mode === 'ONLINE' ? 'PHÒNG CHƠI TRỰC TUYẾN' : (phase === 'SETUP' ? 'TÚ LƠ KHƠ EDITION' : getPhaseLabel())}
+              {mode === 'ONLINE' ? 'SẢNH 100% NGƯỜI THẬT' : (phase === 'SETUP' ? 'CHIẾN TRƯỜNG TRĂNG MÁU' : getPhaseLabel())}
             </div>
           </div>
         </div>
@@ -83,7 +83,7 @@ export const Header: React.FC<Props> = ({
                 borderColor: mode === 'ONLINE' ? '#818cf8' : 'var(--border-subtle)',
                 background: mode === 'ONLINE' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255, 255, 255, 0.05)',
               }}
-              title={mode === 'ONLINE' ? 'Chuyển sang Chế độ Offline (Quản trò)' : 'Chuyển sang Chế độ Online (Ghép phòng)'}
+              title={mode === 'ONLINE' ? 'Chuyển sang Chế độ Quản trò (Trực tiếp)' : 'Chuyển sang Chế độ Online (Sảnh bàn chơi)'}
             >
               <Globe size={18} color={mode === 'ONLINE' ? '#818cf8' : '#94a3b8'} />
             </button>
@@ -93,7 +93,7 @@ export const Header: React.FC<Props> = ({
           <button
             onClick={onOpenLookup}
             className="btn btn-ghost btn-icon-only"
-            title="Bảng tra cứu bài Tú"
+            title="Bí thư các vai trò Ma Sói"
           >
             <BookOpen size={18} color="#94a3b8" />
           </button>

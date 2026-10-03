@@ -549,32 +549,49 @@ export const App: React.FC = () => {
           />
         )}
 
-        {/* Tab 4: CARDS CHEATSHEET */}
+        {/* Tab 4: ROLE LORE CHEATSHEET */}
         {activeTab === 'CARDS' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div className="card-glass" style={{ padding: '16px', textAlign: 'center' }}>
               <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }} className="font-cinzel">
-                🃏 Quy Ước Lá Bài Tây & Ma Sói
+                🐺 Bí Kíp Thẻ Bài Ma Sói
               </h3>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                Đưa màn hình này cho người chơi tham khảo khi xem lá bài của mình.
+                Tra cứu danh sách vai trò, kỹ năng thần bí và điều kiện thắng của từng phe.
               </p>
             </div>
 
-            {['A', 'K', 'Q', 'J', '10', '2-9'].map(rankKey => {
-              const roleId = rankKey === '2-9' ? 'VILLAGER' : gameState.cardMappings[rankKey] || 'VILLAGER';
-              const roleDef = ROLE_DEFINITIONS[roleId];
+            {['WEREWOLF', 'SEER', 'BODYGUARD', 'WITCH', 'HUNTER', 'MAYOR', 'IDIOT', 'VILLAGER'].map(roleKey => {
+              const roleDef = ROLE_DEFINITIONS[roleKey as keyof typeof ROLE_DEFINITIONS];
+              if (!roleDef) return null;
               return (
-                <div key={rankKey} className="card-glass" style={{ padding: '12px 14px' }}>
+                <div key={roleKey} className="card-glass" style={{ padding: '12px 14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div className="playing-card-badge" style={{ minWidth: '46px', height: '42px', fontSize: '1rem' }}>
-                      {rankKey}
+                    <div style={{
+                      minWidth: '46px',
+                      height: '46px',
+                      borderRadius: '12px',
+                      background: 'rgba(255, 255, 255, 0.06)',
+                      border: `1.5px solid ${roleDef.color}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.4rem',
+                      boxShadow: `0 0 10px ${roleDef.color}30`,
+                    }}>
+                      {roleDef.name.includes('Sói') ? '🐺' :
+                       roleDef.name.includes('Tiên Tri') ? '🔮' :
+                       roleDef.name.includes('Bảo Vệ') ? '🛡️' :
+                       roleDef.name.includes('Phù Thủy') ? '🧙‍♀️' :
+                       roleDef.name.includes('Thợ Săn') ? '🏹' :
+                       roleDef.name.includes('Thị Trưởng') ? '👑' :
+                       roleDef.name.includes('Kẻ Ngốc') ? '🃏' : '👨‍🌾'}
                     </div>
                     <div>
                       <div style={{ fontWeight: 800, fontSize: '1rem', color: roleDef.color }}>
                         {roleDef.name}
                       </div>
-                      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.35 }}>
                         {roleDef.description}
                       </p>
                     </div>
@@ -649,7 +666,7 @@ export const App: React.FC = () => {
             className={`nav-item ${activeTab === 'CARDS' ? 'active' : ''}`}
           >
             <BookOpen size={20} />
-            <span>Bài Tú</span>
+            <span>Vai Trò</span>
           </button>
         </nav>
       )}
