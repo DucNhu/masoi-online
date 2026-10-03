@@ -105,6 +105,7 @@ export interface ServerGameState {
  */
 export interface ClientGameState {
   roomId: string;
+  tableName?: string;
   phase: RoomPhase;
   subPhase?: string;
   dayNumber: number;

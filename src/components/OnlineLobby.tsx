@@ -11,7 +11,8 @@ import { LeaderboardModal } from './LeaderboardModal';
 import { HunterProfileModal } from './HunterProfileModal';
 import { WEREWOLF_AVATARS, WerewolfAvatar } from '../constants/avatars';
 import { soundEffects } from '../utils/soundEffects';
-import { Users, Crown, CheckCircle2, Clock, Copy, Check, ArrowLeft, Play, LogOut, ShieldAlert, Sliders, Sparkles, RefreshCw, KeyRound, Plus, ShieldCheck, Trophy, Award } from 'lucide-react';
+import { Users, Crown, CheckCircle2, Clock, Copy, Check, ArrowLeft, Play, LogOut, ShieldAlert, Sliders, Sparkles, RefreshCw, KeyRound, Plus, ShieldCheck, Trophy, Award, Share2 } from 'lucide-react';
+import { shareRoomInvite, extractRoomCodeFromUrl, clearRoomCodeFromUrl } from '../utils/shareInvite';
 
 interface Props {
   onBackToOffline: () => void;
@@ -33,6 +34,7 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
   const [activeView, setActiveView] = useState<'TABLES' | 'CREATE' | 'JOIN' | 'ROOM'>('TABLES');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
+  const [copiedShare, setCopiedShare] = useState<boolean>(false);
   const [showLeaveRoomConfirm, setShowLeaveRoomConfirm] = useState<boolean>(false);
 
   // Danh sách bàn chơi trực tuyến & Anti-Bot Verification
@@ -78,6 +80,16 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
       console.error('Lỗi khi lấy danh sách bàn:', err);
     } finally {
       setTimeout(() => setIsRefreshingTables(false), 400);
+    }
+  }, []);
+
+  // Tự động kiểm tra liên kết mời (?room=CODE) khi truy cập
+  useEffect(() => {
+    const inviteCode = extractRoomCodeFromUrl();
+    if (inviteCode) {
+      setInputRoomCode(inviteCode);
+      setActiveView('JOIN');
+      clearRoomCodeFromUrl();
     }
   }, []);
 
@@ -231,6 +243,17 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
     navigator.clipboard.writeText(currentSession.roomId);
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
+  };
+
+  // Chia sẻ liên kết mời vào bàn
+  const handleShareInvite = async () => {
+    if (!currentSession) return;
+    soundEffects.triggerHaptic('medium');
+    const result = await shareRoomInvite(currentSession.roomId, gameState?.tableName);
+    if (result.success) {
+      setCopiedShare(true);
+      setTimeout(() => setCopiedShare(false), 2500);
+    }
   };
 
   // Sẵn sàng / Hủy sẵn sàng
@@ -1059,25 +1082,52 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
             }}>
               {currentSession.roomId}
             </div>
-            <button
-              onClick={handleCopyCode}
-              style={{
-                background: copiedCode ? '#059669' : 'rgba(255,255,255,0.1)',
-                border: 'none',
-                color: '#fff',
-                padding: '6px 14px',
-                borderRadius: '8px',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                cursor: 'pointer',
-              }}
-            >
-              {copiedCode ? <Check size={14} /> : <Copy size={14} />}
-              {copiedCode ? 'Đã Sao Chép Mã!' : 'Sao Chép Mã Phòng'}
-            </button>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={handleCopyCode}
+                style={{
+                  background: copiedCode ? '#059669' : 'rgba(255,255,255,0.1)',
+                  border: 'none',
+                  color: '#fff',
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s ease',
+                }}
+              >
+                {copiedCode ? <Check size={14} /> : <Copy size={14} />}
+                {copiedCode ? 'Đã Sao Chép!' : 'Sao Chép Mã'}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleShareInvite}
+                style={{
+                  background: copiedShare ? '#059669' : 'linear-gradient(135deg, #4f46e5, #4338ca)',
+                  border: 'none',
+                  color: '#fff',
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {copiedShare ? <Check size={14} /> : <Share2 size={14} />}
+                {copiedShare ? 'Đã Sao Chép Link!' : 'Chia Sẻ Link Mời'}
+              </button>
+            </div>
           </div>
 
           {/* Thanh Thông Tin Phòng */}

@@ -99,8 +99,18 @@
 
 | Task ID | Tên Task | Role | Trạng thái | Dependency | Ghi chú |
 |---|---|---|---|---|---|
-| TASK-801 | Cơ Chế 1-Click Copy & Share Link Mời Bạn Bè (`?room=CODE` deep link) | Backend / Frontend | READY | SPRINT 8 | Hỗ trợ Web Share API & Clipboard fallback |
-| TASK-802 | Nhật Ký Ván Đấu Chi Tiết (Game Chronological Event Log Modal & Timeline) | Game Engine Dev | READY | TASK-801 | Xem lại diễn biến từng đêm / ngày của trận đấu |
-| TASK-803 | QA Test Suite Sprint 9 & Pipeline Verification | QA Lead | READY | TASK-801..802 | `tests/sprint9ShareAndHistory.test.mjs`, `npm run verify` |
+| TASK-801 | Cơ Chế 1-Click Copy & Share Link Mời Bạn Bè (`?room=CODE` deep link) | Backend / Frontend | DONE | SPRINT 8 | Hỗ trợ Web Share API & Clipboard fallback, auto-fill URL |
+| TASK-802 | Nhật Ký Ván Đấu Chi Tiết (Game Chronological Event Log Modal & Timeline) | Game Engine Dev | DONE | TASK-801 | `MatchHistoryModal.tsx`, xem lại toàn bộ sự kiện ván đấu |
+| TASK-803 | QA Test Suite Sprint 9 & Pipeline Verification | QA Lead | DONE | TASK-801..802 | `tests/sprint9ShareAndHistory.test.mjs`, `npm run verify` |
+
+---
+
+## SPRINT 10: Tối Ưu Trải Nghiệm Mobile Native, Dynamic Island & Kết Nối Mạng (Network Health & Reconnection Banner)
+
+| Task ID | Tên Task | Role | Trạng thái | Dependency | Ghi chú |
+|---|---|---|---|---|---|
+| TASK-901 | Tối Ưu An Toàn Viewport & Dynamic Island cho iPhone 16 Pro & Mobile Touch UX | Mobile / Frontend | READY | SPRINT 9 | `safe-area-inset`, chống double tap zoom, touch target >= 44px |
+| TASK-902 | Bảng Thông Báo Trạng Thái Kết Nối & Độ Trễ Mạng (Network Health Ping & Reconnect Toast) | Engine / Frontend | READY | TASK-901 | Hiển thị Ping thời gian thực và tự động khôi phục kết nối |
+| TASK-903 | QA Test Suite Sprint 10 & Release Candidate Audit | QA Lead | READY | TASK-901..902 | `tests/sprint10MobileAndNetwork.test.mjs`, `npm run verify` |
 
 

@@ -19,9 +19,11 @@ import {
   Trophy, 
   Vote,
   Mic,
-  MicOff
+  MicOff,
+  Scroll
 } from 'lucide-react';
 import { EmotePicker } from './EmotePicker';
+import { MatchHistoryModal } from './MatchHistoryModal';
 
 interface Props {
   gameState: ClientGameState;
@@ -31,6 +33,7 @@ interface Props {
 export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }) => {
   const [showRoleDetails, setShowRoleDetails] = useState<boolean>(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState<boolean>(false);
+  const [showHistoryModal, setShowHistoryModal] = useState<boolean>(false);
   const [selectedNightTargetId, setSelectedNightTargetId] = useState<string | null>(null);
   const [nightActionSubmitted, setNightActionSubmitted] = useState<boolean>(false);
   
@@ -180,6 +183,29 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
           >
             {!isMuted ? <Mic size={14} color="#4ade80" /> : <MicOff size={14} color="#fca5a5" />}
             {!isMuted ? 'Mic BẬT' : 'Mic TẮT'}
+          </button>
+
+          <button
+            onClick={() => {
+              soundEffects.triggerHaptic('light');
+              setShowHistoryModal(true);
+            }}
+            title="Xem nhật ký diễn biến ván đấu"
+            style={{
+              background: 'rgba(99, 102, 241, 0.15)',
+              border: '1px solid rgba(99, 102, 241, 0.3)',
+              color: '#c7d2fe',
+              padding: '5px 10px',
+              borderRadius: '8px',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+          >
+            <Scroll size={13} /> Nhật Ký
           </button>
 
           <button
@@ -1069,6 +1095,15 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
           })}
         </div>
       </div>
+
+      {/* Modal Nhật ký diễn biến ván đấu */}
+      <MatchHistoryModal
+        isOpen={showHistoryModal}
+        onClose={() => setShowHistoryModal(false)}
+        roomId={gameState.roomId}
+        historyLog={roomManager.getServerRoom(gameState.roomId)?.historyLog || []}
+        winner={gameState.winner}
+      />
 
       {/* Modal xác nhận rời trận đấu */}
       <ConfirmModal
