@@ -127,9 +127,9 @@
 ## SPRINT 12: Chế Độ Tập Luyện Đêm Trăng (Solo Hunter Practice Mode Với AI Bots)
 | Task ID | Tên Task | Role | Trạng thái | Dependency | Ghi chú |
 |---|---|---|---|---|---|
-| TASK-1101 | AI Bot Engine (Hành vi phán đoán ban đêm & phản biện ban ngày của Bot Dân / Bot Sói) | Game Engine Dev | READY | SPRINT 11 | Thuật toán phán đoán suy luận cục bộ, không tốn tài nguyên |
-| TASK-1102 | UI Chế Độ Tập Luyện Solo (Luyện kỹ năng Thợ Săn, Tiên Tri, Phù Thủy đối đầu Bot) | Frontend Dev | READY | TASK-1101 | Giúp người mới làm quen luật chơi trước khi vào phòng người thật |
-| TASK-1103 | QA Test Suite Sprint 12 & Pipeline Verification | QA Lead | READY | TASK-1101..1102 | `tests/sprint12SoloPractice.test.mjs`, `npm run verify` |
+| TASK-1101 | AI Bot Engine (Hành vi phán đoán ban đêm & phản biện ban ngày của Bot Dân / Bot Sói) | Game Engine Dev | DONE | SPRINT 11 | Thuật toán phán đoán suy luận cục bộ, không tốn tài nguyên |
+| TASK-1102 | UI Chế Độ Tập Luyện Solo (Luyện kỹ năng Thợ Săn, Tiên Tri, Phù Thủy đối đầu Bot) | Frontend Dev | DONE | TASK-1101 | Giúp người mới làm quen luật chơi trước khi vào phòng người thật |
+| TASK-1103 | QA Test Suite Sprint 12 & Pipeline Verification | QA Lead | DONE | TASK-1101..1102 | `tests/sprint12SoloPractice.test.mjs`, `npm run verify` |
 
 
 

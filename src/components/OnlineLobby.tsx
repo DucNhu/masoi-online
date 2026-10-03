@@ -11,10 +11,12 @@ import { LeaderboardModal } from './LeaderboardModal';
 import { HunterProfileModal } from './HunterProfileModal';
 import { WEREWOLF_AVATARS, WerewolfAvatar } from '../constants/avatars';
 import { soundEffects } from '../utils/soundEffects';
-import { Users, Crown, CheckCircle2, Clock, Copy, Check, ArrowLeft, Play, LogOut, ShieldAlert, Sliders, Sparkles, RefreshCw, KeyRound, Plus, ShieldCheck, Trophy, Award, Share2, Eye } from 'lucide-react';
+import { Users, Crown, CheckCircle2, Clock, Copy, Check, ArrowLeft, Play, LogOut, ShieldAlert, Sliders, Sparkles, RefreshCw, KeyRound, Plus, ShieldCheck, Trophy, Award, Share2, Eye, Sword } from 'lucide-react';
 import { shareRoomInvite, extractRoomCodeFromUrl, clearRoomCodeFromUrl } from '../utils/shareInvite';
 import { NetworkStatusBadge } from './NetworkStatusBadge';
 import { SpectatorLiveView } from './SpectatorLiveView';
+import { SoloPracticeModal } from './SoloPracticeModal';
+import { BotPlayerEngine } from '../logic/botPlayerEngine';
 
 interface Props {
   onBackToOffline: () => void;
@@ -54,6 +56,7 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
   const [pendingJoinTable, setPendingJoinTable] = useState<PublicTableInfo | null>(null);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState<boolean>(false);
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
+  const [isPracticeModalOpen, setIsPracticeModalOpen] = useState<boolean>(false);
 
   // Cấu hình phòng chơi nâng cao (Host Settings)
   const [showAdvancedSettings, setShowAdvancedSettings] = useState<boolean>(false);
@@ -146,6 +149,67 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
       soundEffects.triggerHaptic('medium');
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Không thể vào xem trận đấu');
+    }
+  };
+
+  // Khởi động ván Tập Luyện Solo đối đầu 6 AI Bots
+  const handleStartSoloPractice = (role: RoleId, _difficulty: 'EASY' | 'HARD') => {
+    setIsPracticeModalOpen(false);
+    try {
+      const res = roomManager.createRoom(
+        playerName.trim() || 'Thợ Săn Solo',
+        selectedAvatarObj.emoji,
+        {
+          tableName: `Tập Luyện Solo • ${role}`,
+          maxPlayers: 7,
+          allowExpansionRoles: true,
+          isPrivate: true,
+        }
+      );
+
+      const serverRoom = roomManager.getServerRoom(res.roomId);
+      if (serverRoom) {
+        // Gán vai trò mong muốn cho người chơi
+        const me = serverRoom.players.find((p) => p.id === res.playerId);
+        if (me) {
+          me.role = role;
+        }
+
+        // Tạo 6 Bots thông minh
+        const bots = BotPlayerEngine.generatePracticeBots(role, 7);
+        bots.forEach((bot, index) => {
+          serverRoom.players.push({
+            id: bot.id,
+            name: bot.name,
+            avatar: bot.avatar,
+            isHost: false,
+            isReady: true,
+            isAlive: true,
+            seatNumber: index + 2,
+            hasVoted: false,
+            hasActedNight: false,
+            role: bot.role,
+            sessionToken: `token_${bot.id}`,
+          });
+        });
+
+        // Bắt đầu game ngay lập tức
+        roomManager.startGame(res.roomId, res.playerId);
+      }
+
+      setCurrentSession({
+        roomId: res.roomId,
+        playerId: res.playerId,
+        sessionToken: res.sessionToken,
+      });
+      const maskedState = roomManager.getMaskedState(res.roomId, res.playerId);
+      setGameState(maskedState);
+      if (onGameStarted) {
+        onGameStarted(maskedState);
+      }
+      soundEffects.triggerHaptic('medium');
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Có lỗi khi khởi tạo ván tập luyện');
     }
   };
 
@@ -512,8 +576,8 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
             </button>
           </div>
 
-          {/* Thanh Nút Phụ: Bảng Xếp Hạng & Hồ Sơ Cá Nhân */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
+          {/* Thanh Nút Phụ: Bảng Xếp Hạng, Hồ Sơ & Luyện Tập Solo AI */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '16px' }}>
             <button
               onClick={() => {
                 soundEffects.triggerHaptic('light');
@@ -523,18 +587,18 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
                 background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(180, 83, 9, 0.25))',
                 border: '1px solid rgba(245, 158, 11, 0.4)',
                 color: '#fde047',
-                padding: '8px 12px',
+                padding: '8px 8px',
                 borderRadius: '10px',
                 fontWeight: 700,
-                fontSize: '0.8rem',
+                fontSize: '0.75rem',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '6px',
+                gap: '4px',
               }}
             >
-              <Trophy size={14} color="#fde047" /> Bảng Xếp Hạng
+              <Trophy size={13} color="#fde047" /> Xếp Hạng
             </button>
 
             <button
@@ -546,18 +610,41 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
                 background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(67, 56, 202, 0.25))',
                 border: '1px solid rgba(99, 102, 241, 0.4)',
                 color: '#a5b4fc',
-                padding: '8px 12px',
+                padding: '8px 8px',
                 borderRadius: '10px',
                 fontWeight: 700,
-                fontSize: '0.8rem',
+                fontSize: '0.75rem',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '6px',
+                gap: '4px',
               }}
             >
-              <Award size={14} color="#a5b4fc" /> Hồ Sơ & Huy Hiệu
+              <Award size={13} color="#a5b4fc" /> Hồ Sơ & Badge
+            </button>
+
+            <button
+              onClick={() => {
+                soundEffects.triggerHaptic('light');
+                setIsPracticeModalOpen(true);
+              }}
+              style={{
+                background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(126, 34, 206, 0.25))',
+                border: '1px solid rgba(168, 85, 247, 0.4)',
+                color: '#e9d5ff',
+                padding: '8px 8px',
+                borderRadius: '10px',
+                fontWeight: 700,
+                fontSize: '0.75rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px',
+              }}
+            >
+              <Sword size={13} color="#c084fc" /> Luyện Solo (AI)
             </button>
           </div>
 
@@ -1417,6 +1504,13 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
       <HunterProfileModal
         isOpen={isProfileOpen}
         onClose={() => setIsProfileOpen(false)}
+      />
+
+      {/* Modal Huấn Luyện Thợ Săn Solo với AI Bots */}
+      <SoloPracticeModal
+        isOpen={isPracticeModalOpen}
+        onClose={() => setIsPracticeModalOpen(false)}
+        onStartPractice={handleStartSoloPractice}
       />
     </div>
   );

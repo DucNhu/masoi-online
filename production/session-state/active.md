@@ -1,44 +1,44 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-10-03 15:13 (Asia/Ho_Chi_Minh) — Autonomous Execution Sprint 11 DONE.
-- **Mục tiêu**: **Sprint 11: Chế Độ Khán Giả (Spectator Mode / Xem Trực Tiếp) & Cổ Vũ Live Cheers [COMPLETED]**.
-- **Quyết định định hướng**: Mở rộng khả năng theo dõi giải đấu và ván đấu trực tiếp cho người đến sau mà không chiếm slot người chơi, đồng thời tuân thủ cơ chế Zero-Knowledge Masking tuyệt đối chống gian lận/soi vai trò.
+- **Thời gian cập nhật**: 2026-10-03 15:16 (Asia/Ho_Chi_Minh) — Autonomous Execution Sprint 12 DONE.
+- **Mục tiêu**: **Sprint 12: Chế Độ Huấn Luyện Thợ Săn Solo (AI Bots Practice Mode) [COMPLETED]**.
+- **Quyết định định hướng**: Bổ sung chế độ tập luyện ngoại tuyến giúp người chơi mới và các thợ săn rèn luyện kỹ năng phán đoán, phân tích lời thoại và phản biện mà không phụ thuộc vào phòng trực tuyến.
 - **Nhánh làm việc**: `feature/ma-soi-online`.
 - **Mô hình vận hành**: Game Studio Hierarchy (PO → PM → Executor Roles: Game Engine Dev / Architect / Frontend / QA).
 
 ---
 
-## 1. Kết Quả Triển Khai Sprint 11 (Spectator Mode & Live Audience Cheers)
-- **TASK-1001 [DONE]**:
-  - `src/types/multiplayer.ts`: Bổ sung `SpectatorInfo`, `LiveCheer`, `channel: 'SPECTATOR'` trong `ChatMessage`, mở rộng `ServerGameState` và `ClientGameState` với `isSpectator`, `spectatorsCount`, `liveCheers`.
-  - `src/logic/roomProtocol.ts`: Nâng cấp `maskGameStateForPlayer()` với nguyên tắc bảo mật chống gian lận: Khán giả không được biết vai trò của bất kỳ người chơi còn sống nào trong khi ván đang diễn ra; chỉ tiết lộ người đã chết hoặc toàn bộ khi GAME_OVER.
-  - `src/logic/roomManager.ts`: Triển khai `joinAsSpectator()`, `leaveSpectator()`, `sendCheer()` và tích hợp phân quyền chat `SPECTATOR` channel.
-- **TASK-1002 [DONE]**:
-  - `src/components/SpectatorLiveView.tsx`: Màn hình khán đài thời gian thực với thanh Live Reactions cổ vũ (👏, ❤️, 🔥, 🐺, 🍿), hiệu ứng bay bồng bềnh `floatUpAndFade`, sơ đồ bàn tròn người chơi (chống soi role người sống), kênh chat khán đài và modal xem nhật ký.
-  - `src/components/OnlineLobby.tsx`: Bổ sung nút "👀 Xem Trận Đấu Trực Tiếp" nổi bật trên từng thẻ bàn chơi đang diễn ra, cho phép 1-click vào khán đài ngay lập tức.
-- **TASK-1003 [DONE]**:
-  - `tests/sprint11SpectatorMode.test.mjs`: 5/5 test cases PASSED 100%.
-  - Toàn bộ **14 / 14 Test Suites PASS 100%** (53/53 test cases).
+## 1. Kết Quả Triển Khai Sprint 12 (Solo AI Practice Mode)
+- **TASK-1101 [DONE]**:
+  - `src/logic/botPlayerEngine.ts`: Bộ não AI phán đoán cục bộ (Local Heuristic Engine):
+    - Khởi tạo 6 Bots AI tính cách đặc trưng với phân bổ cân bằng.
+    - Quyết định săn mồi của Sói (ưu tiên mục tiêu then chốt, không cắn đồng đội).
+    - Quyết định soi đêm của Tiên Tri & bảo vệ của Bảo Vệ (không lặp 2 đêm liên tiếp).
+    - Quyết định bỏ phiếu ban ngày và sinh lời thoại đối chất/phản biện đậm chất kịch tính Ma Sói.
+- **TASK-1102 [DONE]**:
+  - `src/components/SoloPracticeModal.tsx`: Modal chọn vai trò tập luyện (Thợ Săn, Tiên Tri, Bảo Vệ, Ma Sói, Dân Làng), cấp độ thử thách (Tập Sự / Lão Luyện) kèm Huấn luyện viên chiến thuật (Pro Tips).
+  - `src/components/OnlineLobby.tsx`: Bổ sung nút "⚔️ Luyện Solo (AI)" trong thanh công cụ 3 nút cân xứng, khởi chạy ván đấu 1-Click tức thì.
+- **TASK-1103 [DONE]**:
+  - `tests/sprint12SoloPractice.test.mjs`: 5/5 test cases PASSED 100%.
+  - Toàn bộ **15 / 15 Test Suites PASS 100%** (58/58 test cases).
   - Pipeline verification: `npm run verify` (`oxlint` + `npm test` + `npm run build`) và `npm run mobile:sync` (Capacitor iOS & Android) đều PASS 100%.
 
 ---
 
 ## 2. Trạng Thái Kỹ Thuật (System Health)
 - **Lint**: `oxlint` PASSED 100% (0 errors, 0 warnings).
-- **Unit & E2E Test Suite**: **14 / 14 Test Suites PASSED 100%** (53/53 test cases).
-- **Production Build**: Tối ưu siêu nhẹ **495KB**, PWA offline cache sẵn sàng.
+- **Unit & E2E Test Suite**: **15 / 15 Test Suites PASSED 100%** (58/58 test cases).
+- **Production Build**: Tối ưu siêu nhẹ **505KB**, PWA offline cache sẵn sàng.
 - **Mobile Native Shell**: Đồng bộ thành công dist -> ios & android qua `npm run mobile:sync`.
 - **Quy tắc Git**: Tuyệt đối không tự ý push lên remote repository khi chưa có lệnh tường minh từ PO.
 
 ---
 
-## 3. Hàng Đợi Sprint 12 Chuẩn Bị Thực Thi
-- **TASK-1101 [Game Engine Dev]**: AI Bot Engine (Hành vi phán đoán ban đêm & phản biện ban ngày của Bot Dân / Bot Sói).
-- **TASK-1102 [Frontend Dev]**: UI Chế Độ Tập Luyện Solo (Luyện kỹ năng Thợ Săn, Tiên Tri, Phù Thủy đối đầu Bot AI).
-- **TASK-1103 [QA Lead]**: Test suite Sprint 12 & Pipeline Verification.
+## 3. Hàng Đợi Sprint Tiếp Theo
+- Đã hoàn tất 12 Sprints tính năng trọn vẹn: Toàn bộ hệ thống Ma Sói Online, Trợ lý Quản trò Offline, Chống Bot Khung Giờ Vàng, Bảng Xếp Hạng Elo, Âm Thanh Web Audio, Deep Link 1-Click, iPhone 16 Pro Dynamic Island Safe Area, Chế Độ Khán Giả Spectator & Chế Độ Luyện Tập Solo AI.
 
 ---
 
 ## 4. Hành Động Tiếp Theo Của PM (Single Next Action)
-- Tạo local commit cho Sprint 11 (`feat(sprint-11): spectator mode with zero-knowledge role masking & live audience cheers`).
-- Tự động tiếp tục điều phối Sprint 12 trong studio.
+- Tạo local commit cho Sprint 12 (`feat(sprint-12): solo hunter practice mode against intelligent AI bots`).
+- Báo cáo tổng thể sẵn sàng nghiệm thu cho Product Owner.
