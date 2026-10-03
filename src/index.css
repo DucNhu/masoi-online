@@ -379,3 +379,108 @@ body::before {
   background: rgba(255, 255, 255, 0.15);
   border-radius: 4px;
 }
+
+/* Voice Soundwave Animation Bars */
+@keyframes voiceWave1 {
+  0%, 100% { height: 4px; }
+  50% { height: 14px; }
+}
+
+@keyframes voiceWave2 {
+  0%, 100% { height: 14px; }
+  50% { height: 6px; }
+}
+
+@keyframes voiceWave3 {
+  0%, 100% { height: 8px; }
+  50% { height: 16px; }
+}
+
+.wave-bar-1 {
+  animation: voiceWave1 0.45s ease-in-out infinite;
+}
+.wave-bar-2 {
+  animation: voiceWave2 0.38s ease-in-out infinite;
+}
+.wave-bar-3 {
+  animation: voiceWave3 0.52s ease-in-out infinite;
+}
+
+/* Neon Pulse for Interactive Target Selection */
+@keyframes neonSelectPulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.5), inset 0 0 8px rgba(56, 189, 248, 0.25);
+    border-color: #38bdf8;
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(56, 189, 248, 0.9), inset 0 0 14px rgba(56, 189, 248, 0.5);
+    border-color: #7dd3fc;
+  }
+}
+
+.neon-target-selected {
+  animation: neonSelectPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes wolfTargetPulse {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.6), inset 0 0 10px rgba(239, 68, 68, 0.3);
+    border-color: #ef4444;
+  }
+  50% {
+    box-shadow: 0 0 26px rgba(239, 68, 68, 1), inset 0 0 16px rgba(239, 68, 68, 0.6);
+    border-color: #f87171;
+  }
+}
+
+.wolf-target-selected {
+  animation: wolfTargetPulse 1.2s ease-in-out infinite;
+}
+
+/* Floating Mini Chat Toast */
+@keyframes miniToastIn {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.95);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  85% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+}
+
+.floating-mini-toast {
+  animation: miniToastIn 3.6s ease-in-out forwards;
+}
+
+/* Holo Shimmer for Role Card Modal */
+@keyframes holoShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.holo-card-shine {
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.03) 30%,
+    rgba(255, 255, 255, 0.18) 50%,
+    rgba(255, 255, 255, 0.03) 70%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: holoShimmer 4s infinite linear;
+}
+
