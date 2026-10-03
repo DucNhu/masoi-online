@@ -1,56 +1,60 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-10-03 18:30 (Asia/Ho_Chi_Minh) — Autonomous Heartbeat Iteration 35 Verified.
-- **Mục tiêu**: **Sprint 16: Kế Thừa & Áp Dụng Toàn Bộ Kiến Trúc AI Từ Hệ Thống Studio (AI Architecture & Operating Model) [COMPLETED]**.
-- **Quyết định định hướng**: Triển khai trọn bộ kiến trúc AI kế thừa từ `pokemon-combat`, `auto-send-mail` và Claude-Code-Game-Studios:
-  1. **Game Studio Operating Model & Governance**:
-     - Cập nhật `AGENTS.md`: Tool contract Codex, ma trận switch model/reasoning theo role (Gemini 3.8 Flash High/Medium, GPT-6.1 Sol, Claude 3.7 Sonnet), quy tắc bundled execution (disjoint leases, max 3 executors), approval-before-write, verdict & handoff standards (`PASS`, `CONCERNS`, `FAIL`, `BLOCKED`, `NOT RUN`), review kèm ready-to-use prompt, no auto-GIF rule.
-     - Đồng bộ `production/planning/studio-operating-model.md` và `production/tasks/templates/studio-task-contract.md`.
-  2. **AI Skill Inventory & Automated Verification**:
-     - Thiết lập `production/planning/ai-skill-inventory.json` quản lý 78 AI skills (31 active, 29 manual, 18 dormant).
-     - Triển khai bộ kiểm thử tĩnh hai tầng: `production/qa/verify-ai-skills.rb` (Ruby) và `scripts/verify-ai-skills.mjs` (Node.js ESM native).
-     - Tích hợp `npm run ai:verify` trực tiếp vào pipeline `npm run verify` và `npm run daemon`.
-  3. **Multi-Provider AI & Narrator Architecture**:
-     - `src/logic/aiNarratorService.ts`: Hỗ trợ song song Gemini REST API, Claude API và Local Fallback Heuristics 0% latency.
-     - Tự động sinh kịch bản Quản Trò ma mị (Night Call Narration) và lời thoại đối đáp, phản biện của Bot AI ban ngày.
+- **Thời gian cập nhật**: 2026-10-03 21:00 (Asia/Ho_Chi_Minh) — WebRTC Live Voice Mesh Implementation Verified.
+- **Mục tiêu**: **Sprint 17: Thu Âm Micro Thực Tế & Phát Ra Loa Qua WebRTC Voice Mesh (Microphone Streaming & Speaker Playback) [COMPLETED]**.
+- **Vấn đề đã xử lý**: 
+  - Khắc phục triệt để tình trạng người dùng test online giữa 1 điện thoại và 1 máy tính nhưng "chức năng mic không lên phát loa".
+  - Nguyên nhân: Trước đó nút Mic trong `OnlinePlayerGameView.tsx` chỉ cập nhật biến state `isMuted` nội bộ, chưa từng gọi `navigator.mediaDevices.getUserMedia` để xin quyền micro thật và chưa truyền luồng âm thanh `MediaStream` qua WebRTC PeerJS call để phát qua `<audio>` element ra loa đối phương.
+- **Giải pháp & Kiến trúc triển khai**:
+  1. **WebRTC Voice Mesh Engine (`src/logic/webrtcVoiceMesh.ts`)**:
+     - Thu âm microphone với bộ lọc nâng cao (Echo Cancellation, Noise Suppression, Auto Gain Control) kèm fallback tương thích Safari iOS và trình duyệt mobile.
+     - Tích hợp Voice Activity Detection (VAD) qua Web Audio API `AudioContext` & `AnalyserNode`, tự động phát hiện người chơi đang phát biểu để kích hoạt hiệu ứng sóng âm viền phát sáng trên avatar.
+     - Phát âm thanh trực tiếp ra loa/tai nghe qua thẻ `<audio autoplay playsinline webkit-playsinline>` gắn trực tiếp vào DOM body, gán `srcObject = remoteStream`, `volume = 1.0`, `muted = false`.
+     - Cơ chế chống chặn Autoplay trên iOS Safari (`unlockAudio`): Lắng nghe `click` và `touchstart` trên toàn màn hình để tự động unpause và resume âm thanh ngay khi người dùng chạm vào màn hình điện thoại.
+     - Áp dụng luật phân quyền âm thanh của Ma Sói (`applyGameAudioRules`): Ban đêm tự động khóa mic Dân Làng (Night Auto-Mute), chỉ Sói mới được nghe tiếng Sói; Người chết bị mute hoàn toàn đối với người sống.
+  2. **P2P Audio Calling Mesh (`src/logic/webrtcPeerMesh.ts`)**:
+     - `P2PRoomHost` và `P2PRoomClient` hỗ trợ cuộc gọi 2 chiều (`peer.call` và `peer.on('call')`).
+     - Tự động truyền nhận và phát luồng âm thanh của Host và các Client.
+     - Host tự động gán và chia sẻ `peerId` của từng người chơi trong phòng.
+  3. **Tích Hợp RoomManager & Zero-Knowledge State (`src/logic/roomManager.ts` & `src/logic/roomProtocol.ts`)**:
+     - `NetworkPlayer` được bổ sung trường `peerId?: string` và được giữ lại trong `maskGameStateForPlayer` phục vụ định tuyến Mesh âm thanh mà không làm rò rỉ vai trò tuyệt mật (Zero-Knowledge).
+     - Bổ sung `startVoiceBroadcast(roomId, playerId, targetPeerIds)` và `stopVoiceBroadcast(roomId, playerId)`.
+     - Đồng bộ hóa trạng thái micro thời gian thực giữa Client và Host thông qua action `SET_VOICE_STATE`.
+  4. **Nâng Cấp Giao Diện In-Game (`src/components/OnlinePlayerGameView.tsx`)**:
+     - Nút Mic hỗ trợ trạng thái chờ mở quyền (`isMicLoading`), thông báo cấp quyền micro nếu trình duyệt chặn.
+     - Kết nối trực tiếp sự kiện VAD (`voiceEngine.onSpeaking`) và tự động giải phóng tài nguyên micro khi rời ván đấu.
+  5. **Kiểm Thử & Đảm Bảo Chất Lượng (`tests/sprint17WebRTCVoiceMesh.test.mjs`)**:
+     - 4/4 test cases kiểm tra độ an toàn môi trường Headless, luật phân quyền Ma Sói ban đêm/ngày, đồng bộ P2P và Zero-Knowledge.
 - **Nhánh làm việc**: `feature/ma-soi-online`.
-- **Mô hình vận hành**: Game Studio Hierarchy (PO → PM → Executor Roles: System Architect / Game Engine Dev / QA Lead).
+- **Mô hình vận hành**: Game Studio Hierarchy (PO → PM → Gameplay Programmer → QA Lead).
 
 ---
 
-## 1. Kết Quả Triển Khai Sprint 16 (Full AI Architecture Integration)
-- **TASK-1501 [DONE]**:
-  - `production/planning/ai-skill-inventory.json`: Đầy đủ 78 skills với path, trigger, kind.
-  - Re-link 73 template skills thành symlinks chuẩn và đồng bộ 5 project skills.
-- **TASK-1502 [DONE]**:
-  - `production/qa/verify-ai-skills.rb` & `scripts/verify-ai-skills.mjs`:
-    - Kiểm tra YAML frontmatter, allowed-tools, ban legacy aliases, 2+ sections, verdicts, approval-before-write, next-step handoff.
-    - Kết quả: **78/78 skills PASS 100%, 0 failures**.
-- **TASK-1503 [DONE]**:
-  - `AGENTS.md`, `production/planning/studio-operating-model.md`, `production/tasks/templates/studio-task-contract.md`: Cập nhật toàn diện chuẩn Game Studio 2026-10-03.
-- **TASK-1504 [DONE]**:
-  - `src/logic/aiNarratorService.ts`: Multi-provider AI service (Gemini + Local Heuristics).
-- **TASK-1505 [DONE]**:
-  - `tests/sprint16AiArchitecture.test.mjs`: 4/4 test cases PASSED.
-  - Toàn bộ **19 Test Suites PASSED 100%** (73/73 test cases).
-  - Pipeline verification: `npm run verify` (`oxlint` + `npm run ai:verify` + `npm test` + `npm run build`) và `npm run daemon` đều PASS 100%.
-
----
-
-## 2. Trạng Thái Kỹ Thuật (System Health)
-- **Lint**: `oxlint` PASSED 100% (0 errors, 0 warnings).
+## 1. Kết Quả Kiểm Thử Toàn Diện (System Health & Pipeline Verification)
+- **Lint**: `oxlint` PASSED 100% (0 errors).
 - **AI Skill Verification**: 78/78 skills PASSED 100%.
-- **Unit & E2E Test Suite**: **19 Test Suites PASSED 100%** (73/73 test cases).
-- **Production Build**: Tối ưu siêu nhẹ **609KB**, PWA offline cache sẵn sàng.
-- **Daemon Health**: `npm run daemon` ghi nhận `HEALTHY`.
-- **Git Push Policy**: Đã thực hiện `git push origin feature/ma-soi-online` theo sự phê duyệt tường minh từ PO (2026-10-03 18:13).
+- **Unit & E2E Test Suite**: **20 Test Suites PASSED 100%** (77/77 test cases bao gồm Sprint 1-17).
+- **Production Build**: `tsc -b && vite build` hoàn tất sạch sẽ, PWA Service Worker sẵn sàng.
+- **Local Git Commit**: Đã commit local `3df322d` ("feat(voice): implement WebRTC voice mesh with microphone streaming and speaker playback").
+- **Git Push Policy**: Tuân thủ tuyệt đối quy định "Không tự ý push code", đang dừng lại để xin phép và chờ người dùng duyệt lệnh push lên GitHub Pages.
 
 ---
 
-## 3. Hàng Đợi Sprint Tiếp Theo
-- Đã hoàn tất 16 Sprints: Toàn bộ hệ sinh thái Ma Sói Online, Trợ lý Offline, WebRTC P2P Serverless, Đấu AI Bots, và Kiến Trúc AI Studio hoàn chỉnh.
+## 2. Hướng Dẫn Thử Nghiệm Thực Tế (Test Guide For User)
+1. **Trên Máy Tính (Host hoặc Client)**:
+   - Tạo phòng hoặc vào phòng chơi online.
+   - Nhấn nút **"Mic TẮT"** -> Trình duyệt sẽ hiện popup hỏi quyền: Hãy bấm **"Cho phép" (Allow)** microphone.
+   - Nút chuyển sang **"Mic BẬT"** màu xanh lá. Nói thử vào micro máy tính.
+2. **Trên Điện Thoại (iPhone / Android)**:
+   - Mở link phòng trên trình duyệt (Safari hoặc Chrome).
+   - Nhấn nút **"Mic TẮT"** -> Chọn **"Cho phép"** truy cập micro.
+   - Nói vào điện thoại: Âm thanh sẽ phát to, rõ ràng ra loa/tai nghe của máy tính!
+   - Người ở máy tính nói: Âm thanh sẽ phát trực tiếp ra loa điện thoại!
+3. **Hiệu Ứng Trực Quan**:
+   - Khi ai đó phát biểu, viền avatar của người đó sẽ nhấp nháy phát sáng sóng âm màu xanh lá kèm biểu tượng micro thời gian thực.
+   - Khi ban đêm buông xuống: Dân làng sẽ tự động bị khóa micro để bảo toàn bí mật hang Sói!
 
 ---
 
-## 4. Hành Động Tiếp Theo Của PM (Single Next Action)
-- Giám sát pipeline GitHub Pages deploy tại `https://ducnhu.github.io/masoi-online/` và cung cấp hướng dẫn test thực tế trên mobile/web thật cho PO.
+## 3. Hành Động Tiếp Theo Của PM (Single Next Action)
+- Xin xác nhận từ người dùng để thực hiện lệnh `git push origin feature/ma-soi-online` nhằm cập nhật phiên bản live trên `https://ducnhu.github.io/masoi-online/`.
