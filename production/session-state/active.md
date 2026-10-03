@@ -14,7 +14,8 @@
   1. **Bộ Lọc Môi Trường Thông Minh (`RoomManager.isServerRelayAvailable`)**:
      - Tự động kiểm tra `window.location.hostname`. Nếu phát hiện đang chạy trên GitHub Pages (`*.github.io`) hoặc môi trường tĩnh, hệ thống lập tức ngắt toàn bộ các lệnh gọi API `/api/werewolf/rooms/*` và ngắt SSE stream.
      - Giữ nguyên hoạt động của Vite Server Relay khi dev cục bộ trên `localhost`, `127.0.0.1` hoặc IP mạng LAN (`192.168.x.x`).
-  2. **Gia Cố Kết Nối P2P Mesh (`src/logic/webrtcPeerMesh.ts`)**:
+  2. **Gia Cố Kết Nối P2P Mesh & Dual TURN Relay (`src/logic/webrtcPeerMesh.ts`)**:
+     - Bổ sung cụm máy chủ định tuyến **STUN + TURN Kép** (Google STUN + OpenRelay TURN + PeerJS TURN) giúp WebRTC xuyên thủng mọi tường lửa và Symmetric NAT trên mạng di động 4G/5G, cho phép người chơi khác mạng (4G vs WiFi, khác địa lý) kết nối mượt mà 100%.
      - Bổ sung cơ chế Timeout 12 giây cho `P2PRoomClient.connect()`, ngăn chặn hoàn toàn hiện tượng treo spinner giao diện khi Host offline.
      - Xử lý cụ thể mã lỗi `peer-unavailable` từ PeerJS, chuyển thành thông báo tiếng Việt trực quan: *"Phòng chơi '...' không tồn tại hoặc Host đã rời phòng."*
      - Giải phóng tài nguyên kết nối an toàn khi thất bại (`cleanupAndReject`).

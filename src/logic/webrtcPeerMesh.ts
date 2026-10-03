@@ -14,12 +14,31 @@ export interface P2PMessage {
 }
 
 const PEER_PREFIX = 'masoi-v1-';
-const GOOGLE_STUN = {
+export const P2P_ICE_CONFIG = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:openrelay.metered.ca:80' },
+    {
+      urls: [
+        'turn:openrelay.metered.ca:80',
+        'turn:openrelay.metered.ca:443',
+        'turn:openrelay.metered.ca:443?transport=tcp',
+      ],
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+    {
+      urls: [
+        'turn:eu-0.turn.peerjs.com:3478',
+        'turn:us-0.turn.peerjs.com:3478',
+      ],
+      username: 'peerjs',
+      credential: 'peerjsp',
+    },
   ],
+  sdpSemantics: 'unified-plan',
 };
 
 /**
@@ -49,7 +68,7 @@ export class P2PRoomHost {
       }
       try {
         const peerId = `${PEER_PREFIX}${this.roomId.toUpperCase()}`;
-        this.peer = new PeerConstructor(peerId, { config: GOOGLE_STUN });
+        this.peer = new PeerConstructor(peerId, { config: P2P_ICE_CONFIG });
 
         this.peer.on('open', (id: string) => {
           this.isReady = true;
@@ -249,7 +268,7 @@ export class P2PRoomClient {
         return;
       }
       try {
-        this.peer = new PeerConstructor({ config: GOOGLE_STUN });
+        this.peer = new PeerConstructor({ config: P2P_ICE_CONFIG });
 
         let connectionTimeout: any = null;
         let isSettled = false;
