@@ -1,6 +1,7 @@
 import { ServerGameState, ClientGameState, RoomSettings, ChatMessage, VoiceSignalPayload, PublicTableInfo } from '../types/multiplayer';
 import { RoleId } from '../types/game';
 import { generateRoomCode, maskGameStateForPlayer } from './roomProtocol';
+import { recordMatchResult, getHunterProfile } from '../utils/eloRating';
 
 export type StateListener = (playerId: string, state: ClientGameState) => void;
 export type VoiceSignalListener = (signal: VoiceSignalPayload) => void;
@@ -598,6 +599,41 @@ export class RoomManager {
       (p) => p.role !== 'WEREWOLF' && !(p.role === 'CURSED' && p.cursedTurnedWolf)
     );
 
+    // Helper ghi nhận kết quả và cập nhật Elo / Huy hiệu cho local user
+    const finalizeGame = (winner: 'VILLAGERS' | 'WEREWOLVES' | 'LOVERS', logMsg: string) => {
+      room.phase = 'GAME_OVER';
+      room.winner = winner;
+      if (!room.historyLog) {
+        room.historyLog = [];
+      }
+      room.historyLog.push(logMsg);
+
+      try {
+        const localProfile = typeof window !== 'undefined' ? getHunterProfile() : null;
+        if (localProfile) {
+          const localPlayer = room.players.find((p) => p.name === localProfile.name);
+          if (localPlayer) {
+            let isWinner = false;
+            if (winner === 'LOVERS') {
+              isWinner = localPlayer.isCoupleWith !== undefined;
+            } else if (winner === 'WEREWOLVES') {
+              isWinner =
+                localPlayer.role === 'WEREWOLF' ||
+                (localPlayer.role === 'CURSED' && !!localPlayer.cursedTurnedWolf);
+            } else if (winner === 'VILLAGERS') {
+              isWinner =
+                localPlayer.role !== 'WEREWOLF' &&
+                !(localPlayer.role === 'CURSED' && localPlayer.cursedTurnedWolf);
+            }
+            recordMatchResult(isWinner, localPlayer.isAlive);
+          }
+        }
+      } catch {
+        // Safe fallback in headless/test environments
+      }
+      return true;
+    };
+
     // Kiểm tra cặp đôi khác phe sống sót cuối cùng
     if (livingPlayers.length === 2 && livingPlayers[0].isCoupleWith === livingPlayers[1].id) {
       const isDifferentTeam =
@@ -605,30 +641,28 @@ export class RoomManager {
         (livingPlayers[1].role === 'WEREWOLF' && livingPlayers[0].role !== 'WEREWOLF');
 
       if (isDifferentTeam) {
-        room.phase = 'GAME_OVER';
-        room.winner = 'LOVERS';
-        room.historyLog.push(`💘 CẶP ĐÔI KHÁC PHE SỐNG SÓT CUỐI CÙNG — CẶP ĐÔI CHIẾN THẮNG!`);
-        return true;
+        return finalizeGame('LOVERS', `💘 CẶP ĐÔI KHÁC PHE SỐNG SÓT CUỐI CÙNG — CẶP ĐÔI CHIẾN THẮNG!`);
       }
     }
 
     // Dân làng thắng: Sói chết hết
     if (livingWolves.length === 0) {
-      room.phase = 'GAME_OVER';
-      room.winner = 'VILLAGERS';
-      room.historyLog.push(`🎉 TOÀN BỘ MA SÓI ĐÃ BỊ TIÊU DIỆT — PHE DÂN LÀNG CHIẾN THẮNG!`);
-      return true;
+      return finalizeGame('VILLAGERS', `🎉 TOÀN BỘ MA SÓI ĐÃ BỊ TIÊU DIỆT — PHE DÂN LÀNG CHIẾN THẮNG!`);
     }
 
     // Ma sói thắng: Số Sói >= Số Dân
     if (livingWolves.length >= livingVillagers.length) {
-      room.phase = 'GAME_OVER';
-      room.winner = 'WEREWOLVES';
-      room.historyLog.push(`🐺 SỐ LƯỢNG MA SÓI ĐÃ ÁP ĐẢO DÂN LÀNG — PHE MA SÓI CHIẾN THẮNG!`);
-      return true;
+      return finalizeGame('WEREWOLVES', `🐺 SỐ LƯỢNG MA SÓI ĐÃ ÁP ĐẢO DÂN LÀNG — PHE MA SÓI CHIẾN THẮNG!`);
     }
 
     return false;
+  }
+
+  /**
+   * Lấy thông tin ServerGameState nội bộ của phòng (Dành cho kiểm thử hoặc quản trị)
+   */
+  public getServerRoom(roomId: string): ServerGameState | undefined {
+    return this.rooms.get(roomId);
   }
 
   /**

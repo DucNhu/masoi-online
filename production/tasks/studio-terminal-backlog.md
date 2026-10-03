@@ -71,4 +71,26 @@
 | TASK-503 | Đổi tên nhận diện sang Game Ma Sói Thực Thụ, thay thế bài Tú Lơ Khơ bằng Thẻ Bài Ma Sói | Creative / Frontend | DONE | TASK-501 | `src/components/Header.tsx`, `src/App.tsx`, `index.html`, Role Cards |
 | TASK-504 | QA Test Suite Sprint 6 & Pipeline Verification | QA Lead | DONE | TASK-501..503 | `tests/sprint6AntiBotAndTableLobby.test.mjs`, `npm run verify` |
 
+---
+
+## SPRINT 7: Hệ Thống Bảng Xếp Hạng Thợ Săn (Elo & Leaderboard), Bộ Huy Hiệu Danh Dự & Chống Phá Game (Anti-Griefing)
+
+| Task ID | Tên Task | Role | Trạng thái | Dependency | Ghi chú |
+|---|---|---|---|---|---|
+| TASK-601 | Thiết kế Elo Rating Engine, Cấp Bậc Thợ Săn & Hệ Thống Huy Hiệu (Badges System) | Game Engine Dev | DONE | SPRINT 6 | `src/utils/eloRating.ts`, `src/constants/achievements.ts`, 5 bậc Rank, 10 Huy hiệu |
+| TASK-602 | Tích hợp tính điểm Elo & Mở khóa Huy hiệu tự động sau trận đấu trong RoomManager | Backend / Architect | DONE | TASK-601 | `src/logic/roomManager.ts`, ghi nhận thành tích & thăng hạng |
+| TASK-603 | Xây dựng UI Bảng Xếp Hạng Thợ Săn (Leaderboard), Hồ Sơ Cá Nhân & Modal Báo Cáo Chơi Xấu | Frontend Lead | DONE | TASK-601, 602 | `LeaderboardModal.tsx`, `HunterProfileModal.tsx`, `ReportPlayerModal.tsx` |
+| TASK-604 | QA Test Suite Sprint 7: Kiểm thử tính toán Elo, Huy hiệu và pipeline verification | QA Lead | DONE | TASK-601..603 | `tests/sprint7LeaderboardAndProfile.test.mjs`, `npm run verify` |
+
+---
+
+## SPRINT 8: Trải Nghiệm Tương Tác Sống Động Trong Bàn (In-Game Emotes, Web Audio Soundscapes & Visual Atmosphere)
+
+| Task ID | Tên Task | Role | Trạng thái | Dependency | Ghi chú |
+|---|---|---|---|---|---|
+| TASK-701 | Bộ Âm Thanh Ma Mị Tự Nhiên (Synthesized Web Audio Engine: Tiếng Sói Hú, Chuông Tử Thần, Búa Phán Quyết) | Audio / Engine Dev | READY | SPRINT 7 | `src/utils/soundEffects.ts` không phụ thuộc file nặng bên ngoài |
+| TASK-702 | Hệ Thống Tương Tác Biểu Cảm Nhanh (In-Game Quick Emotes & Reaction Bubbles) | Frontend Lead | READY | TASK-701 | Bong bóng biểu cảm trên avatar người chơi khi thảo luận |
+| TASK-703 | Nâng Cấp Hiệu Ứng Bầu Trời & Chuyển Pha Trăng Máu (Atmosphere & Phase Transitions) | Creative / Frontend | READY | TASK-701 | Visual FX Đêm Trăng Rằm vs Trăng Máu, bình minh |
+| TASK-704 | QA Test Suite Sprint 8 & Pipeline Verification | QA Lead | READY | TASK-701..703 | `tests/sprint8AudioAndEmotes.test.mjs`, `npm run verify` |
+
 

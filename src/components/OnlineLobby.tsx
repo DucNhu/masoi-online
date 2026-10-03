@@ -7,9 +7,11 @@ import { ConfirmModal } from './ConfirmModal';
 import { AvatarPickerModal } from './AvatarPickerModal';
 import { GoldenHourBanner } from './GoldenHourBanner';
 import { HumanVerifyModal } from './HumanVerifyModal';
+import { LeaderboardModal } from './LeaderboardModal';
+import { HunterProfileModal } from './HunterProfileModal';
 import { WEREWOLF_AVATARS, WerewolfAvatar } from '../constants/avatars';
 import { soundEffects } from '../utils/soundEffects';
-import { Users, Crown, CheckCircle2, Clock, Copy, Check, ArrowLeft, Play, LogOut, ShieldAlert, Sliders, Sparkles, RefreshCw, KeyRound, Plus, ShieldCheck } from 'lucide-react';
+import { Users, Crown, CheckCircle2, Clock, Copy, Check, ArrowLeft, Play, LogOut, ShieldAlert, Sliders, Sparkles, RefreshCw, KeyRound, Plus, ShieldCheck, Trophy, Award } from 'lucide-react';
 
 interface Props {
   onBackToOffline: () => void;
@@ -45,6 +47,8 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
   const [isHumanVerified, setIsHumanVerified] = useState<boolean>(false);
   const [isHumanModalOpen, setIsHumanModalOpen] = useState<boolean>(false);
   const [pendingJoinTable, setPendingJoinTable] = useState<PublicTableInfo | null>(null);
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState<boolean>(false);
+  const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
 
   // Cấu hình phòng chơi nâng cao (Host Settings)
   const [showAdvancedSettings, setShowAdvancedSettings] = useState<boolean>(false);
@@ -451,6 +455,55 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
               title="Làm mới danh sách bàn chơi"
             >
               <RefreshCw size={16} className={isRefreshingTables ? 'spin-icon' : ''} />
+            </button>
+          </div>
+
+          {/* Thanh Nút Phụ: Bảng Xếp Hạng & Hồ Sơ Cá Nhân */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
+            <button
+              onClick={() => {
+                soundEffects.triggerHaptic('light');
+                setIsLeaderboardOpen(true);
+              }}
+              style={{
+                background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(180, 83, 9, 0.25))',
+                border: '1px solid rgba(245, 158, 11, 0.4)',
+                color: '#fde047',
+                padding: '8px 12px',
+                borderRadius: '10px',
+                fontWeight: 700,
+                fontSize: '0.8rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+              }}
+            >
+              <Trophy size={14} color="#fde047" /> Bảng Xếp Hạng
+            </button>
+
+            <button
+              onClick={() => {
+                soundEffects.triggerHaptic('light');
+                setIsProfileOpen(true);
+              }}
+              style={{
+                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(67, 56, 202, 0.25))',
+                border: '1px solid rgba(99, 102, 241, 0.4)',
+                color: '#a5b4fc',
+                padding: '8px 12px',
+                borderRadius: '10px',
+                fontWeight: 700,
+                fontSize: '0.8rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+              }}
+            >
+              <Award size={14} color="#a5b4fc" /> Hồ Sơ & Huy Hiệu
             </button>
           </div>
 
@@ -1231,6 +1284,18 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
           setIsHumanModalOpen(false);
           setPendingJoinTable(null);
         }}
+      />
+
+      {/* Modal Bảng Xếp Hạng Thợ Săn */}
+      <LeaderboardModal
+        isOpen={isLeaderboardOpen}
+        onClose={() => setIsLeaderboardOpen(false)}
+      />
+
+      {/* Modal Hồ Sơ & Kho Huy Hiệu */}
+      <HunterProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
       />
     </div>
   );
