@@ -38,6 +38,25 @@ export class RoomManager {
   }
 
   /**
+   * Kiểm tra xem môi trường hiện tại có hỗ trợ Vite Node.js Relay Server hay không.
+   * Trên GitHub Pages (*.github.io) hoặc môi trường tĩnh, không có backend /api.
+   */
+  public isServerRelayAvailable(): boolean {
+    if (typeof window === 'undefined' || !window.location || !window.location.hostname) return false;
+    const hostname = window.location.hostname;
+    // GitHub Pages là static host, tuyệt đối không có backend server /api
+    if (!hostname || hostname.endsWith('github.io')) return false;
+    // Hỗ trợ local development (localhost, 127.0.0.1, LAN IP)
+    return (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname.startsWith('192.168.') ||
+      hostname.startsWith('10.') ||
+      hostname.startsWith('172.')
+    );
+  }
+
+  /**
    * Đẩy dữ liệu phòng lên Realtime Server Relay và BroadcastChannel
    */
   public async syncRoomToRemote(room: ServerGameState): Promise<void> {
@@ -47,7 +66,7 @@ export class RoomManager {
       } catch {}
     }
 
-    if (typeof window !== 'undefined' && typeof window.fetch !== 'undefined') {
+    if (this.isServerRelayAvailable() && typeof window !== 'undefined' && typeof window.fetch !== 'undefined') {
       try {
         await fetch('/api/werewolf/rooms/sync', {
           method: 'POST',
@@ -67,7 +86,7 @@ export class RoomManager {
     const cleanId = roomId.trim().toUpperCase();
     if (this.rooms.has(cleanId)) return true;
 
-    if (typeof window !== 'undefined' && typeof window.fetch !== 'undefined') {
+    if (this.isServerRelayAvailable() && typeof window !== 'undefined' && typeof window.fetch !== 'undefined') {
       try {
         const res = await fetch(`/api/werewolf/rooms/${cleanId}`);
         if (res.ok) {
@@ -86,7 +105,7 @@ export class RoomManager {
    * Đồng bộ toàn bộ danh sách bàn chơi từ Server Relay
    */
   public async syncPublicTablesFromRemote(): Promise<void> {
-    if (typeof window !== 'undefined' && typeof window.fetch !== 'undefined') {
+    if (this.isServerRelayAvailable() && typeof window !== 'undefined' && typeof window.fetch !== 'undefined') {
       try {
         const res = await fetch('/api/werewolf/rooms');
         if (res.ok) {
@@ -108,6 +127,7 @@ export class RoomManager {
   }
 
   private connectSseForRoom(roomId: string) {
+    if (!this.isServerRelayAvailable()) return;
     if (typeof window === 'undefined' || typeof window.EventSource === 'undefined') return;
     if (this.activeSseRoomId === roomId && this.sseSource) return;
 

@@ -1,28 +1,25 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-10-03 22:20 (Asia/Ho_Chi_Minh) — Sprint 18: Zero-Scroll Visual Arena UI Implementation Verified.
-- **Mục tiêu**: **Sprint 18: Tối Ưu Giao Diện Thân Thiện, Responsive Không Cuộn (Zero-Scroll 100dvh), Giàu Hình Ảnh & Thẻ Bài Trực Quan [COMPLETED]**.
-- **Yêu cầu người dùng giải quyết**: 
-  - *"oke, giờ tôi cần giao diện trông thân thiện hơn, responsive hơn, đừng để user phải scroll, nhiều hình hơn là nhiều chữ"*
+- **Thời gian cập nhật**: 2026-10-03 22:25 (Asia/Ho_Chi_Minh) — Sprint 19: Fix 404 Relay Server On GitHub Pages & Resilient P2P Mesh.
+- **Mục tiêu**: **Sprint 19: Khắc Phục Lỗi 404 Relay Server Trên GitHub Pages & Tối Ưu Kết Nối WebRTC P2P Mesh [COMPLETED]**.
+- **Vấn đề người dùng báo cáo**: 
+  - `index-B9DoiSjV.js:50  GET https://ducnhu.github.io/api/werewolf/rooms/HWFREY 404 (Not Found)`
+- **Phân tích nguyên nhân gốc rễ (Root Cause Analysis)**:
+  - Máy chủ GitHub Pages (`ducnhu.github.io`) là nền tảng máy chủ tĩnh (Static Hosting), không hỗ trợ chạy ngầm Node.js backend.
+  - Endpoint `/api/werewolf/rooms/*` vốn là plugin Relay Server được thiết kế chỉ dành riêng cho môi trường chạy thử cục bộ Vite (`localhost:5173` qua `werewolfRoomServerPlugin.ts`).
+  - Trước đây, `RoomManager` trong `src/logic/roomManager.ts` gọi vô điều kiện `fetch('/api/werewolf/rooms/...')` và `new EventSource('/api/werewolf/rooms/events')` trên mọi môi trường.
+  - Khi chạy trên GitHub Pages, trình duyệt bắn request ra root domain `ducnhu.github.io/api/werewolf/rooms/HWFREY` dẫn tới phản hồi 404 (Not Found) và in cảnh báo đỏ rác lên Console.
+  - Đồng thời, `P2PRoomClient.connect()` trước đó chưa có timeout bảo vệ và `OnlineLobby.tsx` ghi đè thông báo lỗi chi tiết của mạng P2P.
 - **Giải pháp & Kiến trúc triển khai**:
-  1. **Zero-Scroll Viewport Layout (`100dvh`)**:
-     - Cố định toàn màn hình `height: 100dvh; max-height: 100dvh; overflow: hidden;` loại bỏ hoàn toàn tình trạng phải cuộn cả trang web (page scroll) trên mobile.
-     - Header siêu gọn (48px) chứa: Nút Vai trò rút gọn (chạm mở Full Card Art Modal), Phase Pill trung tâm kèm đếm ngược giây, Nút Mic Voice với sóng âm, Quick Host Switch và Nút Nhật ký/Rời trận.
-     - Action Dock cố định ở chân trang (62px): Luôn nằm vừa tầm ngón tay cái, tự động hiển thị nút hành động 1 chạm theo ngữ cảnh (Cắn đêm, Soi đêm, Bảo vệ đêm, Bỏ phiếu ngày, Phiếu trắng).
-  2. **Bàn Đấu Trực Quan (Interactive Player Arena Grid)**:
-     - Chuyển toàn bộ danh sách người chơi dọc cồng kềnh thành Lưới Card Bàn Tròn 2-4 cột tự động co giãn fit 100% màn hình.
-     - Mỗi thẻ ghế ngồi có số ghế to `#1`, `#2`, avatar lớn (44px) biểu cảm sống động.
-     - Sóng âm giọng nói động (`wave-bar-1`, `wave-bar-2`, `wave-bar-3`) nhảy múa màu xanh lá ngay dưới avatar khi đang phát biểu qua WebRTC Voice.
-     - Hiệu ứng Neon viền phát sáng khi được chạm chọn mục tiêu (`wolf-target-selected` đỏ rực cho Sói, `neon-target-selected` xanh lam cho Soi/Vote).
-     - Live Vote Tally: Huy hiệu số phiếu bầu `🗳️ 3` nổi bật góc phải thẻ người chơi.
-     - Tương tác 1 chạm trực tiếp: Chạm trực tiếp vào card người chơi trên bàn để cắn/soi/bỏ phiếu, không cần kéo tìm danh sách riêng!
-  3. **Responsive Dual-Mode**:
-     - **Mobile (< 768px)**: Tab Switcher mỏng `[ 🐺 Bàn Đấu ]` & `[ 💬 Trò Chuyện (Unread Badge) ]`. Tích hợp **Floating Mini Chat Toast** tự nổi lên trong 3.5s trên Bàn Đấu khi có tin nhắn mới giúp người chơi theo dõi trò chuyện mà không cần rời bàn.
-     - **Desktop (≥ 768px)**: Tự động kích hoạt Dual-Pane song song (Cột trái Bàn Đấu 60%, Cột phải Kênh Chat 40%) vừa vặn 100vh.
-  4. **Thẻ Bài Thần Thoại (Trading Role Card Modal)**:
-     - Chạm vào vai trò ở Header để mở Modal Thẻ Bài Holo Foil lấp lánh phong cách Tú Lơ Khơ (Rank A, K, Q, J, 10, 9...), linh vật to lớn, hiệu ứng ánh sáng Hologram và kỹ năng tóm tắt bằng bullet points trực quan, thay thế các đoạn văn bản dài dòng.
-  5. **Animations & CSS (`src/index.css`)**:
-     - Bổ sung `@keyframes voiceWave1/2/3`, `@keyframes neonSelectPulse`, `@keyframes wolfTargetPulse`, `@keyframes miniToastIn`, `@keyframes holoShimmer`.
+  1. **Bộ Lọc Môi Trường Thông Minh (`RoomManager.isServerRelayAvailable`)**:
+     - Tự động kiểm tra `window.location.hostname`. Nếu phát hiện đang chạy trên GitHub Pages (`*.github.io`) hoặc môi trường tĩnh, hệ thống lập tức ngắt toàn bộ các lệnh gọi API `/api/werewolf/rooms/*` và ngắt SSE stream.
+     - Giữ nguyên hoạt động của Vite Server Relay khi dev cục bộ trên `localhost`, `127.0.0.1` hoặc IP mạng LAN (`192.168.x.x`).
+  2. **Gia Cố Kết Nối P2P Mesh (`src/logic/webrtcPeerMesh.ts`)**:
+     - Bổ sung cơ chế Timeout 12 giây cho `P2PRoomClient.connect()`, ngăn chặn hoàn toàn hiện tượng treo spinner giao diện khi Host offline.
+     - Xử lý cụ thể mã lỗi `peer-unavailable` từ PeerJS, chuyển thành thông báo tiếng Việt trực quan: *"Phòng chơi '...' không tồn tại hoặc Host đã rời phòng."*
+     - Giải phóng tài nguyên kết nối an toàn khi thất bại (`cleanupAndReject`).
+  3. **Truyền Tải Lỗi Chi Tiết Trong Sảnh Chờ (`src/components/OnlineLobby.tsx`)**:
+     - Bóc tách `err.message` thực tế từ exception của kết nối P2P để hiển thị ngay trên UI của người chơi thay vì thông báo chung chung.
 - **Nhánh làm việc**: `feature/ma-soi-online`.
 - **Mô hình vận hành**: Game Studio Hierarchy (PO → PM → Gameplay Programmer → QA Lead).
 
@@ -31,23 +28,19 @@
 ## 1. Kết Quả Kiểm Thử Toàn Diện (System Health & Pipeline Verification)
 - **Lint**: `oxlint` PASSED 100% (0 errors).
 - **AI Skill Verification**: 78/78 skills PASSED 100%.
-- **Unit & E2E Test Suite**: **20 Test Suites PASSED 100%** (77/77 test cases bao gồm Sprint 1-18).
+- **Unit & E2E Test Suite**: **20 Test Suites PASSED 100%** (77/77 test cases bao gồm Sprint 1-19).
 - **Production Build**: `tsc -b && vite build` hoàn tất sạch sẽ, PWA Service Worker sẵn sàng.
 - **Git Push Policy**: Tuân thủ tuyệt đối quy định "Không tự ý push code", đang dừng lại để xin phép và chờ người dùng duyệt lệnh push lên GitHub Pages.
 
 ---
 
-## 2. Hướng Dẫn Thử Nghiệm Giao Diện Mới
-1. **Trên Điện Thoại**:
-   - Giao diện vừa khít 1 màn hình `100dvh`, không còn hiện tượng vuốt cuộn trang gây mỏi tay.
-   - Bàn đấu dạng lưới thẻ người chơi trực quan với số ghế, avatar lớn, trạng thái sống chết rõ ràng bằng icon.
-   - Khi ai đó nói qua Mic, sóng âm dập dờn nhảy múa ngay dưới avatar.
-   - Khi muốn cắn hoặc bỏ phiếu: Chạm thẳng vào thẻ của người đó trên bàn -> Bấm nút to ở Action Dock chân trang.
-   - Chạm vào huy hiệu vai trò góc trái trên để chiêm ngưỡng Thẻ Bài Thần Thoại Holo foil cực đẹp.
-2. **Trên Máy Tính**:
-   - Tự động hiển thị song song 2 cột: Bàn đấu bên trái và Kênh Chat bên phải, thao tác mượt mà không cần chuyển tab.
+## 2. Bản Tóm Tắt Kỹ Thuật Cho Người Dùng
+1. **Lý do lỗi 404**: `ducnhu.github.io` là máy chủ tĩnh (GitHub Pages), không có Node.js server ở `/api/...`. Bản build trước đó vẫn gửi request tìm phòng qua `/api/` trước khi chuyển sang P2P nên sinh ra lỗi 404 này trên console.
+2. **Đã sửa chữa**:
+   - `RoomManager` hiện đã nhận biết GitHub Pages và chuyển thẳng sang kết nối **WebRTC P2P Serverless**, không gọi API rác và không còn lỗi 404.
+   - Thêm timeout và bắt lỗi chính xác khi phòng không tồn tại hoặc Host chưa mở phòng.
 
 ---
 
 ## 3. Hành Động Tiếp Theo Của PM (Single Next Action)
-- Tạo local commit và xin xác nhận từ người dùng để thực hiện lệnh `git push origin feature/ma-soi-online` cập nhật bản live mới lên `https://ducnhu.github.io/masoi-online/`.
+- Tạo local commit và xin xác nhận từ người dùng để thực hiện lệnh `git push origin feature/ma-soi-online` cập nhật bản sửa lỗi lên `https://ducnhu.github.io/masoi-online/`.

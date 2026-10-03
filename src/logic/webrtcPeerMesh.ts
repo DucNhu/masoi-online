@@ -251,6 +251,29 @@ export class P2PRoomClient {
       try {
         this.peer = new PeerConstructor({ config: GOOGLE_STUN });
 
+        let connectionTimeout: any = null;
+        let isSettled = false;
+
+        const cleanupAndReject = (err: Error) => {
+          if (isSettled) return;
+          isSettled = true;
+          if (connectionTimeout) clearTimeout(connectionTimeout);
+          this.disconnect();
+          reject(err);
+        };
+
+        const cleanupAndResolve = (result: { playerId: string; sessionToken: string; state: ClientGameState }) => {
+          if (isSettled) return;
+          isSettled = true;
+          if (connectionTimeout) clearTimeout(connectionTimeout);
+          resolve(result);
+        };
+
+        // Timeout 12s nếu Host không phản hồi hoặc phòng không tồn tại
+        connectionTimeout = setTimeout(() => {
+          cleanupAndReject(new Error(`Hết thời gian chờ kết nối tới Host phòng "${this.roomId}". Vui lòng kiểm tra mã phòng hoặc đảm bảo Host vẫn đang mở phòng.`));
+        }, 12000);
+
         this.peer.on('open', () => {
           const hostPeerId = `${PEER_PREFIX}${this.roomId.toUpperCase()}`;
           const conn = this.peer!.connect(hostPeerId, { reliable: true });
@@ -269,13 +292,13 @@ export class P2PRoomClient {
           conn.on('data', (raw: unknown) => {
             const msg = raw as P2PMessage;
             if (msg.type === 'JOIN_ACCEPTED') {
-              resolve({
+              cleanupAndResolve({
                 playerId: msg.payload.playerId,
                 sessionToken: msg.payload.sessionToken,
                 state: msg.payload.state,
               });
             } else if (msg.type === 'JOIN_REJECTED') {
-              reject(new Error(msg.payload?.message || 'Host từ chối yêu cầu vào bàn.'));
+              cleanupAndReject(new Error(msg.payload?.message || 'Host từ chối yêu cầu vào bàn.'));
             } else if (msg.type === 'STATE_UPDATE' && msg.payload?.state) {
               this.onStateReceived(msg.payload.state);
             }
@@ -288,7 +311,7 @@ export class P2PRoomClient {
 
           conn.on('error', (err: any) => {
             console.warn('[P2PClient] Connection error:', err);
-            reject(err);
+            cleanupAndReject(new Error(`Lỗi kết nối P2P tới Host: ${err?.message || err?.type || 'Không xác định'}`));
           });
 
           // Lắng nghe cuộc gọi voice audio từ Host
@@ -307,7 +330,11 @@ export class P2PRoomClient {
 
         this.peer.on('error', (err: any) => {
           console.warn('[P2PClient] Peer error:', err);
-          reject(err);
+          if (err?.type === 'peer-unavailable') {
+            cleanupAndReject(new Error(`Phòng chơi "${this.roomId}" không tồn tại hoặc Host đã rời phòng.`));
+          } else {
+            cleanupAndReject(new Error(`Lỗi mạng P2P: ${err?.message || err?.type || 'Không thể kết nối máy chủ PeerJS'}`));
+          }
         });
       } catch (err) {
         reject(err);

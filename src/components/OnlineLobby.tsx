@@ -280,8 +280,8 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
           setGameState(p2pRes.state);
           setActiveView('ROOM');
           soundEffects.triggerHaptic('medium');
-        } catch {
-          throw new Error(`Phòng chơi "${cleanRoomId}" không tồn tại trên máy chủ hoặc mạng P2P.`);
+        } catch (err: unknown) {
+          throw new Error(err instanceof Error ? err.message : `Phòng chơi "${cleanRoomId}" không tồn tại trên máy chủ hoặc mạng P2P.`);
         }
       }
     } catch (err: unknown) {
