@@ -124,6 +124,7 @@ export function maskGameStateForPlayer(
   return {
     roomId: serverState.roomId,
     tableName: serverState.settings?.tableName,
+    arenaTheme: serverState.settings?.arenaTheme,
     phase: serverState.phase,
     subPhase: serverState.subPhase,
     dayNumber: serverState.dayNumber,

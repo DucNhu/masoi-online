@@ -2,8 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ClientGameState } from '../types/multiplayer';
 import { ROLE_DEFINITIONS } from '../data/roles';
 import { roomManager } from '../logic/roomManager';
-import { soundEffects } from '../utils/soundEffects';
+import { soundEffects, playSpatialSound } from '../utils/soundEffects';
 import { ConfirmModal } from './ConfirmModal';
+import { ARENA_THEMES } from '../constants/arenaThemes';
 import { 
   Eye, 
   EyeOff, 
@@ -130,15 +131,30 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
         targetId: selectedNightTargetId,
       });
       setNightActionSubmitted(true);
+
+      // Phát âm thanh không gian 3D nếu là Sói cắn đêm
+      if (actionType === 'WEREWOLF_KILL' && selectedNightTargetId && me) {
+        const targetP = gameState.players.find((p) => p.id === selectedNightTargetId);
+        if (targetP) {
+          playSpatialSound('wolf', targetP.seatNumber, me.seatNumber, gameState.players.length || 8);
+        }
+      }
     }
   };
 
-  // Xử lý bỏ phiếu ban ngày
+  // Xử lý bỏ phiếu ban ngày với 3D Spatial Audio
   const handleCastVote = (targetId: string | null) => {
     soundEffects.triggerHaptic('medium');
     setSelectedVoteTargetId(targetId);
     roomManager.castVote(gameState.roomId, gameState.myPlayerId, targetId);
     setVoteSubmitted(true);
+
+    if (targetId && me) {
+      const targetP = gameState.players.find((p) => p.id === targetId);
+      if (targetP) {
+        playSpatialSound('vote', targetP.seatNumber, me.seatNumber, gameState.players.length || 8);
+      }
+    }
   };
 
   // Xử lý gửi tin nhắn chat
@@ -157,13 +173,41 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
     }
   };
 
+  const arenaTheme = ARENA_THEMES[gameState.arenaTheme || 'BLOOD_MOON'] || ARENA_THEMES.BLOOD_MOON;
+
   return (
-    <div style={{ padding: '16px', maxWidth: '640px', margin: '0 auto', color: '#fff', paddingBottom: '80px' }}>
+    <div style={{
+      maxWidth: '640px',
+      margin: '0 auto',
+      color: '#fff',
+      paddingBottom: '80px',
+      minHeight: '100vh',
+      background: arenaTheme.backgroundGradient,
+      borderLeft: `1px solid ${arenaTheme.borderColor}`,
+      borderRight: `1px solid ${arenaTheme.borderColor}`,
+      boxShadow: `0 0 50px ${arenaTheme.accentGlow}`,
+      padding: '16px',
+    }}>
       {/* Header nhỏ hiển thị mã phòng & nút thoát */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 700 }}>
-          PHÒNG: <strong style={{ color: '#38bdf8' }}>{gameState.roomId}</strong> • BẠN: <strong style={{ color: '#fff' }}>{me?.name}</strong> {isHost && '👑'}
-        </span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 700 }}>
+            PHÒNG: <strong style={{ color: '#38bdf8' }}>{gameState.roomId}</strong> • BẠN: <strong style={{ color: '#fff' }}>{me?.name}</strong> {isHost && '👑'}
+          </span>
+          <span style={{
+            fontSize: '0.68rem',
+            padding: '2px 8px',
+            borderRadius: '6px',
+            background: 'rgba(255,255,255,0.08)',
+            border: `1px solid ${arenaTheme.borderColor}`,
+            color: '#cbd5e1',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}>
+            {arenaTheme.icon} {arenaTheme.name}
+          </span>
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <NetworkStatusBadge />
           {/* Nút Điều Khiển Micro */}

@@ -25,6 +25,7 @@ export class RoomManager {
       list.push({
         roomId: room.roomId,
         tableName: room.settings.tableName || `Bàn Săn Sói #${room.roomId}`,
+        arenaTheme: room.settings.arenaTheme || 'BLOOD_MOON',
         hostName: host?.name || 'Chủ Bàn',
         hostAvatar: host?.avatar || '🐺',
         currentPlayers: room.players.length,
@@ -85,6 +86,7 @@ export class RoomManager {
 
     const defaultSettings: RoomSettings = {
       tableName: customSettings?.tableName || `Bàn Săn Sói #${roomId}`,
+      arenaTheme: customSettings?.arenaTheme || 'BLOOD_MOON',
       maxPlayers: 12,
       discussionTimeSeconds: 60,
       votingTimeSeconds: 30,

@@ -8,8 +8,11 @@ export type RoomPhase =
   | 'DAY_HANGING'
   | 'GAME_OVER';
 
+export type ArenaThemeId = 'BLOOD_MOON' | 'GOTHIC_CASTLE' | 'MISTY_SWAMP' | 'ENCHANTED_FOREST';
+
 export interface RoomSettings {
   tableName?: string;
+  arenaTheme?: ArenaThemeId;
   maxPlayers: number;
   discussionTimeSeconds: number;
   votingTimeSeconds: number;
@@ -24,6 +27,7 @@ export interface RoomSettings {
 export interface PublicTableInfo {
   roomId: string;
   tableName: string;
+  arenaTheme?: ArenaThemeId;
   hostName: string;
   hostAvatar: string;
   currentPlayers: number;
@@ -123,6 +127,7 @@ export interface ServerGameState {
 export interface ClientGameState {
   roomId: string;
   tableName?: string;
+  arenaTheme?: ArenaThemeId;
   phase: RoomPhase;
   subPhase?: string;
   dayNumber: number;

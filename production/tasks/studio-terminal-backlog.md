@@ -131,5 +131,15 @@
 | TASK-1102 | UI Chế Độ Tập Luyện Solo (Luyện kỹ năng Thợ Săn, Tiên Tri, Phù Thủy đối đầu Bot) | Frontend Dev | DONE | TASK-1101 | Giúp người mới làm quen luật chơi trước khi vào phòng người thật |
 | TASK-1103 | QA Test Suite Sprint 12 & Pipeline Verification | QA Lead | DONE | TASK-1101..1102 | `tests/sprint12SoloPractice.test.mjs`, `npm run verify` |
 
+---
+
+## SPRINT 13: Âm Thanh Không Gian Bàn Tròn 3D (Spatial Audio Panning) & Chủ Đề Bàn Đấu VIP (Custom Arena Themes)
+| Task ID | Tên Task | Role | Trạng thái | Dependency | Ghi chú |
+|---|---|---|---|---|---|
+| TASK-1201 | Nâng Cấp Web Audio Spatial Panning Theo Tọa Độ Ghế Ngồi Bàn Tròn | Audio / Engine Dev | DONE | SPRINT 12 | `StereoPannerNode` tính góc âm thanh từ số ghế ngồi |
+| TASK-1202 | Hệ Thống Chủ Đề Bàn Đấu VIP (Rừng Đen Trăng Máu, Lâu Đài Gothic, Đầm Lầy Sương Mù) | Frontend Lead | DONE | TASK-1201 | Cài đặt theme trong RoomSettings, background atmosphere theo bàn |
+| TASK-1203 | QA Test Suite Sprint 13 & Pipeline Verification | QA Lead | DONE | TASK-1201..1202 | `tests/sprint13SpatialAudioAndThemes.test.mjs`, `npm run verify` |
+
+
 
 

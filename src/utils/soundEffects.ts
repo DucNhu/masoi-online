@@ -350,6 +350,87 @@ class SoundManager {
   triggerHaptic(type: 'light' | 'medium' | 'heavy' = 'light') {
     NativeBridge.hapticImpact(type);
   }
+
+  /**
+   * Âm thanh không gian 3D Stereo Panning theo số ghế trên bàn tròn
+   */
+  playSpatialSound(
+    soundType: 'vote' | 'wolf' | 'gavel' | 'bell',
+    sourceSeatNumber: number,
+    listenerSeatNumber: number,
+    totalSeats: number = 8
+  ) {
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+
+      const pan = calculateSpatialPan(sourceSeatNumber, listenerSeatNumber, totalSeats);
+
+      let panner: StereoPannerNode | null = null;
+      if (typeof this.ctx.createStereoPanner === 'function') {
+        panner = this.ctx.createStereoPanner();
+        panner.pan.setValueAtTime(pan, this.ctx.currentTime);
+        panner.connect(this.ctx.destination);
+      }
+
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      if (soundType === 'wolf') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(140, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(320, this.ctx.currentTime + 0.6);
+        osc.frequency.exponentialRampToValueAtTime(110, this.ctx.currentTime + 1.8);
+
+        gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 1.8);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 1.8);
+      } else if (soundType === 'gavel') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(220, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(60, this.ctx.currentTime + 0.35);
+
+        gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.35);
+      } else {
+        // Vote tick
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(250, this.ctx.currentTime + 0.08);
+
+        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.08);
+      }
+
+      osc.connect(gain);
+      if (panner) {
+        gain.connect(panner);
+      } else {
+        gain.connect(this.ctx.destination);
+      }
+    } catch (e) {
+      console.warn('Spatial Audio play failed', e);
+    }
+  }
+}
+
+/**
+ * Tính toán độ lệch âm Stereo Pan (-1.0 cực trái đến +1.0 cực phải) dựa trên vị trí 2 ghế trên bàn tròn
+ */
+export function calculateSpatialPan(
+  sourceSeatNumber: number,
+  listenerSeatNumber: number,
+  totalSeats: number = 8
+): number {
+  if (totalSeats <= 1 || sourceSeatNumber === listenerSeatNumber) return 0;
+  const angle = ((sourceSeatNumber - listenerSeatNumber) / totalSeats) * 2 * Math.PI;
+  const pan = Math.sin(angle);
+  return Math.max(-1, Math.min(1, Number(pan.toFixed(2))));
 }
 
 export const soundEffects = new SoundManager();
@@ -360,4 +441,10 @@ export const playDeathBell = () => soundEffects.playDeathBell();
 export const playDawnChime = () => soundEffects.playDawnChime();
 export const playRoosterMorning = () => soundEffects.playRoosterMorning();
 export const playCourtGavel = () => soundEffects.playCourtGavel();
+export const playSpatialSound = (
+  soundType: 'vote' | 'wolf' | 'gavel' | 'bell',
+  sourceSeatNumber: number,
+  listenerSeatNumber: number,
+  totalSeats: number = 8
+) => soundEffects.playSpatialSound(soundType, sourceSeatNumber, listenerSeatNumber, totalSeats);
 

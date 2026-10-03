@@ -4,6 +4,7 @@ import { roomManager } from '../logic/roomManager';
 import { soundEffects } from '../utils/soundEffects';
 import { NetworkStatusBadge } from './NetworkStatusBadge';
 import { MatchHistoryModal } from './MatchHistoryModal';
+import { ARENA_THEMES } from '../constants/arenaThemes';
 import { 
   Eye, 
   LogOut, 
@@ -108,8 +109,21 @@ export const SpectatorLiveView: React.FC<SpectatorLiveViewProps> = ({
 
   const livingPlayersCount = gameState.players.filter((p) => p.isAlive).length;
 
+  const arenaTheme = ARENA_THEMES[gameState.arenaTheme || 'BLOOD_MOON'] || ARENA_THEMES.BLOOD_MOON;
+
   return (
-    <div style={{ padding: '16px', maxWidth: '640px', margin: '0 auto', color: '#fff', position: 'relative' }}>
+    <div style={{
+      maxWidth: '640px',
+      margin: '0 auto',
+      color: '#fff',
+      position: 'relative',
+      minHeight: '100vh',
+      background: arenaTheme.backgroundGradient,
+      borderLeft: `1px solid ${arenaTheme.borderColor}`,
+      borderRight: `1px solid ${arenaTheme.borderColor}`,
+      boxShadow: `0 0 50px ${arenaTheme.accentGlow}`,
+      padding: '16px',
+    }}>
       {/* Hiệu ứng Floating Live Cheers */}
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', zIndex: 9999 }}>
         {flyingCheers.map((c) => (
@@ -137,26 +151,43 @@ export const SpectatorLiveView: React.FC<SpectatorLiveViewProps> = ({
           marginBottom: '16px',
           paddingBottom: '12px',
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          flexWrap: 'wrap',
+          gap: '8px',
         }}
       >
-        <button
-          onClick={onLeave}
-          style={{
-            background: 'rgba(239, 68, 68, 0.15)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            color: '#fca5a5',
-            padding: '6px 12px',
-            borderRadius: '10px',
-            cursor: 'pointer',
-            display: 'flex',
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            onClick={onLeave}
+            style={{
+              background: 'rgba(239, 68, 68, 0.15)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#fca5a5',
+              padding: '6px 12px',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+            }}
+          >
+            <LogOut size={14} /> Rời Khán Đài
+          </button>
+          <span style={{
+            fontSize: '0.68rem',
+            padding: '2px 8px',
+            borderRadius: '6px',
+            background: 'rgba(255, 255, 255, 0.08)',
+            border: `1px solid ${arenaTheme.borderColor}`,
+            color: '#cbd5e1',
+            display: 'inline-flex',
             alignItems: 'center',
-            gap: '6px',
-            fontSize: '0.8rem',
-            fontWeight: 600,
-          }}
-        >
-          <LogOut size={14} /> Rời Khán Đài
-        </button>
+            gap: '4px',
+          }}>
+            {arenaTheme.icon} {arenaTheme.name}
+          </span>
+        </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <NetworkStatusBadge />

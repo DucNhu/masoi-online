@@ -17,6 +17,7 @@ import { NetworkStatusBadge } from './NetworkStatusBadge';
 import { SpectatorLiveView } from './SpectatorLiveView';
 import { SoloPracticeModal } from './SoloPracticeModal';
 import { BotPlayerEngine } from '../logic/botPlayerEngine';
+import { ARENA_THEMES, ArenaThemeId } from '../constants/arenaThemes';
 
 interface Props {
   onBackToOffline: () => void;
@@ -57,6 +58,7 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState<boolean>(false);
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
   const [isPracticeModalOpen, setIsPracticeModalOpen] = useState<boolean>(false);
+  const [selectedArenaTheme, setSelectedArenaTheme] = useState<ArenaThemeId>('BLOOD_MOON');
 
   // Cấu hình phòng chơi nâng cao (Host Settings)
   const [showAdvancedSettings, setShowAdvancedSettings] = useState<boolean>(false);
@@ -291,6 +293,7 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
 
       const customSettings: Partial<RoomSettings> = {
         tableName: tableNameInput.trim() || undefined,
+        arenaTheme: selectedArenaTheme,
         discussionTimeSeconds: discussionTime,
         votingTimeSeconds: votingTime,
         nightActionTimeSeconds: nightTime,
@@ -691,13 +694,14 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
               publicTables.map((table) => {
                 const isFull = table.currentPlayers >= table.maxPlayers;
                 const isPlaying = table.phase !== 'LOBBY';
+                const arenaThemeConfig = ARENA_THEMES[table.arenaTheme || 'BLOOD_MOON'] || ARENA_THEMES.BLOOD_MOON;
 
                 return (
                   <div
                     key={table.roomId}
                     style={{
                       background: 'linear-gradient(135deg, rgba(30, 27, 75, 0.6), rgba(17, 24, 39, 0.8))',
-                      border: '1px solid rgba(129, 140, 248, 0.25)',
+                      border: `1px solid ${arenaThemeConfig.borderColor}`,
                       borderRadius: '16px',
                       padding: '14px 16px',
                       display: 'flex',
@@ -712,10 +716,23 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
                         <div style={{ fontWeight: 800, fontSize: '1rem', color: '#f8fafc' }}>
                           {table.tableName}
                         </div>
-                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px', flexWrap: 'wrap' }}>
                           <span>Chủ bàn: {table.hostAvatar} {table.hostName}</span>
                           <span>•</span>
                           <span style={{ fontFamily: 'monospace', color: '#818cf8' }}>Mã: {table.roomId}</span>
+                          <span style={{
+                            padding: '1px 6px',
+                            borderRadius: '6px',
+                            background: 'rgba(255, 255, 255, 0.08)',
+                            border: `1px solid ${arenaThemeConfig.borderColor}`,
+                            color: '#cbd5e1',
+                            fontSize: '0.68rem',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}>
+                            {arenaThemeConfig.icon} {arenaThemeConfig.name}
+                          </span>
                         </div>
                       </div>
 
@@ -926,6 +943,58 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
               </div>
             </div>
             <Sparkles size={18} color={selectedAvatarObj.auraColor} />
+          </div>
+
+          {/* Bộ Chọn Chủ Đề Bàn Đấu VIP (Arena Theme) */}
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '8px' }}>
+              Chủ Đề Bàn Đấu (Arena Theme):
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+              {Object.values(ARENA_THEMES).map((theme) => {
+                const isSelected = selectedArenaTheme === theme.id;
+                return (
+                  <button
+                    key={theme.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedArenaTheme(theme.id);
+                      soundEffects.triggerHaptic('light');
+                    }}
+                    style={{
+                      background: isSelected ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.03)',
+                      border: isSelected ? `2px solid ${theme.borderColor}` : '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '12px',
+                      padding: '10px',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      boxShadow: isSelected ? `0 0 16px ${theme.accentGlow}` : 'none',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '1.2rem' }}>{theme.icon}</span>
+                      <span style={{
+                        fontSize: '0.65rem',
+                        fontWeight: 800,
+                        padding: '2px 6px',
+                        borderRadius: '6px',
+                        background: theme.borderColor,
+                        color: '#fff',
+                      }}>
+                        {theme.badge}
+                      </span>
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: isSelected ? '#fff' : '#cbd5e1' }}>
+                      {theme.name}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '2px', lineHeight: 1.2 }}>
+                      {theme.description}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Cụm Cài Đặt Phòng Nâng Cao */}
