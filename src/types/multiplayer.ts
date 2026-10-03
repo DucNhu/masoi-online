@@ -54,6 +54,7 @@ export interface NetworkPlayer {
   idiotRevealed?: boolean;
   isSpeaking?: boolean;
   isMuted?: boolean;
+  peerId?: string;
 }
 
 export interface VoiceSignalPayload {

@@ -62,6 +62,7 @@ export function maskGameStateForPlayer(
     idiotRevealed: Boolean(p.idiotRevealed),
     isSpeaking: p.isSpeaking,
     isMuted: p.isMuted,
+    peerId: p.peerId,
   }));
 
   // 2. Tính toán danh sách đồng đội Sói (chỉ mở cho Ma Sói hoặc Kẻ Bán Tơ)
@@ -81,7 +82,7 @@ export function maskGameStateForPlayer(
   const couplePartnerId = me?.isCoupleWith;
 
   // 4. Kết quả soi của Tiên Tri
-  const seerScanResult = me ? serverState.seerHistory[playerId] : undefined;
+  const seerScanResult = me && serverState.seerHistory ? serverState.seerHistory[playerId] : undefined;
 
   // 5. Danh sách các vai trò đã lộ diện hợp pháp (chống gian lận cho Khán Giả)
   const revealedRoles: Record<string, RoleId> = {};
@@ -100,7 +101,7 @@ export function maskGameStateForPlayer(
 
   // 6. Tính tổng số phiếu công khai khi đang ở pha Bỏ Phiếu DAY_VOTING
   let voteTally: Record<string, number> | undefined;
-  if (serverState.phase === 'DAY_VOTING') {
+  if (serverState.phase === 'DAY_VOTING' && serverState.currentVotes) {
     voteTally = {};
     Object.entries(serverState.currentVotes).forEach(([voterId, targetId]) => {
       if (targetId) {
@@ -109,7 +110,7 @@ export function maskGameStateForPlayer(
       }
     });
   }
-  const myVote = isSpectator ? null : (serverState.currentVotes[playerId] ?? null);
+  const myVote = isSpectator ? null : (serverState.currentVotes?.[playerId] ?? null);
 
   // 7. Lọc Chat Messages theo phân quyền nghiêm ngặt
   const filteredChat = (serverState.chatMessages || []).filter((msg) => {

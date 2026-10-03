@@ -1,6 +1,7 @@
 import peerPkg, { type DataConnection } from 'peerjs';
 import { ClientGameState, ServerGameState } from '../types/multiplayer';
 import { maskGameStateForPlayer } from './roomProtocol';
+import { voiceEngine } from './webrtcVoiceMesh';
 
 // Hỗ trợ cả ESM default export lẫn named export giữa browser Vite bundle và Node.js runtime
 const PeerConstructor = (peerPkg as any)?.Peer || (peerPkg as any)?.default || peerPkg;
@@ -29,12 +30,13 @@ export class P2PRoomHost {
   private peer: any = null;
   private connections: Map<string, DataConnection> = new Map(); // conn.peer -> connection
   private playerPeerMap: Map<string, string> = new Map(); // playerId -> conn.peer
+  private peerPlayerMap: Map<string, string> = new Map(); // conn.peer -> playerId
   public isReady: boolean = false;
 
   constructor(
     public readonly roomId: string,
     private readonly onClientAction: (senderId: string, actionType: string, payload: any) => void,
-    private readonly onClientJoin: (playerName: string, avatar: string, isSpectator: boolean) => { playerId: string; sessionToken: string } | null,
+    private readonly onClientJoin: (playerName: string, avatar: string, isSpectator: boolean, peerId?: string) => { playerId: string; sessionToken: string } | null,
     private readonly getClientMaskedState: (playerId: string) => ClientGameState | null
   ) {}
 
@@ -58,6 +60,20 @@ export class P2PRoomHost {
           this.handleIncomingConnection(conn);
         });
 
+        // Lắng nghe cuộc gọi voice audio từ các client
+        this.peer.on('call', (mediaConn: any) => {
+          try {
+            const localStream = voiceEngine.getLocalStream();
+            mediaConn.answer(localStream || undefined);
+            mediaConn.on('stream', (remoteStream: MediaStream) => {
+              const playerId = this.peerPlayerMap.get(mediaConn.peer);
+              voiceEngine.attachRemoteAudio(mediaConn.peer, remoteStream, playerId);
+            });
+          } catch (e) {
+            console.warn('[P2PHost] Lỗi tiếp nhận voice stream:', e);
+          }
+        });
+
         this.peer.on('error', (err: any) => {
           console.warn('[P2PHost] Peer error:', err);
           if (!this.isReady) reject(err);
@@ -79,7 +95,7 @@ export class P2PRoomHost {
 
       if (msg.type === 'JOIN_REQUEST') {
         const { playerName, avatar, isSpectator } = msg.payload || {};
-        const joinResult = this.onClientJoin(playerName || 'Khách', avatar || '🐺', Boolean(isSpectator));
+        const joinResult = this.onClientJoin(playerName || 'Khách', avatar || '🐺', Boolean(isSpectator), conn.peer);
 
         if (!joinResult) {
           conn.send({
@@ -91,6 +107,7 @@ export class P2PRoomHost {
         }
 
         this.playerPeerMap.set(joinResult.playerId, conn.peer);
+        this.peerPlayerMap.set(conn.peer, joinResult.playerId);
         const state = this.getClientMaskedState(joinResult.playerId);
 
         conn.send({
@@ -103,6 +120,19 @@ export class P2PRoomHost {
             state,
           },
         } as P2PMessage);
+
+        // Nếu Host đã bật mic trước đó, gọi audio tới client mới vào phòng
+        const localStream = voiceEngine.getLocalStream();
+        if (localStream && this.peer) {
+          try {
+            const call = this.peer.call(conn.peer, localStream);
+            if (call) {
+              call.on('stream', (remoteStream: MediaStream) => {
+                voiceEngine.attachRemoteAudio(conn.peer, remoteStream, joinResult.playerId);
+              });
+            }
+          } catch {}
+        }
       } else if (msg.type === 'CLIENT_ACTION') {
         if (msg.senderId) {
           this.onClientAction(msg.senderId, msg.payload?.actionType, msg.payload?.data);
@@ -112,7 +142,30 @@ export class P2PRoomHost {
 
     conn.on('close', () => {
       this.connections.delete(conn.peer);
+      const pid = this.peerPlayerMap.get(conn.peer);
+      if (pid) this.playerPeerMap.delete(pid);
+      this.peerPlayerMap.delete(conn.peer);
+      voiceEngine.removeRemoteAudio(conn.peer);
     });
+  }
+
+  /**
+   * Khởi tạo cuộc gọi audio tới tất cả người chơi khi Host bật micro
+   */
+  public callAllClientsAudio(stream: MediaStream) {
+    if (!this.peer || !this.isReady) return;
+    for (const [playerId, peerId] of this.playerPeerMap.entries()) {
+      try {
+        const mediaConn = this.peer.call(peerId, stream);
+        if (mediaConn) {
+          mediaConn.on('stream', (remoteStream: MediaStream) => {
+            voiceEngine.attachRemoteAudio(peerId, remoteStream, playerId);
+          });
+        }
+      } catch (err) {
+        console.warn(`[P2PHost] Không thể gửi audio call tới ${playerId}:`, err);
+      }
+    }
   }
 
   /**
@@ -136,6 +189,8 @@ export class P2PRoomHost {
     this.connections.forEach((c) => c.close());
     this.connections.clear();
     this.playerPeerMap.clear();
+    this.peerPlayerMap.clear();
+    voiceEngine.destroy();
     if (this.peer) {
       this.peer.destroy();
       this.peer = null;
@@ -235,6 +290,19 @@ export class P2PRoomClient {
             console.warn('[P2PClient] Connection error:', err);
             reject(err);
           });
+
+          // Lắng nghe cuộc gọi voice audio từ Host
+          this.peer.on('call', (mediaConn: any) => {
+            try {
+              const localStream = voiceEngine.getLocalStream();
+              mediaConn.answer(localStream || undefined);
+              mediaConn.on('stream', (remoteStream: MediaStream) => {
+                voiceEngine.attachRemoteAudio(mediaConn.peer, remoteStream);
+              });
+            } catch (e) {
+              console.warn('[P2PClient] Lỗi nhận voice stream:', e);
+            }
+          });
         });
 
         this.peer.on('error', (err: any) => {
@@ -243,6 +311,49 @@ export class P2PRoomClient {
         });
       } catch (err) {
         reject(err);
+      }
+    });
+  }
+
+  public getPeerId(): string | null {
+    return this.peer?.id || null;
+  }
+
+  /**
+   * Khởi tạo cuộc gọi audio tới Host khi Client bật micro
+   */
+  public callHostAudio(stream: MediaStream) {
+    if (!this.peer || !this.isConnected) return;
+    try {
+      const hostPeerId = `${PEER_PREFIX}${this.roomId.toUpperCase()}`;
+      const mediaConn = this.peer.call(hostPeerId, stream);
+      if (mediaConn) {
+        mediaConn.on('stream', (remoteStream: MediaStream) => {
+          voiceEngine.attachRemoteAudio(hostPeerId, remoteStream);
+        });
+      }
+    } catch (err) {
+      console.warn('[P2PClient] Không thể gọi voice audio tới Host:', err);
+    }
+  }
+
+  /**
+   * Khởi tạo cuộc gọi audio tới tất cả người chơi khác trong phòng khi Client bật micro
+   */
+  public callPeersAudio(stream: MediaStream, peerIds: string[]) {
+    if (!this.peer || !this.isConnected) return;
+    const myId = this.peer.id;
+    peerIds.forEach((targetPeerId) => {
+      if (!targetPeerId || targetPeerId === myId) return;
+      try {
+        const mediaConn = this.peer.call(targetPeerId, stream);
+        if (mediaConn) {
+          mediaConn.on('stream', (remoteStream: MediaStream) => {
+            voiceEngine.attachRemoteAudio(targetPeerId, remoteStream);
+          });
+        }
+      } catch (err) {
+        console.warn(`[P2PClient] Không thể gọi voice audio tới ${targetPeerId}:`, err);
       }
     });
   }
@@ -263,6 +374,7 @@ export class P2PRoomClient {
       this.conn.close();
       this.conn = null;
     }
+    voiceEngine.destroy();
     if (this.peer) {
       this.peer.destroy();
       this.peer = null;

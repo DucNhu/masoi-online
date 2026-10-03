@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ClientGameState } from '../types/multiplayer';
 import { ROLE_DEFINITIONS } from '../data/roles';
 import { roomManager } from '../logic/roomManager';
+import { voiceEngine } from '../logic/webrtcVoiceMesh';
 import { soundEffects, playSpatialSound } from '../utils/soundEffects';
 import { ConfirmModal } from './ConfirmModal';
 import { ARENA_THEMES } from '../constants/arenaThemes';
@@ -85,8 +86,11 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
     }
   }
 
-  // Xử lý bật/tắt micro
-  const handleToggleMic = () => {
+  // Micro & Voice Control
+  const [isMicLoading, setIsMicLoading] = useState<boolean>(false);
+
+  // Xử lý bật/tắt micro thu âm thực tế & phát loa P2P
+  const handleToggleMic = async () => {
     if (isNight && !isWolfSide) {
       soundEffects.triggerHaptic('heavy');
       alert('🔒 Night Auto-Mute: Đêm tối cả làng ngủ say, micro bị khóa để bảo toàn tĩnh lặng.');
@@ -98,11 +102,56 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
       return;
     }
 
+    if (isMicLoading) return;
+
     const nextMuted = !isMuted;
-    setIsMuted(nextMuted);
-    soundEffects.triggerHaptic('light');
-    roomManager.setVoiceState(gameState.roomId, gameState.myPlayerId, !nextMuted, nextMuted);
+    if (!nextMuted) {
+      setIsMicLoading(true);
+      try {
+        const peerIds = gameState.players
+          .map((p) => p.peerId)
+          .filter((id): id is string => Boolean(id) && id !== gameState.myPlayerId);
+
+        await roomManager.startVoiceBroadcast(gameState.roomId, gameState.myPlayerId, peerIds);
+        setIsMuted(false);
+        soundEffects.triggerHaptic('medium');
+      } catch (err: any) {
+        console.warn('[Mic] Lỗi mở micro:', err);
+        alert(err.message || 'Không thể mở Micro. Vui lòng cấp quyền truy cập Micro trên trình duyệt để nói chuyện.');
+        setIsMuted(true);
+      } finally {
+        setIsMicLoading(false);
+      }
+    } else {
+      roomManager.stopVoiceBroadcast(gameState.roomId, gameState.myPlayerId);
+      setIsMuted(true);
+      soundEffects.triggerHaptic('light');
+    }
   };
+
+  // Lắng nghe trạng thái nói của Micro (VAD) để nhấp nháy UI
+  useEffect(() => {
+    voiceEngine.onSpeaking((isSpeaking) => {
+      roomManager.setVoiceState(gameState.roomId, gameState.myPlayerId, isSpeaking, isMuted);
+    });
+  }, [gameState.roomId, gameState.myPlayerId, isMuted]);
+
+  // Tự động áp dụng phân quyền âm thanh khi phase hoặc vai trò thay đổi
+  useEffect(() => {
+    voiceEngine.applyGameAudioRules({
+      isNight,
+      myRole: gameState.myRole,
+      isAlive,
+      players: gameState.players,
+    });
+  }, [isNight, gameState.myRole, isAlive, gameState.players]);
+
+  // Giải phóng micro khi rời phòng
+  useEffect(() => {
+    return () => {
+      voiceEngine.destroy();
+    };
+  }, []);
 
   // Tự động cuộn chat xuống cuối khi có tin nhắn mới
   useEffect(() => {
@@ -213,6 +262,7 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
           {/* Nút Điều Khiển Micro */}
           <button
             onClick={handleToggleMic}
+            disabled={isMicLoading}
             style={{
               background: !isMuted ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.15)',
               border: !isMuted ? '1px solid #22c55e' : '1px solid rgba(239, 68, 68, 0.3)',
@@ -221,14 +271,15 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
               borderRadius: '8px',
               fontSize: '0.75rem',
               fontWeight: 700,
-              cursor: 'pointer',
+              cursor: isMicLoading ? 'wait' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
+              opacity: isMicLoading ? 0.7 : 1,
             }}
           >
             {!isMuted ? <Mic size={14} color="#4ade80" /> : <MicOff size={14} color="#fca5a5" />}
-            {!isMuted ? 'Mic BẬT' : 'Mic TẮT'}
+            {isMicLoading ? 'Đang mở Mic...' : (!isMuted ? 'Mic BẬT' : 'Mic TẮT')}
           </button>
 
           <button

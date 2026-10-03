@@ -34,9 +34,10 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
   });
   const [selectedAvatarObj, setSelectedAvatarObj] = useState<WerewolfAvatar>(WEREWOLF_AVATARS[0]);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState<boolean>(false);
-  const [inputRoomCode, setInputRoomCode] = useState<string>('');
+  const initialInvite = extractRoomCodeFromUrl();
+  const [inputRoomCode, setInputRoomCode] = useState<string>(() => initialInvite || '');
   const [tableNameInput, setTableNameInput] = useState<string>('');
-  const [activeView, setActiveView] = useState<'TABLES' | 'CREATE' | 'JOIN' | 'ROOM' | 'SPECTATOR'>('TABLES');
+  const [activeView, setActiveView] = useState<'TABLES' | 'CREATE' | 'JOIN' | 'ROOM' | 'SPECTATOR'>(() => initialInvite ? 'JOIN' : 'TABLES');
   const [spectatorSession, setSpectatorSession] = useState<{ roomId: string; spectatorId: string } | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
@@ -92,15 +93,12 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
     }
   }, []);
 
-  // Tự động kiểm tra liên kết mời (?room=CODE) khi truy cập
+  // Dọn dẹp mã phòng trên URL sau khi khởi tạo
   useEffect(() => {
-    const inviteCode = extractRoomCodeFromUrl();
-    if (inviteCode) {
-      setInputRoomCode(inviteCode);
-      setActiveView('JOIN');
+    if (initialInvite) {
       clearRoomCodeFromUrl();
     }
-  }, []);
+  }, [initialInvite]);
 
   // Tự động load và refresh bàn chơi
   useEffect(() => {

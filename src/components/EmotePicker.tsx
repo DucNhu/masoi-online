@@ -1,3 +1,4 @@
+/* oxlint-disable react/only-export-components */
 import React, { useState } from 'react';
 import { Smile, X } from 'lucide-react';
 import { playVoteSound } from '../utils/soundEffects';

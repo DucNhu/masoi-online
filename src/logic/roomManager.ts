@@ -3,6 +3,7 @@ import { RoleId } from '../types/game';
 import { generateRoomCode, maskGameStateForPlayer } from './roomProtocol';
 import { recordMatchResult, getHunterProfile } from '../utils/eloRating';
 import { P2PRoomHost, P2PRoomClient } from './webrtcPeerMesh';
+import { voiceEngine } from './webrtcVoiceMesh';
 
 export type StateListener = (playerId: string, state: ClientGameState) => void;
 export type VoiceSignalListener = (signal: VoiceSignalPayload) => void;
@@ -172,13 +173,13 @@ export class RoomManager {
         (senderId, actionType, payload) => {
           this.handleClientActionFromP2P(cleanId, senderId, actionType, payload);
         },
-        (playerName, avatar, isSpectator) => {
+        (playerName, avatar, isSpectator, peerId) => {
           try {
             if (isSpectator) {
               const res = this.joinAsSpectator(cleanId, playerName, avatar);
               return { playerId: res.spectatorId, sessionToken: `spectator_${res.spectatorId}` };
             } else {
-              const res = this.joinRoom(cleanId, playerName, avatar);
+              const res = this.joinRoom(cleanId, playerName, avatar, peerId);
               return { playerId: res.playerId, sessionToken: res.sessionToken };
             }
           } catch {
@@ -215,6 +216,8 @@ export class RoomManager {
         this.sendChatMessage(roomId, senderId, payload?.text, payload?.channel);
       } else if (actionType === 'CHEER') {
         this.sendCheer(roomId, payload?.senderName, payload?.emoji);
+      } else if (actionType === 'SET_VOICE_STATE') {
+        this.setVoiceState(roomId, senderId, Boolean(payload?.isSpeaking), Boolean(payload?.isMuted));
       } else if (actionType === 'LEAVE') {
         this.leaveRoom(roomId, senderId);
       }
@@ -370,6 +373,7 @@ export class RoomManager {
           hasActedNight: false,
           role: 'VILLAGER', // Tạm thời trong lobby
           sessionToken,
+          peerId: `masoi-v1-${roomId.toUpperCase()}`,
         },
       ],
       nightActions: {
@@ -404,7 +408,8 @@ export class RoomManager {
   public joinRoom(
     roomId: string,
     playerName: string,
-    avatar: string
+    avatar: string,
+    peerId?: string
   ): { sessionToken: string; playerId: string; state: ClientGameState } {
     const cleanRoomId = roomId.trim().toUpperCase();
     const room = this.rooms.get(cleanRoomId);
@@ -437,6 +442,7 @@ export class RoomManager {
       hasActedNight: false,
       role: 'VILLAGER',
       sessionToken,
+      peerId,
     });
 
     room.historyLog.push(`${playerName} đã vào phòng (Ghế số ${seatNumber})`);
@@ -1223,7 +1229,13 @@ export class RoomManager {
    * Cập nhật trạng thái Nói / Tắt tiếng (Speaking / Muted)
    */
   public setVoiceState(roomId: string, playerId: string, isSpeaking: boolean, isMuted: boolean): void {
-    const room = this.rooms.get(roomId);
+    const cleanRoomId = roomId.trim().toUpperCase();
+    if (!this.rooms.has(cleanRoomId) && this.p2pClient) {
+      this.p2pClient.sendAction(playerId, 'SET_VOICE_STATE', { isSpeaking, isMuted });
+      return;
+    }
+
+    const room = this.rooms.get(cleanRoomId);
     if (!room) return;
 
     const player = room.players.find((p) => p.id === playerId);
@@ -1232,7 +1244,35 @@ export class RoomManager {
     player.isSpeaking = isSpeaking;
     player.isMuted = isMuted;
 
-    this.broadcastState(roomId);
+    this.broadcastState(cleanRoomId);
+  }
+
+  /**
+   * Bật thu âm micro thực tế và gọi audio tới các người chơi khác qua WebRTC Mesh
+   */
+  public async startVoiceBroadcast(roomId: string, playerId: string, targetPeerIds?: string[]): Promise<MediaStream> {
+    const stream = await voiceEngine.enableMicrophone();
+    const cleanId = roomId.trim().toUpperCase();
+    const host = this.p2pHosts.get(cleanId);
+    if (host) {
+      host.callAllClientsAudio(stream);
+    } else if (this.p2pClient) {
+      this.p2pClient.callHostAudio(stream);
+      if (targetPeerIds && targetPeerIds.length > 0) {
+        this.p2pClient.callPeersAudio(stream, targetPeerIds);
+      }
+    }
+    this.setVoiceState(cleanId, playerId, true, false);
+    return stream;
+  }
+
+  /**
+   * Tắt thu âm micro thực tế
+   */
+  public stopVoiceBroadcast(roomId: string, playerId: string): void {
+    voiceEngine.setMicEnabled(false);
+    const cleanId = roomId.trim().toUpperCase();
+    this.setVoiceState(cleanId, playerId, false, true);
   }
 
   /**
