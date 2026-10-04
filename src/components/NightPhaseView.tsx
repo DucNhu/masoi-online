@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Moon, Shield, Eye, Sparkles, Skull, ArrowRight, Check, Heart, VenetianMask, Crosshair } from 'lucide-react';
-import { GameState, NightStepAction, GamePhase } from '../types/game';
+import { GameState, NightStepAction, GamePhase, RoleId } from '../types/game';
 import { ROLE_DEFINITIONS, MODERATOR_SCRIPTS } from '../data/roles';
 import { soundEffects } from '../utils/soundEffects';
 import { ConfirmModal } from './ConfirmModal';
+import { ROLE_CARD_IMAGES, PHASE_BACKGROUNDS } from '../constants/assets';
 
 interface Props {
   gameState: GameState;
@@ -122,6 +123,41 @@ export const NightPhaseView: React.FC<Props> = ({
   // Nạn nhân bị sói cắn (cho Phù Thủy xem)
   const wolfBittenPlayer = players.find(p => p.id === currentNightAction.werewolfTargetId);
 
+  const renderStepHeader = (roleId: RoleId, title: string, subtitle?: string) => {
+    const cardImg = ROLE_CARD_IMAGES[roleId];
+    const roleDef = ROLE_DEFINITIONS[roleId];
+    const color = roleDef?.color || '#fff';
+
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+        <div style={{
+          width: '42px',
+          height: '56px',
+          borderRadius: '8px',
+          overflow: 'hidden',
+          border: `1.5px solid ${color}`,
+          boxShadow: `0 4px 12px ${color}35`,
+          flexShrink: 0,
+          background: '#0a0a14',
+        }}>
+          {cardImg && (
+            <img src={cardImg} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          )}
+        </div>
+        <div>
+          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, color: '#f1f5f9' }} className="font-cinzel">
+            {title}
+          </h3>
+          {subtitle && (
+            <div style={{ fontSize: '0.72rem', color, fontWeight: 700, marginTop: '2px' }}>
+              {subtitle}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* Night Progress Pill Bar */}
@@ -153,7 +189,14 @@ export const NightPhaseView: React.FC<Props> = ({
 
       {/* Step 1: INTRO */}
       {currentStep === 'INTRO' && (
-        <div className="card-glass active-pulse" style={{ textAlign: 'center', padding: '24px 16px' }}>
+        <div className="card-glass active-pulse" style={{ 
+          textAlign: 'center', 
+          padding: '28px 18px',
+          backgroundImage: `linear-gradient(rgba(18, 20, 36, 0.85), rgba(10, 12, 22, 0.94)), url(${PHASE_BACKGROUNDS.NIGHT})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          borderRadius: '20px',
+        }}>
           <div style={{
             width: '64px',
             height: '64px',
@@ -173,11 +216,12 @@ export const NightPhaseView: React.FC<Props> = ({
           </h2>
 
           <div style={{
-            background: 'rgba(0, 0, 0, 0.35)',
+            background: 'rgba(0, 0, 0, 0.45)',
+            backdropFilter: 'blur(8px)',
             borderRadius: '14px',
             padding: '14px',
             margin: '16px 0',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
             textAlign: 'left',
           }}>
             <div style={{ fontSize: '0.72rem', color: 'var(--accent-gold)', fontWeight: 800, marginBottom: '4px' }}>
@@ -197,12 +241,7 @@ export const NightPhaseView: React.FC<Props> = ({
       {/* Step: CUPID (Thần Tình Yêu - Lá 9) */}
       {currentStep === 'CUPID' && (
         <div className="card-glass" style={{ borderLeft: '4px solid var(--accent-cupid)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <Heart size={20} color="var(--accent-cupid)" />
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }} className="font-cinzel">
-              Thần Tình Yêu (Lá 9) Thức Dậy
-            </h3>
-          </div>
+          {renderStepHeader('CUPID', 'Thần Tình Yêu (Lá 9) Thức Dậy', 'Đêm đầu tiên • Ghép duyên 2 người chơi')}
 
           <div style={{
             background: 'rgba(0, 0, 0, 0.35)',
@@ -269,12 +308,7 @@ export const NightPhaseView: React.FC<Props> = ({
       {/* Step: MINION (Kẻ Bán Tơ - Lá 8) */}
       {currentStep === 'MINION' && (
         <div className="card-glass" style={{ borderLeft: '4px solid #f97316' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <VenetianMask size={20} color="#f97316" />
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }} className="font-cinzel">
-              Kẻ Bán Tơ (Lá 8) Thức Dậy
-            </h3>
-          </div>
+          {renderStepHeader('MINION', 'Kẻ Bán Tơ (Lá 8) Thức Dậy', 'Đêm đầu tiên • Nhận diện đàn Sói')}
 
           <div style={{
             background: 'rgba(0, 0, 0, 0.35)',
@@ -316,12 +350,7 @@ export const NightPhaseView: React.FC<Props> = ({
       {/* Step: BODYGUARD (Bảo Vệ - Lá J) */}
       {currentStep === 'BODYGUARD' && (
         <div className="card-glass" style={{ borderLeft: '4px solid var(--accent-guard)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <Shield size={20} color="var(--accent-guard)" />
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }} className="font-cinzel">
-              Bảo Vệ (Lá J) Thức Dậy
-            </h3>
-          </div>
+          {renderStepHeader('BODYGUARD', 'Bảo Vệ (Lá J) Thức Dậy', 'Mỗi đêm • Bảo vệ 1 người khỏi Sói cắn')}
 
           <div style={{
             background: 'rgba(0, 0, 0, 0.35)',
@@ -378,12 +407,7 @@ export const NightPhaseView: React.FC<Props> = ({
       {/* Step: HUNTER (Thợ Săn - Lá 10) */}
       {currentStep === 'HUNTER' && (
         <div className="card-glass" style={{ borderLeft: '4px solid var(--accent-hunter)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <Crosshair size={20} color="var(--accent-hunter)" />
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }} className="font-cinzel">
-              Thợ Săn (Lá 10) Thức Dậy
-            </h3>
-          </div>
+          {renderStepHeader('HUNTER', 'Thợ Săn (Lá 10) Thức Dậy', 'Mỗi đêm • Găm đạn ngắm bắn mục tiêu báo thù')}
 
           <div style={{
             background: 'rgba(0, 0, 0, 0.35)',
@@ -462,12 +486,7 @@ export const NightPhaseView: React.FC<Props> = ({
       {/* Step: WEREWOLF (Ma Sói - Lá K) */}
       {currentStep === 'WEREWOLF' && (
         <div className="card-glass danger-pulse" style={{ borderLeft: '4px solid var(--accent-wolf)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <Skull size={20} color="var(--accent-wolf)" />
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }} className="font-cinzel">
-              Ma Sói (Lá K) Thức Dậy
-            </h3>
-          </div>
+          {renderStepHeader('WEREWOLF', 'Ma Sói (Lá K) Thức Dậy', 'Mỗi đêm • Thống nhất cắn chết 1 nạn nhân')}
 
           <div style={{
             background: 'rgba(0, 0, 0, 0.35)',
@@ -535,12 +554,7 @@ export const NightPhaseView: React.FC<Props> = ({
       {/* Step: WITCH (Phù Thủy - Lá Q) */}
       {currentStep === 'WITCH' && (
         <div className="card-glass" style={{ borderLeft: '4px solid var(--accent-witch)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <Sparkles size={20} color="var(--accent-witch)" />
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }} className="font-cinzel">
-              Phù Thủy (Lá Q) Thức Dậy
-            </h3>
-          </div>
+          {renderStepHeader('WITCH', 'Phù Thủy (Lá Q) Thức Dậy', 'Mỗi đêm • Bình Cứu sinh mạng & Bình Độc kết liễu')}
 
           <div style={{
             background: 'rgba(0, 0, 0, 0.35)',
@@ -651,12 +665,7 @@ export const NightPhaseView: React.FC<Props> = ({
       {/* Step: SEER (Tiên Tri - Lá A) */}
       {currentStep === 'SEER' && (
         <div className="card-glass" style={{ borderLeft: '4px solid var(--accent-seer)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <Eye size={20} color="var(--accent-seer)" />
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }} className="font-cinzel">
-              Tiên Tri (Lá A) Thức Dậy
-            </h3>
-          </div>
+          {renderStepHeader('SEER', 'Tiên Tri (Lá A) Thức Dậy', 'Mỗi đêm • Soi danh tính 1 người chơi')}
 
           <div style={{
             background: 'rgba(0, 0, 0, 0.35)',

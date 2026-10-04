@@ -4,6 +4,7 @@ import { GameState } from '../types/game';
 import { ROLE_DEFINITIONS } from '../data/roles';
 import { soundEffects } from '../utils/soundEffects';
 import { ConfirmModal } from './ConfirmModal';
+import { PHASE_BACKGROUNDS, ROLE_CARD_IMAGES, CARD_BACK_IMAGE } from '../constants/assets';
 
 interface Props {
   gameState: GameState;
@@ -69,7 +70,14 @@ export const DayVotingView: React.FC<Props> = ({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* Header */}
-      <div className="card-glass danger-pulse" style={{ padding: '16px', textAlign: 'center' }}>
+      <div className="card-glass danger-pulse" style={{ 
+        padding: '22px 16px', 
+        textAlign: 'center',
+        backgroundImage: `linear-gradient(rgba(18, 20, 36, 0.84), rgba(10, 12, 22, 0.95)), url(${PHASE_BACKGROUNDS.DAY_VOTING})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        borderRadius: '20px',
+      }}>
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -203,14 +211,36 @@ export const DayVotingView: React.FC<Props> = ({
           borderRadius: '16px',
           padding: '16px',
           textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
         }}>
           <div style={{ fontSize: '0.8rem', color: '#fca5a5', textTransform: 'uppercase', fontWeight: 800 }}>
             Người Sắp Bị Treo Cổ:
           </div>
-          <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#f87171', margin: '4px 0' }}>
+
+          {/* Tarot card preview */}
+          <div style={{
+            width: '44px',
+            height: '58px',
+            borderRadius: '8px',
+            overflow: 'hidden',
+            border: '2px solid var(--accent-wolf)',
+            boxShadow: '0 4px 14px rgba(239, 68, 68, 0.4)',
+            margin: '8px auto',
+            background: '#0a0a14',
+          }}>
+            <img 
+              src={privacyShield ? CARD_BACK_IMAGE : (ROLE_CARD_IMAGES[targetPlayer.roleId] || CARD_BACK_IMAGE)} 
+              alt={targetPlayer.name} 
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+            />
+          </div>
+
+          <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#f87171', margin: '2px 0 4px 0' }}>
             {targetPlayer.name} (Ghế {targetPlayer.seatNumber})
           </div>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
             Sau khi xác nhận, người này sẽ bị loại khỏi ván đấu và trăn trối lời cuối.
           </p>
         </div>

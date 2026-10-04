@@ -4,6 +4,7 @@ import { Trophy, RotateCcw, Skull, Users, Heart } from 'lucide-react';
 import { TeamSide, Player } from '../types/game';
 import { ROLE_DEFINITIONS } from '../data/roles';
 import { ConfirmModal } from './ConfirmModal';
+import { PHASE_BACKGROUNDS, ROLE_CARD_IMAGES } from '../constants/assets';
 
 interface Props {
   winner: TeamSide | 'NONE';
@@ -35,7 +36,7 @@ export const GameOverModal: React.FC<Props> = ({
           title: 'PHE DÂN LÀNG THẮNG!',
           color: '#38bdf8',
           icon: <Users size={40} color="#38bdf8" />,
-          bg: 'rgba(56, 189, 248, 0.15)',
+          bg: `linear-gradient(rgba(10, 18, 30, 0.82), rgba(10, 18, 30, 0.95)), url(${PHASE_BACKGROUNDS.WIN_VILLAGE})`,
           border: '2px solid rgba(56, 189, 248, 0.5)',
         };
       case 'WEREWOLF':
@@ -43,7 +44,7 @@ export const GameOverModal: React.FC<Props> = ({
           title: 'PHE MA SÓI THẮNG!',
           color: '#ef4444',
           icon: <Skull size={40} color="#ef4444" />,
-          bg: 'rgba(239, 68, 68, 0.15)',
+          bg: `linear-gradient(rgba(30, 10, 10, 0.82), rgba(20, 10, 10, 0.95)), url(${PHASE_BACKGROUNDS.WIN_WEREWOLF})`,
           border: '2px solid rgba(239, 68, 68, 0.5)',
         };
       case 'LOVERS':
@@ -51,7 +52,7 @@ export const GameOverModal: React.FC<Props> = ({
           title: 'PHE CẶP ĐÔI THẮNG!',
           color: '#ec4899',
           icon: <Heart size={40} color="#ec4899" />,
-          bg: 'rgba(236, 72, 153, 0.15)',
+          bg: 'linear-gradient(rgba(36, 12, 24, 0.85), rgba(20, 10, 15, 0.95))',
           border: '2px solid rgba(236, 72, 153, 0.5)',
         };
       default:
@@ -59,7 +60,7 @@ export const GameOverModal: React.FC<Props> = ({
           title: 'KẾT THÚC HÒA!',
           color: '#94a3b8',
           icon: <Trophy size={40} color="#94a3b8" />,
-          bg: 'rgba(255, 255, 255, 0.08)',
+          bg: 'linear-gradient(rgba(20, 20, 30, 0.85), rgba(10, 10, 15, 0.95))',
           border: '2px solid rgba(255, 255, 255, 0.2)',
         };
     }
@@ -98,8 +99,10 @@ export const GameOverModal: React.FC<Props> = ({
         {/* Banner */}
         <div style={{
           textAlign: 'center',
-          padding: '24px 20px 16px 20px',
+          padding: '28px 20px 20px 20px',
           background: config.bg,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
           borderBottom: '1px solid var(--border-subtle)',
         }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
@@ -133,32 +136,46 @@ export const GameOverModal: React.FC<Props> = ({
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '10px 12px',
+                  gap: '10px',
+                  padding: '8px 12px',
                   borderRadius: '10px',
                   background: p.isAlive ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.4)',
                   border: '1px solid var(--border-subtle)',
-                  opacity: p.isAlive ? 1 : 0.6,
+                  opacity: p.isAlive ? 1 : 0.65,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--accent-gold)' }}>
-                    #{p.seatNumber}
-                  </span>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: '0.92rem' }}>
-                      {p.name} {!p.isAlive && <span style={{ fontSize: '0.75rem', color: '#f87171' }}>(Đã chết)</span>}
-                    </div>
+                {/* Tarot Thumbnail */}
+                <div style={{
+                  width: '32px',
+                  height: '42px',
+                  borderRadius: '6px',
+                  overflow: 'hidden',
+                  border: `1.5px solid ${roleDef.color}`,
+                  flexShrink: 0,
+                  background: '#0a0a14',
+                }}>
+                  <img 
+                    src={ROLE_CARD_IMAGES[p.roleId]} 
+                    alt={roleDef.name} 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                  />
+                </div>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontWeight: 800, fontSize: '0.82rem', color: 'var(--accent-gold)' }}>
+                      #{p.seatNumber}
+                    </span>
+                    <span>{p.name}</span>
+                    {!p.isAlive && <span style={{ fontSize: '0.75rem', color: '#f87171' }}>(Đã chết)</span>}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: roleDef.color, fontWeight: 700 }}>
+                    {roleDef.name}
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontWeight: 800, fontSize: '0.9rem', color: roleDef.color }}>
-                    {roleDef.name}
-                  </span>
-                  <div className="playing-card-badge" style={{ minWidth: '32px', height: '32px', fontSize: '0.88rem' }}>
-                    {p.card.rank}{p.card.suit}
-                  </div>
+                <div className="playing-card-badge" style={{ minWidth: '32px', height: '32px', fontSize: '0.88rem' }}>
+                  {p.card.rank}{p.card.suit}
                 </div>
               </div>
             );

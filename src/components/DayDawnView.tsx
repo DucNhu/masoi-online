@@ -4,6 +4,7 @@ import { GameState } from '../types/game';
 import { ROLE_DEFINITIONS } from '../data/roles';
 import { soundEffects } from '../utils/soundEffects';
 import { ConfirmModal } from './ConfirmModal';
+import { PHASE_BACKGROUNDS, ROLE_CARD_IMAGES } from '../constants/assets';
 
 interface Props {
   gameState: GameState;
@@ -45,8 +46,12 @@ export const DayDawnView: React.FC<Props> = ({
       {/* Dawn Banner */}
       <div className="card-glass" style={{
         textAlign: 'center',
-        padding: '24px 16px',
+        padding: '28px 18px',
         borderTop: '4px solid var(--accent-gold)',
+        backgroundImage: `linear-gradient(rgba(18, 20, 36, 0.82), rgba(10, 12, 22, 0.94)), url(${PHASE_BACKGROUNDS.DAY_DAWN})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        borderRadius: '20px',
       }}>
         <div style={{
           width: '60px',
@@ -95,14 +100,33 @@ export const DayDawnView: React.FC<Props> = ({
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
+                    gap: '12px',
                     padding: '12px',
                     borderRadius: '12px',
                     background: 'rgba(239, 68, 68, 0.1)',
                     border: '1px solid rgba(239, 68, 68, 0.3)',
                   }}
                 >
-                  <div>
+                  {/* Dead Card Thumbnail */}
+                  <div style={{
+                    width: '36px',
+                    height: '48px',
+                    borderRadius: '6px',
+                    overflow: 'hidden',
+                    border: '1.5px solid #ef4444',
+                    boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)',
+                    flexShrink: 0,
+                    background: '#0a0a14',
+                    filter: 'grayscale(50%)',
+                  }}>
+                    <img 
+                      src={ROLE_CARD_IMAGES[p.roleId]} 
+                      alt={p.name} 
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                    />
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 800, fontSize: '1rem', color: '#f87171' }}>
                       Ghế {p.seatNumber}: {p.name}
                     </div>

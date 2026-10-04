@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Sword, Target, Sparkles, Shield, Eye, Flame, BookOpen, Play } from 'lucide-react';
 import { RoleId } from '../types/game';
 import { soundEffects } from '../utils/soundEffects';
+import { ROLE_CARD_IMAGES } from '../constants/assets';
 
 interface SoloPracticeModalProps {
   isOpen: boolean;
@@ -172,17 +173,32 @@ export const SoloPracticeModal: React.FC<SoloPracticeModalProps> = ({
                     background: isSelected ? `${r.badgeColor}22` : 'rgba(255, 255, 255, 0.04)',
                     border: isSelected ? `2px solid ${r.badgeColor}` : '1px solid rgba(255, 255, 255, 0.08)',
                     borderRadius: '12px',
-                    padding: '10px 6px',
+                    padding: '8px 4px',
                     cursor: 'pointer',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: '4px',
+                    gap: '6px',
                     color: '#fff',
+                    boxShadow: isSelected ? `0 0 12px ${r.badgeColor}40` : 'none',
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  <span style={{ fontSize: '1.6rem' }}>{r.icon}</span>
+                  <div style={{
+                    width: '38px',
+                    height: '50px',
+                    borderRadius: '6px',
+                    overflow: 'hidden',
+                    border: `1px solid ${r.badgeColor}80`,
+                    flexShrink: 0,
+                    background: '#0a0a14',
+                  }}>
+                    <img 
+                      src={ROLE_CARD_IMAGES[r.role]} 
+                      alt={r.name} 
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                    />
+                  </div>
                   <span style={{ fontSize: '0.75rem', fontWeight: 700, color: isSelected ? r.badgeColor : '#e2e8f0' }}>
                     {r.name}
                   </span>

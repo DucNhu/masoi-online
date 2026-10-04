@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ShieldCheck, Award, X, Flame, Lock } from 'lucide-react';
 import { getHunterProfile, getRankTier, HunterProfile } from '../utils/eloRating';
 import { HUNTER_BADGES } from '../constants/achievements';
+import { BRAND_ASSETS } from '../constants/assets';
 
 interface Props {
   isOpen: boolean;
@@ -74,6 +75,9 @@ export const HunterProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
           <div
             style={{
               background: 'linear-gradient(135deg, rgba(30, 27, 75, 0.7), rgba(17, 24, 39, 0.9))',
+              backgroundImage: `linear-gradient(rgba(18, 20, 36, 0.86), rgba(10, 12, 22, 0.96)), url(${BRAND_ASSETS.heroBanner})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
               border: `1.5px solid ${currentTier.color}50`,
               borderRadius: '16px',
               padding: '16px',

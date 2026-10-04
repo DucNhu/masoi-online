@@ -31,6 +31,7 @@ import {
 import { EmotePicker } from './EmotePicker';
 import { MatchHistoryModal } from './MatchHistoryModal';
 import { NetworkStatusBadge } from './NetworkStatusBadge';
+import { ROLE_CARD_IMAGES, CARD_BACK_IMAGE, PHASE_BACKGROUNDS } from '../constants/assets';
 
 interface Props {
   gameState: ClientGameState;
@@ -42,6 +43,7 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
   const [showRoleModal, setShowRoleModal] = useState<boolean>(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState<boolean>(false);
   const [showHistoryModal, setShowHistoryModal] = useState<boolean>(false);
+  const [isRoleCardFlipped, setIsRoleCardFlipped] = useState<boolean>(false);
 
   // Mục tiêu được chọn tương tác trực tiếp 1 chạm trên Bàn Đấu (Dùng chung cho cả Đêm và Ngày)
   const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null);
@@ -290,6 +292,9 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
       overflow: 'hidden',
       color: '#fff',
       background: arenaTheme.backgroundGradient,
+      backgroundImage: `linear-gradient(rgba(10, 10, 18, 0.88), rgba(10, 10, 18, 0.94)), url(${isNight ? PHASE_BACKGROUNDS.NIGHT : isDayVoting ? PHASE_BACKGROUNDS.DAY_VOTING : PHASE_BACKGROUNDS.DAY_DAWN})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
       fontFamily: 'Be Vietnam Pro, Montserrat, sans-serif',
       position: 'relative',
     }}>
@@ -310,6 +315,7 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
         <button
           onClick={() => {
             soundEffects.triggerHaptic('light');
+            setIsRoleCardFlipped(false);
             setShowRoleModal(true);
           }}
           title="Xem lá bài vai trò & kỹ năng"
@@ -317,16 +323,31 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
             background: myRoleDef.badgeBg,
             border: `1.5px solid ${myRoleDef.color}`,
             borderRadius: '12px',
-            padding: '3px 10px',
+            padding: '3px 8px',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '8px',
             cursor: 'pointer',
             color: '#fff',
             boxShadow: `0 0 10px ${myRoleDef.color}40`,
           }}
         >
-          <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>{me?.avatar}</span>
+          {/* Card Thumbnail */}
+          <div style={{
+            width: '26px',
+            height: '34px',
+            borderRadius: '5px',
+            overflow: 'hidden',
+            border: `1px solid ${myRoleDef.color}`,
+            flexShrink: 0,
+            background: '#0a0a14',
+          }}>
+            <img 
+              src={ROLE_CARD_IMAGES[gameState.myRole] || CARD_BACK_IMAGE} 
+              alt={myRoleDef.name} 
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+            />
+          </div>
           <div style={{ textAlign: 'left' }}>
             <div style={{ fontSize: '0.62rem', color: myRoleDef.color, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               [{myRoleDef.defaultRank || '?'}] {myRoleDef.name}
@@ -1221,21 +1242,62 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
               <div style={{ fontSize: '0.9rem', color: myRoleDef.color }}>♠</div>
             </div>
 
-            {/* Avatar Linh Vật Lớn */}
-            <div style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              background: myRoleDef.badgeBg,
-              border: `3px solid ${myRoleDef.color}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '3rem',
-              margin: '0 auto 12px auto',
-              boxShadow: `0 0 24px ${myRoleDef.color}60`,
-            }}>
-              {me?.avatar}
+            {/* Lá Bài Tarot Nghệ Thuật (Chạm để Lật úp/Mở - Privacy Mode) */}
+            <div 
+              onClick={() => {
+                soundEffects.triggerHaptic('light');
+                setIsRoleCardFlipped(!isRoleCardFlipped);
+              }}
+              title="Chạm để lật bài (Ẩn / Hiện để chống nhìn trộm)"
+              style={{
+                width: '180px',
+                height: '240px',
+                borderRadius: '16px',
+                overflow: 'hidden',
+                border: `2px solid ${myRoleDef.color}`,
+                boxShadow: `0 10px 30px rgba(0,0,0,0.8), 0 0 24px ${myRoleDef.color}50`,
+                margin: '12px auto 14px auto',
+                cursor: 'pointer',
+                position: 'relative',
+                backgroundColor: '#0a0a14',
+                transition: 'all 0.25s ease',
+              }}
+            >
+              <img 
+                src={isRoleCardFlipped ? CARD_BACK_IMAGE : (ROLE_CARD_IMAGES[gameState.myRole] || CARD_BACK_IMAGE)} 
+                alt={myRoleDef.name} 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+              />
+              {!isRoleCardFlipped && (
+                <div style={{
+                  position: 'absolute',
+                  top: '8px',
+                  left: '8px',
+                  background: 'rgba(0,0,0,0.85)',
+                  backdropFilter: 'blur(4px)',
+                  color: myRoleDef.color,
+                  padding: '2px 8px',
+                  borderRadius: '6px',
+                  fontSize: '0.85rem',
+                  fontWeight: 900,
+                  border: `1px solid ${myRoleDef.color}80`,
+                }}>
+                  Lá {myRoleDef.defaultRank || '?'}
+                </div>
+              )}
+              <div style={{
+                position: 'absolute',
+                bottom: '6px',
+                left: 0,
+                right: 0,
+                fontSize: '0.68rem',
+                color: 'rgba(255,255,255,0.85)',
+                textShadow: '0 1px 3px rgba(0,0,0,0.9)',
+                background: 'linear-gradient(transparent, rgba(0,0,0,0.85))',
+                padding: '4px 0 2px 0',
+              }}>
+                {isRoleCardFlipped ? '🔄 Chạm để mở bài' : '🔄 Chạm để úp bài (Che)'}
+              </div>
             </div>
 
             {/* Tên vai trò & Phe phái */}

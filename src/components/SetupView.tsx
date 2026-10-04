@@ -20,6 +20,7 @@ import { Player, CardRank, CardSuit, CardMappingConfig, RoleId } from '../types/
 import { ROLE_DEFINITIONS } from '../data/roles';
 import { soundEffects } from '../utils/soundEffects';
 import { ConfirmModal } from './ConfirmModal';
+import { ROLE_CARD_IMAGES, BRAND_ASSETS } from '../constants/assets';
 
 interface Props {
   cardMappings: CardMappingConfig;
@@ -1091,38 +1092,37 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
                   Ghế {currentP.seatNumber}: {currentP.name}
                 </h3>
 
-                {/* Big Playing Card Graphic */}
+                {/* Big Playing Card / Tarot Card Graphic */}
                 <div style={{
-                  width: '130px',
-                  height: '180px',
-                  background: 'white',
+                  width: '135px',
+                  height: '185px',
                   borderRadius: '16px',
                   margin: '0 auto 16px auto',
                   boxShadow: '0 12px 35px rgba(0,0,0,0.6)',
-                  border: currentP.isDealt ? '4px solid #22c55e' : '4px solid transparent',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  padding: '12px 14px',
-                  color: isRedSuit ? '#dc2626' : '#0f172a',
+                  border: currentP.isDealt ? '4px solid #22c55e' : `3px solid ${roleDef.color}`,
+                  overflow: 'hidden',
                   position: 'relative',
-                  userSelect: 'none',
+                  backgroundColor: '#0a0a14',
                 }}>
-                  {/* Top-left rank & suit */}
-                  <div style={{ textAlign: 'left', lineHeight: 1 }}>
-                    <div style={{ fontSize: '1.4rem', fontWeight: 900 }}>{currentP.rank}</div>
-                    <div style={{ fontSize: '1.1rem' }}>{currentP.suit}</div>
-                  </div>
-
-                  {/* Center giant suit */}
-                  <div style={{ fontSize: '3rem', textAlign: 'center', opacity: 0.9 }}>
-                    {currentP.suit}
-                  </div>
-
-                  {/* Bottom-right inverted */}
-                  <div style={{ textAlign: 'right', lineHeight: 1 }}>
-                    <div style={{ fontSize: '1.4rem', fontWeight: 900 }}>{currentP.rank}</div>
-                    <div style={{ fontSize: '1.1rem' }}>{currentP.suit}</div>
+                  <img 
+                    src={privacyMode ? BRAND_ASSETS.cardBack : (ROLE_CARD_IMAGES[currentP.roleId] || BRAND_ASSETS.cardBack)} 
+                    alt={roleDef.name} 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    top: '8px',
+                    left: '8px',
+                    background: 'rgba(0,0,0,0.85)',
+                    backdropFilter: 'blur(4px)',
+                    color: isRedSuit ? '#f87171' : '#fff',
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    fontSize: '0.85rem',
+                    fontWeight: 900,
+                    border: `1px solid ${isRedSuit ? '#dc2626' : 'rgba(255,255,255,0.4)'}`,
+                  }}>
+                    {currentP.rank}{currentP.suit}
                   </div>
                 </div>
 
@@ -1242,7 +1242,7 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
                       padding: '12px 14px',
                     }}
                   >
-                    {/* Left: Seat & Name */}
+                    {/* Left: Seat, Tarot Thumbnail & Name */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span style={{
                         width: '26px',
@@ -1255,9 +1255,28 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
                         fontSize: '0.8rem',
                         fontWeight: 800,
                         color: p.isDealt ? '#0f172a' : 'var(--accent-gold)',
+                        flexShrink: 0,
                       }}>
                         {p.isDealt ? '✓' : p.seatNumber}
                       </span>
+
+                      {/* Tarot Thumbnail */}
+                      <div style={{
+                        width: '30px',
+                        height: '40px',
+                        borderRadius: '6px',
+                        overflow: 'hidden',
+                        border: `1.5px solid ${p.isDealt ? '#22c55e' : roleDef.color}`,
+                        flexShrink: 0,
+                        background: '#0a0a14',
+                      }}>
+                        <img 
+                          src={privacyMode ? BRAND_ASSETS.cardBack : (ROLE_CARD_IMAGES[p.roleId] || BRAND_ASSETS.cardBack)} 
+                          alt={roleDef.name} 
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                        />
+                      </div>
+
                       <div>
                         <div style={{ fontSize: '0.98rem', fontWeight: 800 }}>
                           {p.name}

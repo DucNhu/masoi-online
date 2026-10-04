@@ -4,6 +4,7 @@ import { GameState } from '../types/game';
 import { soundEffects } from '../utils/soundEffects';
 import { ConfirmModal } from './ConfirmModal';
 import { EmotePicker, EmoteItem } from './EmotePicker';
+import { PHASE_BACKGROUNDS } from '../constants/assets';
 
 interface Props {
   gameState: GameState;
@@ -74,7 +75,14 @@ export const DayDiscussionView: React.FC<Props> = ({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* Discussion Header */}
-      <div className="card-glass" style={{ padding: '16px', textAlign: 'center' }}>
+      <div className="card-glass" style={{ 
+        padding: '22px 16px', 
+        textAlign: 'center',
+        backgroundImage: `linear-gradient(rgba(18, 20, 36, 0.84), rgba(10, 12, 22, 0.95)), url(${PHASE_BACKGROUNDS.DAY_DAWN})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        borderRadius: '20px',
+      }}>
         <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '4px' }} className="font-cinzel">
           Thảo Luận Ban Ngày (Ngày {round})
         </h2>

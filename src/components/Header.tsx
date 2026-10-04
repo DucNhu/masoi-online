@@ -3,6 +3,8 @@ import { Eye, EyeOff, BookOpen, RotateCcw, Moon, Sun, Globe } from 'lucide-react
 import { GamePhase } from '../types/game';
 import { ConfirmModal } from './ConfirmModal';
 
+import { BRAND_ASSETS } from '../constants/assets';
+
 interface Props {
   round: number;
   phase: GamePhase;
@@ -53,16 +55,35 @@ export const Header: React.FC<Props> = ({
       <header className="top-header">
         <div className="top-brand">
           <div style={{
+            position: 'relative',
             width: '38px',
             height: '38px',
             borderRadius: '10px',
-            background: isNight ? 'linear-gradient(135deg, #4338ca, #1e1b4b)' : 'linear-gradient(135deg, #d97706, #78350f)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            overflow: 'hidden',
+            border: isNight ? '1.5px solid rgba(165, 180, 252, 0.4)' : '1.5px solid rgba(245, 158, 11, 0.4)',
             boxShadow: isNight ? '0 0 15px rgba(99, 102, 241, 0.4)' : '0 0 15px rgba(245, 158, 11, 0.4)',
+            flexShrink: 0,
+            background: '#0a0a14',
           }}>
-            {isNight ? <Moon size={20} color="#a5b4fc" /> : <Sun size={20} color="#fde047" />}
+            <img 
+              src={BRAND_ASSETS.appIcon} 
+              alt="Ma Sói Logo" 
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+            />
+            <div style={{
+              position: 'absolute',
+              bottom: '1px',
+              right: '1px',
+              width: '14px',
+              height: '14px',
+              borderRadius: '50%',
+              background: isNight ? '#312e81' : '#78350f',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              {isNight ? <Moon size={9} color="#a5b4fc" /> : <Sun size={9} color="#fde047" />}
+            </div>
           </div>
           <div>
             <div className="app-title">{mode === 'ONLINE' ? 'MA SÓI ONLINE' : 'QUẢN TRÒ MA SÓI'}</div>

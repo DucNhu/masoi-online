@@ -18,6 +18,7 @@ import { SpectatorLiveView } from './SpectatorLiveView';
 import { SoloPracticeModal } from './SoloPracticeModal';
 import { BotPlayerEngine } from '../logic/botPlayerEngine';
 import { ARENA_THEMES, ArenaThemeId } from '../constants/arenaThemes';
+import { BRAND_ASSETS } from '../constants/assets';
 
 interface Props {
   onBackToOffline: () => void;
@@ -488,6 +489,46 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
       {/* VIEW 1: SẢNH BÀN CHƠI TRỰC TUYẾN (JOIN TABLE LOBBY & CHỐNG BOT) */}
       {activeView === 'TABLES' && (
         <div>
+          {/* Hero Showcase Banner */}
+          <div style={{
+            position: 'relative',
+            borderRadius: '20px',
+            overflow: 'hidden',
+            marginBottom: '16px',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
+            height: '130px',
+          }}>
+            <img 
+              src={BRAND_ASSETS.heroBanner} 
+              alt="Ma Sói Trực Tuyến" 
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+            />
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(to top, rgba(9, 10, 16, 0.95) 15%, rgba(9, 10, 16, 0.4) 65%, transparent 100%)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'flex-end',
+              padding: '14px 16px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <img 
+                  src={BRAND_ASSETS.appIcon} 
+                  alt="Logo" 
+                  style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid var(--accent-gold)' }} 
+                />
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 900, margin: 0, letterSpacing: '0.5px' }} className="font-cinzel">
+                  MA SÓI HUYẾT NGUYỆT
+                </h2>
+              </div>
+              <p style={{ margin: '3px 0 0 0', fontSize: '0.78rem', color: '#cbd5e1' }}>
+                Đấu trường sinh tử thời gian thực • Đục NAT P2P 4G/5G
+              </p>
+            </div>
+          </div>
+
           {/* Banner Khung Giờ Vàng Hội Tụ Thợ Săn Chống Bot */}
           <GoldenHourBanner />
 

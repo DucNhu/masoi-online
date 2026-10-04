@@ -1,16 +1,30 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-10-03 23:05 (Asia/Ho_Chi_Minh) — Sprint 20: Comprehensive STUN/TURN ICE Configuration for P2P NAT Traversal Verified.
-- **Mục tiêu**: **Sprint 20: Cấu Hình ICE Servers Toàn Diện (Google STUN + OpenRelay TURN + PeerJS TURN) Đục NAT Mạng Di Động 4G/5G [COMPLETED]**.
+- **Thời gian cập nhật**: 2026-10-04 22:55 (Asia/Ho_Chi_Minh) — Sprint 21: Full Visual Asset Organization & UI Integration Verified.
+- **Mục tiêu**: **Sprint 21: Tổ Chức Kho Ảnh Đồ Họa Đầy Đủ & Tích Hợp Toàn Diện Giao Diện Game Ma Sói (Web & Mobile UX) [COMPLETED]**.
 - **Giải pháp & Kiến trúc triển khai**:
-  1. **Hạ Tầng ICE Servers Toàn Diện (`src/logic/webrtcPeerMesh.ts`)**:
-     - Cấu hình `P2P_ICE_CONFIG` tích hợp đa tầng máy chủ:
-       - STUN: Google STUN (`stun.l.google.com:19302`, `stun1`, `stun2`) & OpenRelay STUN (`openrelay.metered.ca:80`).
-       - TURN Relay: OpenRelay Project TURN (`openrelay.metered.ca` cổng 80 & 443 TCP/UDP) và PeerJS Global TURN Servers (`turn.peerjs.com:3478`).
-       - Chuẩn hóa SDP: `sdpSemantics: 'unified-plan'`.
-     - Giúp WebRTC P2P DataChannel và Voice Mesh kết nối xuyên suốt khi 1 máy dùng Wifi, 1 máy dùng 4G/5G hoặc mạng nội bộ sau tường lửa/Symmetric NAT.
-  2. **Đồng Bộ P2PRoomHost & P2PRoomClient**:
-     - Cả Host và Client đều sử dụng chung `P2P_ICE_CONFIG`, đảm bảo việc bắt tay WebRTC đạt tỷ lệ thành công tối đa.
+  1. **Tổ chức thư mục tài nguyên (`assets/` & `src/assets/`)**:
+     - Phân loại rõ ràng 20 ảnh AI-generated theo 3 danh mục chuẩn Game Studio:
+       - `cards/`: 12 lá bài vai trò (werewolf, seer, witch, bodyguard, hunter, villager, cupid, minion, elder, idiot, cursed, mayor) + 1 mặt sau bài huyền bí (`card_back`).
+       - `backgrounds/`: 5 hình nền không gian (night_phase, day_dawn, day_voting, win_village, win_werewolf).
+       - `brand/`: 2 tài nguyên thương hiệu (hero_banner, app_icon).
+     - Giữ nguyên ảnh gốc định dạng cao `.png` trong `assets/` (phục vụ backup/archive/in ấn).
+     - Tối ưu nén chuyển đổi toàn bộ sang định dạng `.webp` trong `src/assets/` (giảm ~87% dung lượng từ 60MB xuống ~7.6MB) để game tải tức thì trên mobile 4G/5G.
+  2. **Registry tập trung (`src/constants/assets.ts`)**:
+     - Cung cấp `ROLE_CARD_IMAGES`, `CARD_BACK_IMAGE`, `PHASE_BACKGROUNDS`, `BRAND_ASSETS` type-safe, import trực tiếp vào bundle Vite.
+  3. **Tích hợp sâu rộng vào toàn bộ màn hình Game**:
+     - `Header.tsx`: Huy hiệu biểu tượng sói trăng ma mị sắc nét thay cho icon chữ đơn sơ.
+     - `OnlineLobby.tsx`: Hero Showcase Banner đậm chất điện ảnh, card back và logo game.
+     - `OnlinePlayerGameView.tsx`: Hình nền pha động theo thời gian thực (Đêm/Bình Minh/Biểu Quyết), card thumbnail góc phải kèm Modal lật bài Tarot bí mật (có Privacy Shield che giấu vai trò chống nhìn trộm).
+     - `RoleLookupModal.tsx`: Tra cứu 12 vai trò với ảnh bài Tarot, hỗ trợ chế độ xem chi tiết phóng to và lật mặt sau (`card_back`).
+     - `SetupView.tsx`: Thẻ bài Tarot lật mở từng người chơi khi chia bài hoặc phát bài offline, tích hợp Privacy Shield.
+     - `NightPhaseView.tsx`: Hình nền đêm trăng máu + ảnh minh họa lá bài của từng vai trò khi quản trò gọi thức giấc ban đêm.
+     - `DayDawnView.tsx`: Banner bình minh ma mị + chân dung bài Tarot cho các nạn nhân bị hạ gục đêm qua.
+     - `DayVotingView.tsx`: Hình nền pháp trường treo cổ + khung xác nhận treo cổ có ảnh Tarot vai trò.
+     - `DayDiscussionView.tsx`: Banner không gian tranh luận căng thẳng làng ma sói.
+     - `GameOverModal.tsx`: Banner chiến thắng theo phe (Phe Dân / Phe Sói) + danh sách hé lộ toàn bộ bài Tarot người chơi.
+     - `SoloPracticeModal.tsx`: Thẻ bài Tarot trực quan cho các vai trò khi chọn luyện tập với AI Bots.
+     - `HunterProfileModal.tsx`: Thẻ Rank Thợ Săn bọc nền Hero Banner sang trọng.
 - **Nhánh làm việc**: `feature/ma-soi-online`.
 - **Mô hình vận hành**: Game Studio Hierarchy (PO → PM → Gameplay Programmer → QA Lead).
 
@@ -20,10 +34,11 @@
 - **Lint**: `oxlint` PASSED 100% (0 errors).
 - **AI Skill Verification**: 78/78 skills PASSED 100%.
 - **Unit & E2E Test Suite**: **20 Test Suites PASSED 100%** (77/77 test cases).
-- **Production Build**: `tsc -b && vite build` hoàn tất sạch sẽ, PWA Service Worker sẵn sàng.
-- **Git Push Policy**: Tuân thủ tuyệt đối quy định "Không tự ý push code", đang dừng lại để xin phép và chờ người dùng duyệt lệnh push lên GitHub Pages.
+- **Production Build**: `tsc -b && vite build` PASSED (Bundle WebP tối ưu, PWA Service Worker sẵn sàng).
+- **Git Push Policy**: Tuân thủ tuyệt đối quy tắc "Không tự ý push code", đang dừng lại để xin phép và chờ người dùng duyệt lệnh push lên GitHub remote.
 
 ---
 
 ## 2. Hành Động Tiếp Theo Của PM (Single Next Action)
-- Tạo local commit cho `src/logic/webrtcPeerMesh.ts` và xin phép người dùng xác nhận để thực hiện lệnh `git push origin feature/ma-soi-online` cập nhật toàn bộ lên `https://ducnhu.github.io/masoi-online/`.
+- Báo cáo chi tiết cho người dùng về cấu trúc thư mục mới và các vị trí đã tích hợp ảnh trong game, xin ý kiến người dùng để thực hiện local commit và chờ lệnh push lên remote repository.
+
