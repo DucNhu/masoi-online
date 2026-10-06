@@ -228,6 +228,7 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
       });
       const maskedState = roomManager.getMaskedState(res.roomId, res.playerId);
       setGameState(maskedState);
+      setActiveView('ROOM');
       if (onGameStarted) {
         onGameStarted(maskedState);
       }

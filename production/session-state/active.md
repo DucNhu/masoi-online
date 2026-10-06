@@ -35,10 +35,15 @@
 - **AI Skill Verification**: 78/78 skills PASSED 100%.
 - **Unit & E2E Test Suite**: **20 Test Suites PASSED 100%** (77/77 test cases).
 - **Production Build**: `tsc -b && vite build` PASSED (Bundle WebP tối ưu, PWA Service Worker sẵn sàng).
+- **Chrome Automation & E2E Live Testing**:
+  - Đã chạy kiểm thử tự động với Google Chrome (CDP protocol) trên cả **Desktop** (1280x900) và **Mobile iPhone 16 Pro** (393x852, DPR 3.0, Touch emulation).
+  - Kiểm tra trang Live: `https://ducnhu.github.io/masoi-online/` tải tức thì, chuyển sảnh Online, mở modal và kết nối mượt mà.
+  - Sửa lỗi chuyển view: bổ sung `setActiveView('ROOM')` trong `handleStartSoloPractice` tại `OnlineLobby.tsx` để người chơi chuyển cảnh tức thì vào Đấu trường Game Arena.
+  - Đã lưu trữ bằng chứng ảnh chụp màn hình Chrome tại `scratch/chrome-screenshots/`.
 - **Git Push Policy**: Tuân thủ tuyệt đối quy tắc "Không tự ý push code", đang dừng lại để xin phép và chờ người dùng duyệt lệnh push lên GitHub remote.
 
 ---
 
 ## 2. Hành Động Tiếp Theo Của PM (Single Next Action)
-- Báo cáo chi tiết cho người dùng về cấu trúc thư mục mới và các vị trí đã tích hợp ảnh trong game, xin ý kiến người dùng để thực hiện local commit và chờ lệnh push lên remote repository.
+- Báo cáo kết quả kiểm thử Chrome chi tiết và hình ảnh chụp thực tế cho người dùng; commit local bản sửa lỗi `OnlineLobby.tsx` và xin lệnh xác nhận tường minh để thực hiện `git push origin feature/ma-soi-online`.
 
