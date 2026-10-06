@@ -40,10 +40,10 @@
   - Kiểm tra trang Live: `https://ducnhu.github.io/masoi-online/` tải tức thì, chuyển sảnh Online, mở modal và kết nối mượt mà.
   - Sửa lỗi chuyển view: bổ sung `setActiveView('ROOM')` trong `handleStartSoloPractice` tại `OnlineLobby.tsx` để người chơi chuyển cảnh tức thì vào Đấu trường Game Arena.
   - Đã lưu trữ bằng chứng ảnh chụp màn hình Chrome tại `scratch/chrome-screenshots/`.
-- **Git Push Policy**: Tuân thủ tuyệt đối quy tắc "Không tự ý push code", đang dừng lại để xin phép và chờ người dùng duyệt lệnh push lên GitHub remote.
+- **Git Push Status**: Đã nhận lệnh cho phép trực tiếp từ người dùng và thực hiện `git push origin feature/ma-soi-online` thành công (commit `4ac4d6b`). GitHub Actions `deploy.yml` tự động kích hoạt để triển khai lên GitHub Pages.
 
 ---
 
 ## 2. Hành Động Tiếp Theo Của PM (Single Next Action)
-- Báo cáo kết quả kiểm thử Chrome chi tiết và hình ảnh chụp thực tế cho người dùng; commit local bản sửa lỗi `OnlineLobby.tsx` và xin lệnh xác nhận tường minh để thực hiện `git push origin feature/ma-soi-online`.
+- Kiểm tra trạng thái deploy trên GitHub Pages (`https://ducnhu.github.io/masoi-online/`) sau 2-3 phút để đảm bảo toàn bộ asset và bản vá lỗi hoạt động hoàn hảo trên môi trường sản phẩm. Chuẩn bị kế hoạch cho Sprint 22.
 
