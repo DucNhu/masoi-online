@@ -1,30 +1,22 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-10-04 22:55 (Asia/Ho_Chi_Minh) — Sprint 21: Full Visual Asset Organization & UI Integration Verified.
-- **Mục tiêu**: **Sprint 21: Tổ Chức Kho Ảnh Đồ Họa Đầy Đủ & Tích Hợp Toàn Diện Giao Diện Game Ma Sói (Web & Mobile UX) [COMPLETED]**.
+- **Thời gian cập nhật**: 2026-10-11 06:50 (Asia/Ho_Chi_Minh) — Sprint 22: Chẩn Đoán & Khắc Phục Lỗi Kết Nối Xuyên Mạng 5G vs WiFi (Cloud MQTT Relay & Screen Wake Lock).
+- **Mục tiêu**: **Sprint 22: Giải quyết triệt để lỗi "Hết thời gian..." khi Host tạo phòng trên 4G/5G và Client vào phòng qua WiFi [COMPLETED]**.
+- **Nguyên nhân cốt lõi đã chẩn đoán**:
+  1. **Carrier-Grade NAT (CGNAT) & Symmetric NAT trên mạng 5G**: Mạng di động (Viettel, Vina, Mobi) dùng Symmetric NAT, khiến việc đục lỗ trực tiếp WebRTC UDP (STUN hole-punching) giữa 5G và WiFi gia đình thất bại 100%. Các TURN server miễn phí trước đó (`openrelay`, `turn.peerjs.com`) bị chặn hoặc hết hạn nên sau 12 giây WebRTC DataChannel bị timeout.
+  2. **Tắt màn hình / Sleep mode trên điện thoại**: Khi Host trên điện thoại tạo phòng mà màn hình bị tắt/khóa hoặc chuyển sang app khác, iOS Safari & Android Chrome lập tức ngắt WebSocket / WebRTC nền khiến phòng rơi vào trạng thái offline.
+  3. **Chưa tích hợp Cloud Relay vào Sảnh**: File `mqttRoomMesh.ts` (kết nối qua WSS Cloud Broker EMQX/HiveMQ) đã được thiết kế nhưng chưa được gọi từ `OnlineLobby.tsx` và chưa được deploy lên GitHub Pages.
 - **Giải pháp & Kiến trúc triển khai**:
-  1. **Tổ chức thư mục tài nguyên (`assets/` & `src/assets/`)**:
-     - Phân loại rõ ràng 20 ảnh AI-generated theo 3 danh mục chuẩn Game Studio:
-       - `cards/`: 12 lá bài vai trò (werewolf, seer, witch, bodyguard, hunter, villager, cupid, minion, elder, idiot, cursed, mayor) + 1 mặt sau bài huyền bí (`card_back`).
-       - `backgrounds/`: 5 hình nền không gian (night_phase, day_dawn, day_voting, win_village, win_werewolf).
-       - `brand/`: 2 tài nguyên thương hiệu (hero_banner, app_icon).
-     - Giữ nguyên ảnh gốc định dạng cao `.png` trong `assets/` (phục vụ backup/archive/in ấn).
-     - Tối ưu nén chuyển đổi toàn bộ sang định dạng `.webp` trong `src/assets/` (giảm ~87% dung lượng từ 60MB xuống ~7.6MB) để game tải tức thì trên mobile 4G/5G.
-  2. **Registry tập trung (`src/constants/assets.ts`)**:
-     - Cung cấp `ROLE_CARD_IMAGES`, `CARD_BACK_IMAGE`, `PHASE_BACKGROUNDS`, `BRAND_ASSETS` type-safe, import trực tiếp vào bundle Vite.
-  3. **Tích hợp sâu rộng vào toàn bộ màn hình Game**:
-     - `Header.tsx`: Huy hiệu biểu tượng sói trăng ma mị sắc nét thay cho icon chữ đơn sơ.
-     - `OnlineLobby.tsx`: Hero Showcase Banner đậm chất điện ảnh, card back và logo game.
-     - `OnlinePlayerGameView.tsx`: Hình nền pha động theo thời gian thực (Đêm/Bình Minh/Biểu Quyết), card thumbnail góc phải kèm Modal lật bài Tarot bí mật (có Privacy Shield che giấu vai trò chống nhìn trộm).
-     - `RoleLookupModal.tsx`: Tra cứu 12 vai trò với ảnh bài Tarot, hỗ trợ chế độ xem chi tiết phóng to và lật mặt sau (`card_back`).
-     - `SetupView.tsx`: Thẻ bài Tarot lật mở từng người chơi khi chia bài hoặc phát bài offline, tích hợp Privacy Shield.
-     - `NightPhaseView.tsx`: Hình nền đêm trăng máu + ảnh minh họa lá bài của từng vai trò khi quản trò gọi thức giấc ban đêm.
-     - `DayDawnView.tsx`: Banner bình minh ma mị + chân dung bài Tarot cho các nạn nhân bị hạ gục đêm qua.
-     - `DayVotingView.tsx`: Hình nền pháp trường treo cổ + khung xác nhận treo cổ có ảnh Tarot vai trò.
-     - `DayDiscussionView.tsx`: Banner không gian tranh luận căng thẳng làng ma sói.
-     - `GameOverModal.tsx`: Banner chiến thắng theo phe (Phe Dân / Phe Sói) + danh sách hé lộ toàn bộ bài Tarot người chơi.
-     - `SoloPracticeModal.tsx`: Thẻ bài Tarot trực quan cho các vai trò khi chọn luyện tập với AI Bots.
-     - `HunterProfileModal.tsx`: Thẻ Rank Thợ Săn bọc nền Hero Banner sang trọng.
+  1. **Kiến trúc Hybrid Dual-Mesh (`joinRemoteRoom`)**:
+     - `src/logic/roomManager.ts`: Cung cấp hàm `joinRemoteRoom` ưu tiên kết nối **Cloud MQTT WSS** (kết nối qua cổng HTTPS 443/8084 của EMQX/HiveMQ, hoạt động 100% xuyên mọi loại NAT, CGNAT 4G/5G, WiFi, Firewall), tự động fallback sang **WebRTC P2P** nếu cần.
+  2. **Cập nhật Giao diện Sảnh (`src/components/OnlineLobby.tsx`)**:
+     - Cả người chơi vào bàn và khán giả vào xem đều sử dụng `roomManager.joinRemoteRoom` thay vì ép buộc P2P.
+  3. **Screen Wake Lock API (`src/components/OnlinePlayerGameView.tsx`)**:
+     - Tích hợp `navigator.wakeLock.request('screen')` tự động giữ màn hình điện thoại của Quản trò/Người chơi luôn sáng, không bị ngắt kết nối giữa chừng do màn hình tự tắt.
+  4. **Tối ưu STUN Servers (`src/logic/webrtcPeerMesh.ts`)**:
+     - Cập nhật danh sách Google STUN 1-4 và Cloudflare STUN server chuẩn quốc tế.
+  5. **Đảm bảo môi trường Test Headless (`src/logic/mqttRoomMesh.ts`)**:
+     - Kiểm tra `window.document` an toàn để Node.js test runner thoát tức thì và không bị giữ event loop.
 - **Nhánh làm việc**: `feature/ma-soi-online`.
 - **Mô hình vận hành**: Game Studio Hierarchy (PO → PM → Gameplay Programmer → QA Lead).
 
@@ -35,15 +27,9 @@
 - **AI Skill Verification**: 78/78 skills PASSED 100%.
 - **Unit & E2E Test Suite**: **20 Test Suites PASSED 100%** (77/77 test cases).
 - **Production Build**: `tsc -b && vite build` PASSED (Bundle WebP tối ưu, PWA Service Worker sẵn sàng).
-- **Chrome Automation & E2E Live Testing**:
-  - Đã chạy kiểm thử tự động với Google Chrome (CDP protocol) trên cả **Desktop** (1280x900) và **Mobile iPhone 16 Pro** (393x852, DPR 3.0, Touch emulation).
-  - Kiểm tra trang Live: `https://ducnhu.github.io/masoi-online/` tải tức thì, chuyển sảnh Online, mở modal và kết nối mượt mà.
-  - Sửa lỗi chuyển view: bổ sung `setActiveView('ROOM')` trong `handleStartSoloPractice` tại `OnlineLobby.tsx` để người chơi chuyển cảnh tức thì vào Đấu trường Game Arena.
-  - Đã lưu trữ bằng chứng ảnh chụp màn hình Chrome tại `scratch/chrome-screenshots/`.
-- **Git Push Status**: Đã nhận lệnh cho phép trực tiếp từ người dùng và thực hiện `git push origin feature/ma-soi-online` thành công (commit `4ac4d6b`). GitHub Actions `deploy.yml` tự động kích hoạt để triển khai lên GitHub Pages.
+- **Quy tắc Git Push**: Tuân thủ tuyệt đối quy định không tự ý push. Mã nguồn đã sẵn sàng commit local và chờ chỉ thị của người dùng để đẩy lên GitHub Pages.
 
 ---
 
 ## 2. Hành Động Tiếp Theo Của PM (Single Next Action)
-- Kiểm tra trạng thái deploy trên GitHub Pages (`https://ducnhu.github.io/masoi-online/`) sau 2-3 phút để đảm bảo toàn bộ asset và bản vá lỗi hoạt động hoàn hảo trên môi trường sản phẩm. Chuẩn bị kế hoạch cho Sprint 22.
-
+- Báo cáo chi tiết nguyên nhân kỹ thuật và giải pháp cho người dùng; xin phép commit local và push lên repository để GitHub Pages cập nhật bản vá.

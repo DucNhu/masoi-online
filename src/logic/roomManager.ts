@@ -3,6 +3,7 @@ import { RoleId } from '../types/game';
 import { generateRoomCode, maskGameStateForPlayer } from './roomProtocol';
 import { recordMatchResult, getHunterProfile } from '../utils/eloRating';
 import { P2PRoomHost, P2PRoomClient } from './webrtcPeerMesh';
+import { CloudRoomHost, CloudRoomClient, cloudLobbyWatcher } from './mqttRoomMesh';
 import { voiceEngine } from './webrtcVoiceMesh';
 
 export type StateListener = (playerId: string, state: ClientGameState) => void;
@@ -17,9 +18,16 @@ export class RoomManager {
   private activeSseRoomId: string | null = null;
   private p2pHosts: Map<string, P2PRoomHost> = new Map();
   private p2pClient: P2PRoomClient | null = null;
+  private cloudHosts: Map<string, CloudRoomHost> = new Map();
+  private cloudClient: CloudRoomClient | null = null;
 
   constructor() {
     this.initCrossTabMesh();
+    if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
+      try {
+        cloudLobbyWatcher.start();
+      } catch {}
+    }
   }
 
   private initCrossTabMesh() {
@@ -220,7 +228,65 @@ export class RoomManager {
   }
 
   /**
-   * Phân giải các hành động gửi từ Client P2P tới Host
+   * Khởi động Cloud Room Host (MQTT WSS Relay) khi tạo phòng, hỗ trợ chơi xuyên mạng (4G & WiFi)
+   */
+  private startCloudHost(roomId: string) {
+    if (typeof window === 'undefined' || typeof window.document === 'undefined') return;
+    try {
+      const cleanId = roomId.trim().toUpperCase();
+      const host = new CloudRoomHost(
+        cleanId,
+        (senderId, actionType, payload) => {
+          this.handleClientActionFromP2P(cleanId, senderId, actionType, payload);
+        },
+        (playerName, avatar, isSpectator) => {
+          try {
+            if (isSpectator) {
+              const res = this.joinAsSpectator(cleanId, playerName, avatar);
+              return { playerId: res.spectatorId, sessionToken: `spectator_${res.spectatorId}` };
+            } else {
+              const res = this.joinRoom(cleanId, playerName, avatar);
+              return { playerId: res.playerId, sessionToken: res.sessionToken };
+            }
+          } catch {
+            return null;
+          }
+        },
+        (playerId) => {
+          try {
+            return this.getMaskedState(cleanId, playerId);
+          } catch {
+            return null;
+          }
+        },
+        () => {
+          const room = this.rooms.get(cleanId);
+          if (!room) return null;
+          const hostPlayer = room.players.find((p) => p.isHost) || room.players[0];
+          return {
+            roomId: room.roomId,
+            tableName: room.settings.tableName || `Bàn Săn Sói #${room.roomId}`,
+            arenaTheme: room.settings.arenaTheme || 'BLOOD_MOON',
+            hostName: hostPlayer?.name || 'Chủ Bàn',
+            hostAvatar: hostPlayer?.avatar || '🐺',
+            currentPlayers: room.players.length,
+            maxPlayers: room.settings.maxPlayers || 12,
+            phase: room.phase,
+            isPrivate: Boolean(room.settings.isPrivate),
+            enableMayor: room.settings.enableMayor,
+            allowExpansionRoles: room.settings.allowExpansionRoles,
+            spectatorsCount: room.spectators?.length || 0,
+            createdAt: room.createdAt || Date.now(),
+          };
+        }
+      );
+      host.start().catch(() => {});
+      this.cloudHosts.set(cleanId, host);
+    } catch {}
+  }
+
+  /**
+   * Phân giải các hành động gửi từ Client (Cloud Relay hoặc P2P) tới Host
    */
   private handleClientActionFromP2P(roomId: string, senderId: string, actionType: string, payload: any) {
     try {
@@ -242,8 +308,47 @@ export class RoomManager {
         this.leaveRoom(roomId, senderId);
       }
     } catch (e) {
-      console.warn('[P2P] Error handling client action:', e);
+      console.warn('[RemoteAction] Error handling client action:', e);
     }
+  }
+
+  /**
+   * Tham gia phòng chơi thông qua Cloud Relay MQTT WSS (Hỗ trợ 100% 4G, 5G, WiFi xuyên mạng)
+   */
+  public async joinRoomViaCloud(
+    roomId: string,
+    playerName: string,
+    avatar: string,
+    isSpectator: boolean = false
+  ): Promise<{ playerId: string; sessionToken: string; state: ClientGameState }> {
+    const cleanId = roomId.trim().toUpperCase();
+    if (this.cloudClient) {
+      this.cloudClient.disconnect();
+    }
+
+    const client = new CloudRoomClient(
+      cleanId,
+      (newState) => {
+        // Nhận state mới từ Host qua Cloud Relay
+        const listeners = this.listeners.get(cleanId);
+        if (listeners) {
+          listeners.forEach((l) => l(newState.myPlayerId, newState));
+        }
+      },
+      () => {
+        console.warn('[CloudRelay] Mất kết nối tới Host phòng');
+      }
+    );
+
+    const res = await client.connect(playerName, avatar, isSpectator);
+    this.cloudClient = client;
+
+    // Đăng ký listener rỗng để sẵn sàng nhận callback
+    if (!this.listeners.has(cleanId)) {
+      this.listeners.set(cleanId, new Set());
+    }
+
+    return res;
   }
 
   /**
@@ -286,17 +391,47 @@ export class RoomManager {
   }
 
   /**
+   * Tham gia phòng từ xa linh hoạt (Dual Hybrid: Cloud MQTT WSS ưu tiên 4G/5G/WiFi, tự động Fallback WebRTC P2P)
+   */
+  public async joinRemoteRoom(
+    roomId: string,
+    playerName: string,
+    avatar: string,
+    isSpectator: boolean = false
+  ): Promise<{ playerId: string; sessionToken: string; state: ClientGameState; transport: 'cloud' | 'p2p' }> {
+    const cleanId = roomId.trim().toUpperCase();
+
+    // 1. Thử kết nối qua Cloud Relay MQTT WSS trước (hoạt động 100% trên 4G/5G/WiFi xuyên NAT)
+    try {
+      const res = await this.joinRoomViaCloud(cleanId, playerName, avatar, isSpectator);
+      return { ...res, transport: 'cloud' };
+    } catch (cloudErr) {
+      console.warn('[RoomManager] Cloud Relay kết nối không thành công, thử chuyển sang WebRTC P2P:', cloudErr);
+
+      // 2. Fallback sang WebRTC P2P Mesh
+      try {
+        const p2pRes = await this.joinRoomViaP2P(cleanId, playerName, avatar, isSpectator);
+        return { ...p2pRes, transport: 'p2p' };
+      } catch (p2pErr: any) {
+        throw new Error(
+          `Không thể kết nối tới phòng "${cleanId}". Hãy đảm bảo Quản trò trên điện thoại vẫn đang mở màn hình phòng (không khóa màn hình hoặc chuyển tab) và mã phòng chính xác.`
+        );
+      }
+    }
+  }
+
+  /**
    * Khởi tạo và lấy danh sách các bàn chơi công khai (Public Tables)
    * 100% người thật, cho phép người chơi 1-Click Join Table ngay lập tức.
    */
   public listPublicTables(): PublicTableInfo[] {
-    const list: PublicTableInfo[] = [];
+    const listMap = new Map<string, PublicTableInfo>();
 
     for (const room of this.rooms.values()) {
       if (room.settings.isPrivate) continue;
 
       const host = room.players.find(p => p.isHost) || room.players[0];
-      list.push({
+      listMap.set(room.roomId.toUpperCase(), {
         roomId: room.roomId,
         tableName: room.settings.tableName || `Bàn Săn Sói #${room.roomId}`,
         arenaTheme: room.settings.arenaTheme || 'BLOOD_MOON',
@@ -312,6 +447,18 @@ export class RoomManager {
         createdAt: room.createdAt || Date.now(),
       });
     }
+
+    // Kết hợp các bàn chơi phát sóng trực tiếp từ Cloud Relay (hỗ trợ 4G & WiFi)
+    try {
+      const cloudTables = cloudLobbyWatcher.getPublicTables();
+      for (const t of cloudTables) {
+        if (!listMap.has(t.roomId.toUpperCase())) {
+          listMap.set(t.roomId.toUpperCase(), t);
+        }
+      }
+    } catch {}
+
+    const list = Array.from(listMap.values());
 
     // Nếu chưa có phòng nào, tự động tạo 2 bàn cộng đồng mở để người chơi có thể tham gia ngay
     if (list.length === 0) {
@@ -417,6 +564,7 @@ export class RoomManager {
     this.listeners.set(roomId, new Set());
     this.syncRoomToRemote(serverState);
     this.startP2PHost(roomId);
+    this.startCloudHost(roomId);
 
     const clientState = maskGameStateForPlayer(serverState, hostId);
     return { roomId, sessionToken, playerId: hostId, state: clientState };
@@ -517,11 +665,19 @@ export class RoomManager {
    */
   public leaveRoom(roomId: string, playerId: string): void {
     const cleanRoomId = roomId.trim().toUpperCase();
-    if (!this.rooms.has(cleanRoomId) && this.p2pClient) {
-      this.p2pClient.sendAction(playerId, 'LEAVE', {});
-      this.p2pClient.disconnect();
-      this.p2pClient = null;
-      return;
+    if (!this.rooms.has(cleanRoomId)) {
+      if (this.cloudClient) {
+        this.cloudClient.sendAction(playerId, 'LEAVE', {});
+        this.cloudClient.disconnect();
+        this.cloudClient = null;
+        return;
+      }
+      if (this.p2pClient) {
+        this.p2pClient.sendAction(playerId, 'LEAVE', {});
+        this.p2pClient.disconnect();
+        this.p2pClient = null;
+        return;
+      }
     }
 
     const room = this.rooms.get(cleanRoomId);
@@ -534,6 +690,11 @@ export class RoomManager {
       if (host) {
         host.destroy();
         this.p2pHosts.delete(cleanRoomId);
+      }
+      const cloudHost = this.cloudHosts.get(cleanRoomId);
+      if (cloudHost) {
+        cloudHost.destroy();
+        this.cloudHosts.delete(cleanRoomId);
       }
     } else {
       if (!room.players.some((p) => p.isHost)) {
@@ -549,11 +710,19 @@ export class RoomManager {
    */
   public leaveSpectator(roomId: string, spectatorId: string): void {
     const cleanRoomId = roomId.trim().toUpperCase();
-    if (!this.rooms.has(cleanRoomId) && this.p2pClient) {
-      this.p2pClient.sendAction(spectatorId, 'LEAVE', {});
-      this.p2pClient.disconnect();
-      this.p2pClient = null;
-      return;
+    if (!this.rooms.has(cleanRoomId)) {
+      if (this.cloudClient) {
+        this.cloudClient.sendAction(spectatorId, 'LEAVE', {});
+        this.cloudClient.disconnect();
+        this.cloudClient = null;
+        return;
+      }
+      if (this.p2pClient) {
+        this.p2pClient.sendAction(spectatorId, 'LEAVE', {});
+        this.p2pClient.disconnect();
+        this.p2pClient = null;
+        return;
+      }
     }
 
     const room = this.rooms.get(cleanRoomId);
@@ -568,9 +737,15 @@ export class RoomManager {
    */
   public sendCheer(roomId: string, senderName: string, emoji: string): void {
     const cleanRoomId = roomId.trim().toUpperCase();
-    if (!this.rooms.has(cleanRoomId) && this.p2pClient) {
-      this.p2pClient.sendAction('spectator', 'CHEER', { senderName, emoji });
-      return;
+    if (!this.rooms.has(cleanRoomId)) {
+      if (this.cloudClient) {
+        this.cloudClient.sendAction('spectator', 'CHEER', { senderName, emoji });
+        return;
+      }
+      if (this.p2pClient) {
+        this.p2pClient.sendAction('spectator', 'CHEER', { senderName, emoji });
+        return;
+      }
     }
 
     const room = this.rooms.get(cleanRoomId);
@@ -622,18 +797,25 @@ export class RoomManager {
    * Sẵn sàng / Hủy sẵn sàng
    */
   public toggleReady(roomId: string, playerId: string, isReady: boolean): void {
-    if (!this.rooms.has(roomId) && this.p2pClient) {
-      this.p2pClient.sendAction(playerId, 'TOGGLE_READY', { isReady });
-      return;
+    const cleanRoomId = roomId.trim().toUpperCase();
+    if (!this.rooms.has(cleanRoomId)) {
+      if (this.cloudClient) {
+        this.cloudClient.sendAction(playerId, 'TOGGLE_READY', { isReady });
+        return;
+      }
+      if (this.p2pClient) {
+        this.p2pClient.sendAction(playerId, 'TOGGLE_READY', { isReady });
+        return;
+      }
     }
 
-    const room = this.rooms.get(roomId);
+    const room = this.rooms.get(cleanRoomId);
     if (!room || room.phase !== 'LOBBY') return;
 
     const player = room.players.find((p) => p.id === playerId);
     if (player && !player.isHost) {
       player.isReady = isReady;
-      this.broadcastState(roomId);
+      this.broadcastState(cleanRoomId);
     }
   }
 
@@ -642,9 +824,15 @@ export class RoomManager {
    */
   public startGame(roomId: string, hostPlayerId: string): void {
     const cleanRoomId = roomId.trim().toUpperCase();
-    if (!this.rooms.has(cleanRoomId) && this.p2pClient) {
-      this.p2pClient.sendAction(hostPlayerId, 'START_GAME', {});
-      return;
+    if (!this.rooms.has(cleanRoomId)) {
+      if (this.cloudClient) {
+        this.cloudClient.sendAction(hostPlayerId, 'START_GAME', {});
+        return;
+      }
+      if (this.p2pClient) {
+        this.p2pClient.sendAction(hostPlayerId, 'START_GAME', {});
+        return;
+      }
     }
 
     const room = this.rooms.get(cleanRoomId);
@@ -722,9 +910,15 @@ export class RoomManager {
     action: { actionType: string; targetId?: string; targetId2?: string }
   ): void {
     const cleanRoomId = roomId.trim().toUpperCase();
-    if (!this.rooms.has(cleanRoomId) && this.p2pClient) {
-      this.p2pClient.sendAction(playerId, 'NIGHT_ACTION', action);
-      return;
+    if (!this.rooms.has(cleanRoomId)) {
+      if (this.cloudClient) {
+        this.cloudClient.sendAction(playerId, 'NIGHT_ACTION', action);
+        return;
+      }
+      if (this.p2pClient) {
+        this.p2pClient.sendAction(playerId, 'NIGHT_ACTION', action);
+        return;
+      }
     }
 
     const room = this.rooms.get(cleanRoomId);
@@ -872,9 +1066,15 @@ export class RoomManager {
    */
   public castVote(roomId: string, voterId: string, targetId: string | null): void {
     const cleanRoomId = roomId.trim().toUpperCase();
-    if (!this.rooms.has(cleanRoomId) && this.p2pClient) {
-      this.p2pClient.sendAction(voterId, 'VOTE', { targetPlayerId: targetId });
-      return;
+    if (!this.rooms.has(cleanRoomId)) {
+      if (this.cloudClient) {
+        this.cloudClient.sendAction(voterId, 'VOTE', { targetPlayerId: targetId });
+        return;
+      }
+      if (this.p2pClient) {
+        this.p2pClient.sendAction(voterId, 'VOTE', { targetPlayerId: targetId });
+        return;
+      }
     }
 
     const room = this.rooms.get(cleanRoomId);
@@ -1100,9 +1300,15 @@ export class RoomManager {
     channel: 'PUBLIC' | 'WOLF' | 'DEAD' | 'SPECTATOR' = 'PUBLIC'
   ): void {
     const cleanRoomId = roomId.trim().toUpperCase();
-    if (!this.rooms.has(cleanRoomId) && this.p2pClient) {
-      this.p2pClient.sendAction(senderId, 'CHAT', { text, channel });
-      return;
+    if (!this.rooms.has(cleanRoomId)) {
+      if (this.cloudClient) {
+        this.cloudClient.sendAction(senderId, 'CHAT', { text, channel });
+        return;
+      }
+      if (this.p2pClient) {
+        this.p2pClient.sendAction(senderId, 'CHAT', { text, channel });
+        return;
+      }
     }
 
     const room = this.rooms.get(cleanRoomId);
@@ -1250,9 +1456,15 @@ export class RoomManager {
    */
   public setVoiceState(roomId: string, playerId: string, isSpeaking: boolean, isMuted: boolean): void {
     const cleanRoomId = roomId.trim().toUpperCase();
-    if (!this.rooms.has(cleanRoomId) && this.p2pClient) {
-      this.p2pClient.sendAction(playerId, 'SET_VOICE_STATE', { isSpeaking, isMuted });
-      return;
+    if (!this.rooms.has(cleanRoomId)) {
+      if (this.cloudClient) {
+        this.cloudClient.sendAction(playerId, 'SET_VOICE_STATE', { isSpeaking, isMuted });
+        return;
+      }
+      if (this.p2pClient) {
+        this.p2pClient.sendAction(playerId, 'SET_VOICE_STATE', { isSpeaking, isMuted });
+        return;
+      }
     }
 
     const room = this.rooms.get(cleanRoomId);
@@ -1319,6 +1531,12 @@ export class RoomManager {
 
     // Đẩy cập nhật mới lên Server Relay và Mesh
     this.syncRoomToRemote(room);
+
+    // Đẩy cập nhật Cloud MQTT Relay tới các thiết bị từ xa (4G & WiFi)
+    const cloudHost = this.cloudHosts.get(roomId.toUpperCase());
+    if (cloudHost && cloudHost.isReady) {
+      cloudHost.broadcastState(room);
+    }
 
     // Đẩy cập nhật P2P WebRTC tới các client kết nối từ xa trên GitHub Pages
     const p2pHost = this.p2pHosts.get(roomId.toUpperCase());

@@ -156,8 +156,8 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
         setActiveView('SPECTATOR');
         soundEffects.triggerHaptic('medium');
       } else {
-        // Fallback WebRTC P2P cho GitHub Pages
-        const p2pRes = await roomManager.joinRoomViaP2P(
+        // Fallback kết nối từ xa cho GitHub Pages (Cloud Relay MQTT WSS & WebRTC P2P)
+        const remoteRes = await roomManager.joinRemoteRoom(
           cleanRoomId,
           playerName.trim() || 'Khán Giả',
           selectedAvatarObj.emoji,
@@ -165,9 +165,9 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
         );
         setSpectatorSession({
           roomId: cleanRoomId,
-          spectatorId: p2pRes.playerId,
+          spectatorId: remoteRes.playerId,
         });
-        setGameState(p2pRes.state);
+        setGameState(remoteRes.state);
         setActiveView('SPECTATOR');
         soundEffects.triggerHaptic('medium');
       }
@@ -262,9 +262,9 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
         setActiveView('ROOM');
         soundEffects.triggerHaptic('medium');
       } else {
-        // Fallback kết nối WebRTC P2P Mesh trên GitHub Pages (Serverless)
+        // Fallback kết nối từ xa: Ưu tiên Cloud Relay MQTT WSS (hỗ trợ 4G/5G/WiFi), tự động chuyển P2P Mesh
         try {
-          const p2pRes = await roomManager.joinRoomViaP2P(
+          const remoteRes = await roomManager.joinRemoteRoom(
             cleanRoomId,
             playerName.trim(),
             selectedAvatarObj.emoji,
@@ -276,14 +276,14 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
 
           setCurrentSession({
             roomId: cleanRoomId,
-            playerId: p2pRes.playerId,
-            sessionToken: p2pRes.sessionToken,
+            playerId: remoteRes.playerId,
+            sessionToken: remoteRes.sessionToken,
           });
-          setGameState(p2pRes.state);
+          setGameState(remoteRes.state);
           setActiveView('ROOM');
           soundEffects.triggerHaptic('medium');
         } catch (err: unknown) {
-          throw new Error(err instanceof Error ? err.message : `Phòng chơi "${cleanRoomId}" không tồn tại trên máy chủ hoặc mạng P2P.`);
+          throw new Error(err instanceof Error ? err.message : `Phòng chơi "${cleanRoomId}" không tồn tại hoặc mất kết nối.`);
         }
       }
     } catch (err: unknown) {

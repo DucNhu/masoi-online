@@ -100,6 +100,35 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
     }
   }
 
+  // Screen Wake Lock API — Giữ màn hình điện thoại luôn sáng khi Quản trò/người chơi đang trong phòng
+  useEffect(() => {
+    let wakeLockSentinel: any = null;
+    const requestWakeLock = async () => {
+      if (typeof navigator !== 'undefined' && 'wakeLock' in navigator) {
+        try {
+          wakeLockSentinel = await (navigator as any).wakeLock.request('screen');
+        } catch {
+          // Trình duyệt không hỗ trợ hoặc từ chối cấp quyền
+        }
+      }
+    };
+    requestWakeLock();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        requestWakeLock();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (wakeLockSentinel) {
+        wakeLockSentinel.release().catch(() => {});
+      }
+    };
+  }, []);
+
   // Floating Toast thông báo tin nhắn mới khi đang ở Tab Arena
   useEffect(() => {
     if (gameState.chatMessages.length > lastMsgCountRef.current) {
