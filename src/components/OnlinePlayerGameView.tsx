@@ -171,6 +171,7 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
     if (!nextMuted) {
       setIsMicLoading(true);
       try {
+        voiceEngine.unlockAudio();
         const peerIds = gameState.players
           .map((p) => p.peerId)
           .filter((id): id is string => Boolean(id) && id !== gameState.myPlayerId);

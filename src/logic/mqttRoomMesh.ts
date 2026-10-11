@@ -1,6 +1,7 @@
 import * as mqttPkg from 'mqtt';
 import { ClientGameState, ServerGameState, PublicTableInfo } from '../types/multiplayer';
 import { maskGameStateForPlayer } from './roomProtocol';
+import { voiceEngine } from './webrtcVoiceMesh';
 
 // Hỗ trợ cả ESM default export lẫn named export giữa browser Vite bundle và Node.js runtime
 const mqtt = (mqttPkg as any)?.default || mqttPkg;
@@ -141,10 +142,11 @@ export class CloudRoomHost {
     if (!this.client || this.isDestroyed) return;
     const cleanId = this.roomId.toUpperCase();
     const actionsTopic = `${MQTT_TOPIC_PREFIX}rooms/${cleanId}/actions`;
+    const voiceTopic = `${MQTT_TOPIC_PREFIX}rooms/${cleanId}/voice`;
 
-    this.client.subscribe([actionsTopic], (err: any) => {
+    this.client.subscribe([actionsTopic, voiceTopic], (err: any) => {
       if (err) {
-        console.warn(`[CloudHost] Không thể đăng ký topic ${actionsTopic}:`, err);
+        console.warn(`[CloudHost] Không thể đăng ký topics:`, err);
       }
     });
 
@@ -163,6 +165,12 @@ export class CloudRoomHost {
   private handleIncomingMessage(topic: string, msg: any) {
     const cleanId = this.roomId.toUpperCase();
     if (!topic.includes(cleanId) || !msg) return;
+
+    // Tiếp nhận và phát voice chunk tới loa ngoài của Host
+    if (msg.type === 'VOICE_CHUNK' && msg.senderId && msg.audio) {
+      voiceEngine.playVoiceChunk(msg.senderId, msg.audio, msg.sampleRate || 16000);
+      return;
+    }
 
     if (msg.type === 'JOIN_REQUEST') {
       const payload: CloudJoinRequestPayload = msg.payload;
@@ -199,6 +207,21 @@ export class CloudRoomHost {
         this.onClientAction(msg.senderId, msg.actionType, msg.payload);
       }
     }
+  }
+
+  /**
+   * Phát sóng giọng nói của Host tới toàn bộ người chơi trong phòng qua Cloud Relay
+   */
+  public broadcastVoice(senderId: string, audioBase64: string, sampleRate: number = 16000) {
+    if (!this.client || this.isDestroyed) return;
+    const cleanId = this.roomId.toUpperCase();
+    const voiceTopic = `${MQTT_TOPIC_PREFIX}rooms/${cleanId}/voice`;
+    this.publish(voiceTopic, {
+      type: 'VOICE_CHUNK',
+      senderId,
+      audio: audioBase64,
+      sampleRate,
+    });
   }
 
   /**
@@ -356,8 +379,9 @@ export class CloudRoomClient {
       this.client = createResilientMqttClient(clientId, () => {
         const joinResponseTopic = `${MQTT_TOPIC_PREFIX}rooms/${cleanId}/client/${clientId}/join_response`;
         const broadcastTopic = `${MQTT_TOPIC_PREFIX}rooms/${cleanId}/broadcast`;
+        const voiceTopic = `${MQTT_TOPIC_PREFIX}rooms/${cleanId}/voice`;
 
-        this.client.subscribe([joinResponseTopic, broadcastTopic], (err: any) => {
+        this.client.subscribe([joinResponseTopic, broadcastTopic, voiceTopic], (err: any) => {
           if (err) {
             cleanupAndReject(new Error(`Không thể đăng ký kênh truyền tín hiệu phòng: ${err?.message || err}`));
             return;
@@ -419,6 +443,15 @@ export class CloudRoomClient {
                 this.onDisconnected();
               }
             }
+
+            // 4. Nhận voice audio chunks từ người chơi khác qua Cloud Relay
+            if (topic.includes(`/voice`)) {
+              if (msg.type === 'VOICE_CHUNK' && msg.senderId && msg.audio) {
+                if (msg.senderId !== this.myPlayerId) {
+                  voiceEngine.playVoiceChunk(msg.senderId, msg.audio, msg.sampleRate || 16000);
+                }
+              }
+            }
           } catch (err) {
             console.warn(`[CloudClient] Lỗi xử lý gói tin từ ${topic}:`, err);
           }
@@ -429,6 +462,28 @@ export class CloudRoomClient {
         cleanupAndReject(new Error('Môi trường trình duyệt không hỗ trợ kết nối mạng WebSocket.'));
       }
     });
+  }
+
+  /**
+   * Phát sóng giọng nói của Client tới toàn bộ người chơi trong phòng qua Cloud Relay
+   */
+  public broadcastVoice(senderId: string, audioBase64: string, sampleRate: number = 16000) {
+    if (!this.client || this.isDestroyed) return;
+    const cleanId = this.roomId.toUpperCase();
+    const voiceTopic = `${MQTT_TOPIC_PREFIX}rooms/${cleanId}/voice`;
+    try {
+      this.client.publish(
+        voiceTopic,
+        JSON.stringify({
+          type: 'VOICE_CHUNK',
+          senderId,
+          audio: audioBase64,
+          sampleRate,
+        })
+      );
+    } catch (e) {
+      console.warn('[CloudClient] Lỗi gửi voice chunk:', e);
+    }
   }
 
   /**

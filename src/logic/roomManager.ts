@@ -1480,11 +1480,23 @@ export class RoomManager {
   }
 
   /**
-   * Bật thu âm micro thực tế và gọi audio tới các người chơi khác qua WebRTC Mesh
+   * Bật thu âm micro thực tế và phát sóng audio tới các người chơi khác qua Cloud Relay MQTT & WebRTC Mesh
    */
   public async startVoiceBroadcast(roomId: string, playerId: string, targetPeerIds?: string[]): Promise<MediaStream> {
     const stream = await voiceEngine.enableMicrophone();
     const cleanId = roomId.trim().toUpperCase();
+
+    // 1. Kết nối luồng phát sóng Voice PCM qua Cloud MQTT Relay (hỗ trợ 100% 4G/5G/WiFi xuyên NAT)
+    voiceEngine.setOnVoiceChunk((chunkBase64, sampleRate) => {
+      const cloudHost = this.cloudHosts.get(cleanId);
+      if (cloudHost && cloudHost.isReady) {
+        cloudHost.broadcastVoice(playerId, chunkBase64, sampleRate);
+      } else if (this.cloudClient && this.cloudClient.isConnected) {
+        this.cloudClient.broadcastVoice(playerId, chunkBase64, sampleRate);
+      }
+    });
+
+    // 2. Vẫn gọi WebRTC P2P nếu có kết nối trực tiếp
     const host = this.p2pHosts.get(cleanId);
     if (host) {
       host.callAllClientsAudio(stream);
@@ -1503,6 +1515,7 @@ export class RoomManager {
    */
   public stopVoiceBroadcast(roomId: string, playerId: string): void {
     voiceEngine.setMicEnabled(false);
+    voiceEngine.setOnVoiceChunk(null);
     const cleanId = roomId.trim().toUpperCase();
     this.setVoiceState(cleanId, playerId, false, true);
   }
