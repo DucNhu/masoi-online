@@ -384,7 +384,7 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
   const allDealt = dealtCount === players.length && players.length >= 4;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div className="has-dock-padding-offline" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* ======================================================== */}
       {/* BƯỚC 1: NHẬP TÊN NGƯỜI CHƠI & CẤU HÌNH BÀI             */}
       {/* ======================================================== */}
@@ -943,29 +943,35 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
             ))}
           </div>
 
-          {/* Shuffle & Deal Trigger Button */}
-          <div style={{
-            position: 'sticky',
-            bottom: '80px',
-            paddingTop: '8px',
-            zIndex: 50,
-          }}>
+          {/* Shuffle & Deal Fixed Action Dock */}
+          <div className="mobile-action-dock mobile-action-dock-offline">
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '0.72rem', color: isOverCapacity ? '#f87171' : 'var(--accent-gold)', fontWeight: 800 }}>
+                {isOverCapacity ? '⚠️ Quá Số Lá Bài Chức Năng' : `✨ ${players.length} Người Chơi Đã Sẵn Sàng`}
+              </div>
+              <div style={{ fontSize: '0.76rem', color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {isOverCapacity
+                  ? `Giảm ${wolfCount + totalSpecialCount - players.length} lá chức năng`
+                  : `${wolfCount} Sói • ${totalSpecialCount} Chức Năng • ${Math.max(0, players.length - wolfCount - totalSpecialCount)} Dân`}
+              </div>
+            </div>
+
             <button
               onClick={handleShuffleAndDeal}
               disabled={players.length < 4 || isOverCapacity}
               className={`btn ${isOverCapacity ? 'btn-ghost' : 'btn-primary pulse-animation'}`}
               style={{
-                width: '100%',
-                height: '56px',
-                fontSize: '1.08rem',
+                minHeight: '44px',
+                padding: '8px 16px',
+                fontSize: '0.92rem',
                 fontWeight: 800,
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
                 opacity: isOverCapacity ? 0.6 : 1,
               }}
             >
-              <Shuffle size={20} />
-              {isOverCapacity
-                ? `Quá Số Lá Bài (${wolfCount + totalSpecialCount}/${players.length})`
-                : 'Xào Bài & Chia Ngẫu Nhiên'}
+              <Shuffle size={18} />
+              <span>{isOverCapacity ? 'Chỉnh Vai Trò' : 'Xào & Chia Bài'}</span>
             </button>
           </div>
         </>
@@ -1083,23 +1089,23 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
             const isRedSuit = currentP.suit === '♦' || currentP.suit === '♥';
 
             return (
-              <div className="card-glass active-pulse" style={{ padding: '24px 18px', textAlign: 'center' }}>
-                <div style={{ fontSize: '0.8rem', color: 'var(--accent-gold)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '6px' }}>
+              <div className="card-glass active-pulse" style={{ padding: '16px 14px', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.78rem', color: 'var(--accent-gold)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '4px' }}>
                   Người Chơi {currentDealingIndex + 1} / {players.length}
                 </div>
 
-                <h3 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '16px' }} className="font-cinzel">
+                <h3 style={{ fontSize: '1.35rem', fontWeight: 800, marginBottom: '10px' }} className="font-cinzel">
                   Ghế {currentP.seatNumber}: {currentP.name}
                 </h3>
 
                 {/* Big Playing Card / Tarot Card Graphic */}
                 <div style={{
-                  width: '135px',
-                  height: '185px',
-                  borderRadius: '16px',
-                  margin: '0 auto 16px auto',
-                  boxShadow: '0 12px 35px rgba(0,0,0,0.6)',
-                  border: currentP.isDealt ? '4px solid #22c55e' : `3px solid ${roleDef.color}`,
+                  width: '120px',
+                  height: '160px',
+                  borderRadius: '14px',
+                  margin: '0 auto 10px auto',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
+                  border: currentP.isDealt ? '3px solid #22c55e' : `2.5px solid ${roleDef.color}`,
                   overflow: 'hidden',
                   position: 'relative',
                   backgroundColor: '#0a0a14',
@@ -1334,33 +1340,35 @@ export const SetupView: React.FC<Props> = ({ cardMappings: _mappings, onStartGam
             </button>
           </div>
 
-          {/* Final Start Game Floating Button */}
-          <div style={{
-            position: 'sticky',
-            bottom: '80px',
-            paddingTop: '8px',
-            zIndex: 50,
-          }}>
+          {/* Final Start Game Fixed Action Dock */}
+          <div className="mobile-action-dock mobile-action-dock-offline">
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '0.72rem', color: allDealt ? '#4ade80' : 'var(--accent-seer)', fontWeight: 800 }}>
+                {allDealt ? '✓ Đã Phát Đủ Tất Cả Bài' : `Đang chia: ${dealtCount}/${players.length}`}
+              </div>
+              <div style={{ fontSize: '0.76rem', color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {allDealt ? 'Sẵn sàng bước vào Đêm 1' : 'Đưa úp bài cho từng người chơi'}
+              </div>
+            </div>
+
             <button
               onClick={handleStartFinalGame}
               disabled={!allDealt}
               className={`btn ${allDealt ? 'btn-primary pulse-animation' : 'btn-ghost'}`}
               style={{
-                width: '100%',
-                height: '56px',
-                fontSize: '1.1rem',
+                minHeight: '44px',
+                padding: '8px 16px',
+                fontSize: '0.92rem',
                 fontWeight: 800,
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
                 opacity: allDealt ? 1 : 0.6,
                 cursor: allDealt ? 'pointer' : 'not-allowed',
-                boxShadow: allDealt ? '0 0 25px rgba(124, 58, 237, 0.6)' : undefined,
+                boxShadow: allDealt ? '0 0 20px rgba(124, 58, 237, 0.6)' : undefined,
               }}
             >
-              <Play size={20} fill={allDealt ? 'white' : 'transparent'} />
-              <span>
-                {allDealt
-                  ? 'Bắt Đầu Ván Đấu (Vào Đêm 1) 🌙'
-                  : `Cần Phát Hết Bài (${dealtCount}/${players.length})`}
-              </span>
+              <Play size={18} fill={allDealt ? 'white' : 'transparent'} />
+              <span>{allDealt ? 'Vào Đêm 1 🌙' : `${dealtCount}/${players.length}`}</span>
             </button>
           </div>
         </>

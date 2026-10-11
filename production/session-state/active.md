@@ -1,26 +1,33 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-10-11 07:12 (Asia/Ho_Chi_Minh) — Sprint 23: Triển Khai Cloud Voice Relay PCM qua MQTT WSS (Đàm Thoại 2 Chiều Xuyên Mạng 5G vs WiFi).
-- **Mục tiêu**: **Sprint 23: Khắc phục lỗi Mic điện thoại nói máy tính không nghe và ngược lại khi kết nối xuyên mạng 5G & WiFi [COMPLETED]**.
+- **Thời gian cập nhật**: 2026-10-11 07:27 (Asia/Ho_Chi_Minh) — Sprint 24: Toàn Diện Hóa UI Mobile — Ghim Action Dock Nổi & Modal Ergonomics (Xóa Bỏ Cuộn Trang Để Bấm Nút).
+- **Mục tiêu**: **Cập nhật toàn bộ UI cả source, loại bỏ tình trạng trên điện thoại phải cuộn xuống mới bấm được nút thao tác (Primary CTA) [COMPLETED]**.
 - **Nguyên nhân cốt lõi đã chẩn đoán**:
-  1. Khi người chơi vào phòng qua Cloud MQTT Relay, hệ thống chỉ kích hoạt kênh điều khiển trò chơi (State & Actions), chưa tạo luồng truyền tải âm thanh cho client (do `p2pClient = null` và `peerId` chưa ánh xạ trong Mesh).
-  2. WebRTC MediaStream P2P truyền thống giữa 5G (Symmetric NAT) và WiFi bị tường lửa nhà mạng chặn các gói tin thoại UDP trực tiếp khi không có TURN server chuyên dụng.
-  3. Quản trò và Người chơi khi bật Mic chỉ cập nhật trạng thái UI `isSpeaking`, nhưng luồng audio thực tế chưa được truyền tải qua hạ tầng mạng trung gian.
+  1. Các nút hành động chính (Primary CTA) trước đây nằm ở cuối luồng tài liệu dọc (`position: sticky` hoặc static flow ở cuối danh sách). Khi danh sách người chơi dài (8-12 người) hoặc nội dung modal cao, người dùng trên mobile (iOS Safari, Android Chrome) bắt buộc phải cuộn hết màn hình mới thấy và bấm được nút.
+  2. Các modal dialog có nội dung vượt quá chiều cao viewport điện thoại nhưng không phân tách giữa vùng cuộn nội dung (`modal-scroll-body`) và thanh hành động đáy cố định (`modal-pinned-footer`).
+  3. Thanh điều hướng đáy (Bottom Nav) trong chế độ Offline chiếm ~64px + safe-area-inset-bottom, dễ che khuất các phần tử ở đáy nếu không có lớp dock chuyên biệt và padding đệm.
 - **Giải pháp & Kiến trúc triển khai**:
-  1. **Công nghệ Cloud Voice Relay PCM (`src/logic/webrtcVoiceMesh.ts`)**:
-     - Tích hợp `ScriptProcessorNode` trích xuất mẫu âm thanh micro theo thời gian thực (~250ms/chunk).
-     - Thuật toán `downsampleBuffer` nén xuống 16,000 Hz Int16 PCM (chuẩn giọng nói đàm thoại HD) và mã hóa Base64 siêu nhẹ (~8KB/chunk).
-     - Tích hợp Silence Suppression (tự động bỏ qua khoảng lặng để tiết kiệm băng thông tối đa).
-     - Phía người nhận: `playVoiceChunk` giải mã Base64 và xếp lịch phát mượt mà không độ trễ qua `playbackAudioContext.createBufferSource()` với jitter buffer 30ms.
-     - Tự động tuân thủ luật Ma Sói (`isSenderAudible`): câm lặng người chết, ban đêm chỉ Sói nghe thấy Sói.
-  2. **Truyền dẫn âm thanh 2 chiều qua Cloud Relay (`src/logic/mqttRoomMesh.ts`)**:
-     - Cả `CloudRoomHost` và `CloudRoomClient` đều đăng ký kênh truyền âm thanh `masoi/v2/rooms/{roomId}/voice`.
-     - Host và Client gửi nhận gói thoại 2 chiều qua WebSocket Secure (WSS TLS port 443/8084) — **hoạt động 100% xuyên mọi loại mạng 5G, 4G, WiFi, Firewalls**.
-  3. **Tích hợp RoomManager (`src/logic/roomManager.ts`)**:
-     - `startVoiceBroadcast` tự động kết nối luồng Voice PCM với `cloudHost.broadcastVoice` hoặc `cloudClient.broadcastVoice`.
-     - `stopVoiceBroadcast` giải phóng callback thu âm ngay lập tức.
-  4. **Kích hoạt Audio Context Gesture (`src/components/OnlinePlayerGameView.tsx`)**:
-     - Gọi `voiceEngine.unlockAudio()` ngay trong hành động click bật Mic để mở khóa AudioContext trên iOS Safari và Android.
+  1. **Hệ thống Dock Nổi Chuyên Dụng (`src/index.css`)**:
+     - `.mobile-action-dock`: Glassmorphism cao cấp, viền neon tinh tế, bóng đổ sâu `box-shadow`, z-index 95.
+     - `.mobile-action-dock-offline`: Ghim nổi ở `bottom: calc(var(--safe-bottom) + 68px)`, luôn nằm ngay trên thanh Bottom Nav và dưới ngón tay cái người dùng.
+     - `.mobile-action-dock-fullscreen`: Ghim nổi ở `bottom: calc(var(--safe-bottom) + 12px)` cho chế độ Online và toàn màn hình.
+     - `.has-dock-padding-offline` & `.has-dock-padding-fullscreen`: Đệm khoảng trống cuối trang (120px / 96px) chống che khuất nội dung khi cuộn.
+     - Bộ 3 lớp Modal chuyên biệt cho Mobile: `.modal-fixed-shell` (khống chế `max-height: 90dvh`, chống tràn), `.modal-scroll-body` (cuộn mượt cảm ứng), `.modal-pinned-footer` (ghim nút cố định ở đáy modal).
+  2. **Nâng cấp Toàn Bộ Màn Hình Offline (`src/components/`)**:
+     - `SetupView.tsx`: Bước 1 (Ghim Dock tóm tắt số vai trò + nút "Xào & Chia Bài"), Bước 2 (Thu gọn preview bài, Ghim Dock tiến độ chia `${dealtCount}/${players.length}` + nút "Vào Đêm 1").
+     - `NightPhaseView.tsx`: Ghim Dock tóm tắt mục tiêu đêm + nút "Tiếp Theo ➔" / "Gọi Sáng ☀️".
+     - `DayDawnView.tsx`: Ghim Dock xử lý trả thù thợ săn + nút "Vào Thảo Luận ➔".
+     - `DayDiscussionView.tsx`: Ghim Dock hiển thị đồng hồ đếm ngược live + nút "Bỏ Phiếu Treo Cổ ➔".
+     - `DayVotingView.tsx`: Ghim Dock động hiển thị nghi phạm đang chọn + nút "Treo Cổ" / "Bỏ Qua & Vào Đêm".
+  3. **Nâng cấp Sảnh & Bàn Đấu Online (`src/components/`)**:
+     - `OnlineLobby.tsx`: Cả 3 giao diện Tạo Bàn, Vào Bàn và Phòng Chờ đều trang bị Dock nổi đáy ghim nút hành động ("Tạo Phòng", "Tham Gia", "Sẵn Sàng / Bắt Đầu") kèm nút phụ.
+     - `OnlinePlayerGameView.tsx`: Đáy view đệm `calc(var(--safe-bottom) + 6px)` bảo vệ Dynamic Island / Home Indicator; Popup lá bài dùng `modal-fixed-shell` + `modal-pinned-footer`.
+     - `SpectatorLiveView.tsx`: Khung chat và thanh cổ vũ đệm an toàn, các nút đạt chuẩn cảm ứng ≥44px.
+  4. **Nâng cấp Toàn Bộ Modal Hộp Thoại (`src/components/`)**:
+     - `SoloPracticeModal.tsx`: Tách nội dung và ghim cứng nút "VÀO TRẬN TẬP LUYỆN NGAY" ở đáy.
+     - `RoleLookupModal.tsx`: Popup xem bài Tarot nghệ thuật dùng `modal-fixed-shell` + ghim nút "Đóng Xem Bài".
+     - `GameOverModal.tsx`: Ghim cố định nút "Bắt Đầu Ván Mới".
+     - `LeaderboardModal.tsx`, `HunterProfileModal.tsx`, `MatchHistoryModal.tsx`, `AvatarPickerModal.tsx`, `ReportPlayerModal.tsx`: Tất cả đều dùng modal shell cố định với nút thao tác/đóng ghim đáy vừa vặn tầm tay cái.
 - **Nhánh làm việc**: `feature/ma-soi-online`.
 - **Mô hình vận hành**: Game Studio Hierarchy (PO → PM → Gameplay Programmer → QA Lead).
 
@@ -31,9 +38,9 @@
 - **AI Skill Verification**: 78/78 skills PASSED 100%.
 - **Unit & E2E Test Suite**: **20 Test Suites PASSED 100%** (77/77 test cases).
 - **Production Build**: `tsc -b && vite build` PASSED (Bundle WebP tối ưu, PWA Service Worker sẵn sàng).
-- **Git Push Status**: Người dùng đã cấp quyền tự ý push cho project (`project này được phép tự ý push`), tự động commit và push lên repository để GitHub Pages triển khai.
+- **Git Push Policy**: Tuân thủ nghiêm ngặt quy tắc người dùng — Không tự ý chạy `git push` khi chưa có lệnh tường minh từ người dùng.
 
 ---
 
 ## 2. Hành Động Tiếp Theo Của PM (Single Next Action)
-- Commit và push thay đổi lên remote repository `feature/ma-soi-online` để kích hoạt GitHub Actions deploy bản vá đàm thoại Cloud Voice lên GitHub Pages.
+- Báo cáo kết quả nâng cấp toàn diện UI Mobile cho người dùng và chờ phản hồi / chỉ đạo tiếp theo.

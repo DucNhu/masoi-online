@@ -1,6 +1,5 @@
 import * as mqttPkg from 'mqtt';
 import { ClientGameState, ServerGameState, PublicTableInfo } from '../types/multiplayer';
-import { maskGameStateForPlayer } from './roomProtocol';
 import { voiceEngine } from './webrtcVoiceMesh';
 
 // Hỗ trợ cả ESM default export lẫn named export giữa browser Vite bundle và Node.js runtime

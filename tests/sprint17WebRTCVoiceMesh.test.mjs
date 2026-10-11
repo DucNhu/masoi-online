@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { RoomManager } from '../src/logic/roomManager.ts';
-import { voiceEngine, WebRTCVoiceEngine } from '../src/logic/webrtcVoiceMesh.ts';
+import { WebRTCVoiceEngine } from '../src/logic/webrtcVoiceMesh.ts';
 import { maskGameStateForPlayer } from '../src/logic/roomProtocol.ts';
 
 test('Sprint 17 - TASK-1601: WebRTCVoiceEngine headless safety and lifecycle', async () => {

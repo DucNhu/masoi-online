@@ -163,9 +163,18 @@ export const LeaderboardModal: React.FC<Props> = ({ isOpen, onClose }) => {
           })}
         </div>
 
-        {/* Footer Note */}
-        <div style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', textAlign: 'center', fontSize: '0.74rem', color: '#94a3b8' }}>
-          ✨ Tham gia các trận đấu trực tuyến trong Khung Giờ Vàng để tích lũy điểm Elo và thăng hạng!
+        {/* Footer Note & Pinned Close Button */}
+        <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ textAlign: 'center', fontSize: '0.72rem', color: '#94a3b8' }}>
+            ✨ Tham gia các trận đấu trực tuyến trong Khung Giờ Vàng để tích lũy điểm Elo và thăng hạng!
+          </div>
+          <button
+            onClick={onClose}
+            className="btn btn-primary"
+            style={{ width: '100%', minHeight: '44px', fontWeight: 700 }}
+          >
+            Đóng
+          </button>
         </div>
       </div>
     </div>

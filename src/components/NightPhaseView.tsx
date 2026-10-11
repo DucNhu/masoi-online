@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Moon, Shield, Eye, Sparkles, Skull, ArrowRight, Check, Heart, VenetianMask, Crosshair } from 'lucide-react';
+import { Moon, ArrowRight, Check, Heart, Crosshair } from 'lucide-react';
 import { GameState, NightStepAction, GamePhase, RoleId } from '../types/game';
 import { ROLE_DEFINITIONS, MODERATOR_SCRIPTS } from '../data/roles';
 import { soundEffects } from '../utils/soundEffects';
@@ -159,7 +159,7 @@ export const NightPhaseView: React.FC<Props> = ({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div className="has-dock-padding-offline" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* Night Progress Pill Bar */}
       <div style={{
         display: 'flex',
@@ -767,22 +767,39 @@ export const NightPhaseView: React.FC<Props> = ({
         </div>
       )}
 
-      {/* Next Step Sticky Button */}
-      <div style={{
-        position: 'sticky',
-        bottom: '80px',
-        paddingTop: '8px',
-        zIndex: 50,
-      }}>
+      {/* Next Step Fixed Mobile Action Dock */}
+      <div className="mobile-action-dock mobile-action-dock-offline">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: '0.72rem', color: 'var(--accent-gold)', fontWeight: 800 }}>
+            {currentStepIndex === steps.length - 1 ? '☀️ Hoàn tất gọi đêm' : `Bước ${currentStepIndex + 1}/${steps.length}: ${currentStep}`}
+          </div>
+          <div style={{ fontSize: '0.76rem', color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {currentStep === 'BODYGUARD' && (currentNightAction.protectedPlayerId ? `Bảo vệ: #${players.find(p => p.id === currentNightAction.protectedPlayerId)?.seatNumber} ${players.find(p => p.id === currentNightAction.protectedPlayerId)?.name}` : 'Chạm để chọn người bảo vệ')}
+            {currentStep === 'WEREWOLF' && (currentNightAction.werewolfTargetId ? `Cắn: #${players.find(p => p.id === currentNightAction.werewolfTargetId)?.seatNumber} ${players.find(p => p.id === currentNightAction.werewolfTargetId)?.name}` : 'Chạm để chọn nạn nhân')}
+            {currentStep === 'WITCH' && (currentNightAction.witchSaved ? 'Đã cứu nạn nhân' : (currentNightAction.witchPoisonTargetId ? `Độc: ${players.find(p => p.id === currentNightAction.witchPoisonTargetId)?.name}` : 'Không dùng thuốc độc/cứu'))}
+            {currentStep === 'SEER' && (seerInvestigatedId ? `Đã soi: #${players.find(p => p.id === seerInvestigatedId)?.seatNumber} ${players.find(p => p.id === seerInvestigatedId)?.name}` : 'Chạm để soi 1 người')}
+            {currentStep === 'CUPID' && (selectedLovers.length === 2 ? `Đã ghép 2 người yêu` : `Chọn 2 người (${selectedLovers.length}/2)`)}
+            {currentStep === 'HUNTER' && (currentNightAction.hunterTargetId ? `Găm đạn: #${players.find(p => p.id === currentNightAction.hunterTargetId)?.seatNumber} ${players.find(p => p.id === currentNightAction.hunterTargetId)?.name}` : 'Chưa găm đạn')}
+            {(currentStep === 'INTRO' || currentStep === 'MINION' || currentStep === 'OUTRO') && 'Đọc lời thoại và bấm tiếp tục'}
+          </div>
+        </div>
+
         <button
           onClick={handleNextStep}
-          className="btn btn-primary"
-          style={{ width: '100%', height: '52px', fontSize: '1.05rem' }}
+          className={`btn ${currentStepIndex === steps.length - 1 ? 'btn-gold pulse-animation' : 'btn-primary'}`}
+          style={{
+            minHeight: '44px',
+            padding: '8px 16px',
+            fontSize: '0.92rem',
+            fontWeight: 800,
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+          }}
         >
           {currentStepIndex === steps.length - 1 ? (
-            <>☀️ Đánh Thức Cả Làng (Trời Sáng)</>
+            <>☀️ Gọi Sáng</>
           ) : (
-            <>Vai Trò Tiếp Theo <ArrowRight size={18} /></>
+            <>Tiếp Theo <ArrowRight size={16} /></>
           )}
         </button>
       </div>

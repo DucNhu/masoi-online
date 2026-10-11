@@ -484,3 +484,75 @@ body::before {
   animation: holoShimmer 4s infinite linear;
 }
 
+/* ======================================================== */
+/* MOBILE PINNED ACTION DOCK (Thanh Nút Hành Động 1 Chạm)  */
+/* ======================================================== */
+.mobile-action-dock {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  max-width: 460px;
+  margin: 0 auto;
+  background: rgba(14, 17, 30, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.75), 0 0 20px rgba(124, 58, 237, 0.2);
+  z-index: 95;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Chế độ Offline: Nổi trên thanh bottom-nav (nav cao ~64px + safe-bottom) */
+.mobile-action-dock-offline {
+  bottom: calc(var(--safe-bottom) + 68px);
+}
+
+/* Chế độ Toàn màn hình hoặc Online (không có bottom-nav) */
+.mobile-action-dock-fullscreen {
+  bottom: calc(var(--safe-bottom) + 12px);
+}
+
+/* Khoảng đệm cuối trang để nội dung không bị dock che khuất khi cuộn */
+.has-dock-padding-offline {
+  padding-bottom: 120px !important;
+}
+
+.has-dock-padding-fullscreen {
+  padding-bottom: 96px !important;
+}
+
+/* Tối ưu app container cho Online mode */
+.app-container-online {
+  max-width: 640px !important;
+  padding-bottom: calc(var(--safe-bottom) + 16px) !important;
+}
+
+/* Modal Shell tối ưu trên điện thoại */
+.modal-fixed-shell {
+  display: flex;
+  flex-direction: column;
+  max-height: min(90dvh, 88vh);
+  overflow: hidden;
+}
+
+.modal-scroll-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-pinned-footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 12px;
+  margin-top: 8px;
+  background: inherit;
+}
+
+

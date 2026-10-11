@@ -13,7 +13,6 @@ import {
   Shield, 
   Crosshair, 
   Users, 
-  Heart, 
   Skull, 
   LogOut, 
   Send, 
@@ -25,12 +24,10 @@ import {
   MessageSquare,
   Sparkles,
   X,
-  Crown,
-  Volume2
+  Crown
 } from 'lucide-react';
 import { EmotePicker } from './EmotePicker';
 import { MatchHistoryModal } from './MatchHistoryModal';
-import { NetworkStatusBadge } from './NetworkStatusBadge';
 import { ROLE_CARD_IMAGES, CARD_BACK_IMAGE, PHASE_BACKGROUNDS } from '../constants/assets';
 
 interface Props {
@@ -1028,14 +1025,14 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
 
       {/* 4. BOTTOM ACTION DOCK (~60px) - Thanh Hành Động 1 Chạm Cố Định */}
       <footer style={{
-        height: '62px',
+        height: 'auto',
         minHeight: '62px',
         background: 'rgba(10, 10, 18, 0.95)',
         backdropFilter: 'blur(16px)',
         borderTop: '1px solid rgba(255, 255, 255, 0.1)',
         display: 'flex',
         alignItems: 'center',
-        padding: '0 12px',
+        padding: '8px 12px calc(var(--safe-bottom) + 6px) 12px',
         gap: '10px',
         zIndex: 20,
       }}>
@@ -1229,14 +1226,15 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
           zIndex: 100,
         }}>
           <div 
-            className="holo-card-shine"
+            className="holo-card-shine modal-fixed-shell"
             style={{
               width: '100%',
               maxWidth: '340px',
+              maxHeight: 'min(90dvh, 88vh)',
               background: 'linear-gradient(135deg, #181b2a, #0b0d17)',
               border: `2px solid ${myRoleDef.color}`,
               borderRadius: '24px',
-              padding: '24px 20px',
+              padding: '20px 18px 14px 18px',
               position: 'relative',
               boxShadow: `0 0 40px ${myRoleDef.color}50`,
               textAlign: 'center',
@@ -1259,179 +1257,188 @@ export const OnlinePlayerGameView: React.FC<Props> = ({ gameState, onLeaveRoom }
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
+                zIndex: 2,
               }}
             >
               <X size={16} />
             </button>
 
             {/* Rank và chất bài tú lơ khơ ở 2 góc */}
-            <div style={{ position: 'absolute', top: '14px', left: '16px', textAlign: 'left' }}>
+            <div style={{ position: 'absolute', top: '14px', left: '16px', textAlign: 'left', zIndex: 2 }}>
               <div style={{ fontSize: '1.4rem', fontWeight: 900, color: myRoleDef.color, lineHeight: 1 }}>
                 {myRoleDef.defaultRank}
               </div>
               <div style={{ fontSize: '0.9rem', color: myRoleDef.color }}>♠</div>
             </div>
 
-            {/* Lá Bài Tarot Nghệ Thuật (Chạm để Lật úp/Mở - Privacy Mode) */}
-            <div 
-              onClick={() => {
-                soundEffects.triggerHaptic('light');
-                setIsRoleCardFlipped(!isRoleCardFlipped);
-              }}
-              title="Chạm để lật bài (Ẩn / Hiện để chống nhìn trộm)"
-              style={{
-                width: '180px',
-                height: '240px',
-                borderRadius: '16px',
-                overflow: 'hidden',
-                border: `2px solid ${myRoleDef.color}`,
-                boxShadow: `0 10px 30px rgba(0,0,0,0.8), 0 0 24px ${myRoleDef.color}50`,
-                margin: '12px auto 14px auto',
-                cursor: 'pointer',
-                position: 'relative',
-                backgroundColor: '#0a0a14',
-                transition: 'all 0.25s ease',
-              }}
-            >
-              <img 
-                src={isRoleCardFlipped ? CARD_BACK_IMAGE : (ROLE_CARD_IMAGES[gameState.myRole] || CARD_BACK_IMAGE)} 
-                alt={myRoleDef.name} 
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-              />
-              {!isRoleCardFlipped && (
+            {/* Scrollable Content Body */}
+            <div className="modal-scroll-body" style={{ marginTop: '8px', padding: '0 4px' }}>
+              {/* Lá Bài Tarot Nghệ Thuật (Chạm để Lật úp/Mở - Privacy Mode) */}
+              <div 
+                onClick={() => {
+                  soundEffects.triggerHaptic('light');
+                  setIsRoleCardFlipped(!isRoleCardFlipped);
+                }}
+                title="Chạm để lật bài (Ẩn / Hiện để chống nhìn trộm)"
+                style={{
+                  width: '160px',
+                  height: '215px',
+                  borderRadius: '16px',
+                  overflow: 'hidden',
+                  border: `2px solid ${myRoleDef.color}`,
+                  boxShadow: `0 10px 30px rgba(0,0,0,0.8), 0 0 24px ${myRoleDef.color}50`,
+                  margin: '8px auto 12px auto',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  backgroundColor: '#0a0a14',
+                  transition: 'all 0.25s ease',
+                }}
+              >
+                <img 
+                  src={isRoleCardFlipped ? CARD_BACK_IMAGE : (ROLE_CARD_IMAGES[gameState.myRole] || CARD_BACK_IMAGE)} 
+                  alt={myRoleDef.name} 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                />
+                {!isRoleCardFlipped && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '8px',
+                    left: '8px',
+                    background: 'rgba(0,0,0,0.85)',
+                    backdropFilter: 'blur(4px)',
+                    color: myRoleDef.color,
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    fontSize: '0.85rem',
+                    fontWeight: 900,
+                    border: `1px solid ${myRoleDef.color}80`,
+                  }}>
+                    Lá {myRoleDef.defaultRank || '?'}
+                  </div>
+                )}
                 <div style={{
                   position: 'absolute',
-                  top: '8px',
-                  left: '8px',
-                  background: 'rgba(0,0,0,0.85)',
-                  backdropFilter: 'blur(4px)',
-                  color: myRoleDef.color,
-                  padding: '2px 8px',
-                  borderRadius: '6px',
-                  fontSize: '0.85rem',
-                  fontWeight: 900,
-                  border: `1px solid ${myRoleDef.color}80`,
+                  bottom: '6px',
+                  left: 0,
+                  right: 0,
+                  fontSize: '0.68rem',
+                  color: 'rgba(255,255,255,0.85)',
+                  textShadow: '0 1px 3px rgba(0,0,0,0.9)',
+                  background: 'linear-gradient(transparent, rgba(0,0,0,0.85))',
+                  padding: '4px 0 2px 0',
                 }}>
-                  Lá {myRoleDef.defaultRank || '?'}
+                  {isRoleCardFlipped ? '🔄 Chạm để mở bài' : '🔄 Chạm để úp bài (Che)'}
+                </div>
+              </div>
+
+              {/* Tên vai trò & Phe phái */}
+              <h2 style={{ fontSize: '1.3rem', fontWeight: 900, color: '#fff', margin: '0 0 4px 0' }}>
+                {myRoleDef.name}
+              </h2>
+              <div style={{
+                display: 'inline-block',
+                background: myRoleDef.badgeBg,
+                color: myRoleDef.color,
+                fontSize: '0.72rem',
+                fontWeight: 800,
+                padding: '2px 10px',
+                borderRadius: '20px',
+                marginBottom: '12px',
+              }}>
+                {myRoleDef.team === 'WEREWOLF' ? '🐺 PHE MA SÓI' : myRoleDef.team === 'VILLAGE' ? '👤 PHE DÂN LÀNG' : '✨ PHE THỨ BA'}
+              </div>
+
+              {/* Tóm tắt kỹ năng dạng icon */}
+              <div style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '14px',
+                padding: '12px',
+                textAlign: 'left',
+                fontSize: '0.82rem',
+                color: '#cbd5e1',
+                lineHeight: 1.5,
+                marginBottom: '12px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                  <Sparkles size={16} color={myRoleDef.color} style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <span>{myRoleDef.description}</span>
+                </div>
+              </div>
+
+              {/* Đồng đội ma sói (nếu có) */}
+              {gameState.teamMates.length > 0 && (
+                <div style={{
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: '10px',
+                  padding: '8px 10px',
+                  fontSize: '0.78rem',
+                  color: '#fca5a5',
+                  marginBottom: '10px',
+                  textAlign: 'left',
+                }}>
+                  🐺 Đồng đội Sói: <strong>{gameState.players.filter(p => gameState.teamMates.includes(p.id)).map(p => p.name).join(', ')}</strong>
                 </div>
               )}
-              <div style={{
-                position: 'absolute',
-                bottom: '6px',
-                left: 0,
-                right: 0,
-                fontSize: '0.68rem',
-                color: 'rgba(255,255,255,0.85)',
-                textShadow: '0 1px 3px rgba(0,0,0,0.9)',
-                background: 'linear-gradient(transparent, rgba(0,0,0,0.85))',
-                padding: '4px 0 2px 0',
-              }}>
-                {isRoleCardFlipped ? '🔄 Chạm để mở bài' : '🔄 Chạm để úp bài (Che)'}
-              </div>
+
+              {/* Người yêu (nếu có) */}
+              {gameState.couplePartnerId && (
+                <div style={{
+                  background: 'rgba(236, 72, 153, 0.15)',
+                  border: '1px solid rgba(236, 72, 153, 0.3)',
+                  borderRadius: '10px',
+                  padding: '8px 10px',
+                  fontSize: '0.78rem',
+                  color: '#fbcfe8',
+                  marginBottom: '10px',
+                  textAlign: 'left',
+                }}>
+                  💘 Người yêu: <strong>{gameState.players.find(p => p.id === gameState.couplePartnerId)?.name}</strong>
+                </div>
+              )}
+
+              {/* Kết quả soi tiên tri gần nhất */}
+              {gameState.seerScanResult && (
+                <div style={{
+                  background: 'rgba(56, 189, 248, 0.15)',
+                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                  borderRadius: '10px',
+                  padding: '8px 10px',
+                  fontSize: '0.78rem',
+                  color: '#7dd3fc',
+                  marginBottom: '10px',
+                  textAlign: 'left',
+                }}>
+                  🔮 Kết quả soi: <strong>{gameState.players.find(p => p.id === gameState.seerScanResult?.targetId)?.name}</strong> là{' '}
+                  <strong style={{ color: gameState.seerScanResult.isWolf ? '#ef4444' : '#10b981' }}>
+                    {gameState.seerScanResult.isWolf ? '🐺 MA SÓI' : '👤 NGƯỜI TỐT'}
+                  </strong>
+                </div>
+              )}
             </div>
 
-            {/* Tên vai trò & Phe phái */}
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff', margin: '0 0 4px 0' }}>
-              {myRoleDef.name}
-            </h2>
-            <div style={{
-              display: 'inline-block',
-              background: myRoleDef.badgeBg,
-              color: myRoleDef.color,
-              fontSize: '0.72rem',
-              fontWeight: 800,
-              padding: '2px 10px',
-              borderRadius: '20px',
-              marginBottom: '16px',
-            }}>
-              {myRoleDef.team === 'WEREWOLF' ? '🐺 PHE MA SÓI' : myRoleDef.team === 'VILLAGE' ? '👤 PHE DÂN LÀNG' : '✨ PHE THỨ BA'}
+            {/* Pinned Modal Footer */}
+            <div className="modal-pinned-footer" style={{ borderTop: 'none', paddingTop: '8px' }}>
+              <button
+                onClick={() => setShowRoleModal(false)}
+                className="btn btn-primary"
+                style={{
+                  width: '100%',
+                  background: myRoleDef.color,
+                  color: '#0f172a',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '10px',
+                  fontWeight: 900,
+                  fontSize: '0.9rem',
+                  cursor: 'pointer',
+                  minHeight: '44px',
+                }}
+              >
+                Đã Hiểu & Tiếp Tục
+              </button>
             </div>
-
-            {/* Tóm tắt kỹ năng dạng icon */}
-            <div style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: '14px',
-              padding: '12px',
-              textAlign: 'left',
-              fontSize: '0.82rem',
-              color: '#cbd5e1',
-              lineHeight: 1.5,
-              marginBottom: '14px',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '6px' }}>
-                <Sparkles size={16} color={myRoleDef.color} style={{ flexShrink: 0, marginTop: '2px' }} />
-                <span>{myRoleDef.description}</span>
-              </div>
-            </div>
-
-            {/* Đồng đội ma sói (nếu có) */}
-            {gameState.teamMates.length > 0 && (
-              <div style={{
-                background: 'rgba(239, 68, 68, 0.15)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                borderRadius: '10px',
-                padding: '8px 10px',
-                fontSize: '0.78rem',
-                color: '#fca5a5',
-                marginBottom: '10px',
-                textAlign: 'left',
-              }}>
-                🐺 Đồng đội Sói: <strong>{gameState.players.filter(p => gameState.teamMates.includes(p.id)).map(p => p.name).join(', ')}</strong>
-              </div>
-            )}
-
-            {/* Người yêu (nếu có) */}
-            {gameState.couplePartnerId && (
-              <div style={{
-                background: 'rgba(236, 72, 153, 0.15)',
-                border: '1px solid rgba(236, 72, 153, 0.3)',
-                borderRadius: '10px',
-                padding: '8px 10px',
-                fontSize: '0.78rem',
-                color: '#fbcfe8',
-                marginBottom: '10px',
-                textAlign: 'left',
-              }}>
-                💘 Người yêu: <strong>{gameState.players.find(p => p.id === gameState.couplePartnerId)?.name}</strong>
-              </div>
-            )}
-
-            {/* Kết quả soi tiên tri gần nhất */}
-            {gameState.seerScanResult && (
-              <div style={{
-                background: 'rgba(56, 189, 248, 0.15)',
-                border: '1px solid rgba(56, 189, 248, 0.3)',
-                borderRadius: '10px',
-                padding: '8px 10px',
-                fontSize: '0.78rem',
-                color: '#7dd3fc',
-                marginBottom: '10px',
-                textAlign: 'left',
-              }}>
-                🔮 Kết quả soi: <strong>{gameState.players.find(p => p.id === gameState.seerScanResult?.targetId)?.name}</strong> là{' '}
-                <strong style={{ color: gameState.seerScanResult.isWolf ? '#ef4444' : '#10b981' }}>
-                  {gameState.seerScanResult.isWolf ? '🐺 MA SÓI' : '👤 NGƯỜI TỐT'}
-                </strong>
-              </div>
-            )}
-
-            <button
-              onClick={() => setShowRoleModal(false)}
-              style={{
-                width: '100%',
-                background: myRoleDef.color,
-                color: '#0f172a',
-                border: 'none',
-                borderRadius: '10px',
-                padding: '10px',
-                fontWeight: 900,
-                fontSize: '0.85rem',
-                cursor: 'pointer',
-              }}
-            >
-              Đã Hiểu & Tiếp Tục
-            </button>
           </div>
         </div>
       )}

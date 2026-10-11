@@ -20,21 +20,18 @@ export const HunterProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
   return (
     <div className="modal-backdrop">
       <div
-        className="card-glass"
+        className="card-glass modal-fixed-shell"
         style={{
           width: '92%',
           maxWidth: '460px',
-          maxHeight: '88vh',
           padding: '20px',
-          display: 'flex',
-          flexDirection: 'column',
           border: '1px solid rgba(129, 140, 248, 0.4)',
           boxShadow: '0 0 35px rgba(99, 102, 241, 0.25)',
           animation: 'modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
         {/* Header Profile */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div
               style={{
@@ -70,7 +67,7 @@ export const HunterProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Nội dung Profile */}
-        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px', paddingRight: '4px' }}>
+        <div className="modal-scroll-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px', paddingRight: '4px' }}>
           {/* Card Thông tin Cấp Bậc */}
           <div
             style={{
@@ -182,14 +179,16 @@ export const HunterProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Nút Đóng */}
-        <button
-          onClick={onClose}
-          className="btn btn-ghost"
-          style={{ width: '100%', marginTop: '14px', fontSize: '0.85rem' }}
-        >
-          Đóng
-        </button>
+        {/* Nút Đóng Ghim Đáy */}
+        <div className="modal-pinned-footer" style={{ marginTop: '10px', paddingTop: '10px' }}>
+          <button
+            onClick={onClose}
+            className="btn btn-ghost"
+            style={{ width: '100%', minHeight: '44px', fontSize: '0.9rem', fontWeight: 700 }}
+          >
+            Đóng
+          </button>
+        </div>
       </div>
     </div>
   );

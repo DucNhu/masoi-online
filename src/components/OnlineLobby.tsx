@@ -959,7 +959,7 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
 
       {/* VIEW 2: Form Tạo Phòng */}
       {activeView === 'CREATE' && (
-        <form onSubmit={handleCreateRoom} style={{ background: '#12121e', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <form onSubmit={handleCreateRoom} className="has-dock-padding-fullscreen" style={{ background: '#12121e', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 16px 0' }}>👑 Tạo Bàn Chơi Mới</h2>
           
           <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '6px' }}>Tên Bàn Chơi (Tùy chọn):</label>
@@ -1235,19 +1235,21 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div className="mobile-action-dock mobile-action-dock-fullscreen">
             <button
               type="button"
               onClick={() => setActiveView('TABLES')}
-              style={{ flex: 1, padding: '12px', background: 'rgba(255,255,255,0.08)', border: 'none', color: '#e2e8f0', borderRadius: '10px', cursor: 'pointer' }}
+              className="btn btn-ghost"
+              style={{ flex: 1, minHeight: '44px', fontSize: '0.88rem' }}
             >
-              Quay Lại Sảnh Bàn
+              Quay Lại Sảnh
             </button>
             <button
               type="submit"
-              style={{ flex: 2, padding: '12px', background: '#4f46e5', border: 'none', color: '#fff', borderRadius: '10px', fontWeight: 700, cursor: 'pointer' }}
+              className="btn btn-primary pulse-animation"
+              style={{ flex: 2, minHeight: '44px', fontWeight: 800, fontSize: '0.92rem' }}
             >
-              Tạo & Nhận Mã Phòng
+              👑 Tạo & Nhận Mã Phòng
             </button>
           </div>
         </form>
@@ -1255,7 +1257,7 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
 
       {/* VIEW 3: Form Vào Phòng */}
       {activeView === 'JOIN' && (
-        <form onSubmit={handleJoinRoom} style={{ background: '#12121e', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <form onSubmit={handleJoinRoom} className="has-dock-padding-fullscreen" style={{ background: '#12121e', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 16px 0' }}>🔑 Vào Phòng Chơi</h2>
 
           <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '6px' }}>Mã phòng 6 ký tự:</label>
@@ -1344,19 +1346,21 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
             <Sparkles size={18} color={selectedAvatarObj.auraColor} />
           </div>
 
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div className="mobile-action-dock mobile-action-dock-fullscreen">
             <button
               type="button"
               onClick={() => setActiveView('TABLES')}
-              style={{ flex: 1, padding: '12px', background: 'rgba(255,255,255,0.08)', border: 'none', color: '#e2e8f0', borderRadius: '10px', cursor: 'pointer' }}
+              className="btn btn-ghost"
+              style={{ flex: 1, minHeight: '44px', fontSize: '0.88rem' }}
             >
-              Quay Lại Sảnh Bàn
+              Quay Lại Sảnh
             </button>
             <button
               type="submit"
-              style={{ flex: 2, padding: '12px', background: '#059669', border: 'none', color: '#fff', borderRadius: '10px', fontWeight: 700, cursor: 'pointer' }}
+              className="btn btn-primary pulse-animation"
+              style={{ flex: 2, minHeight: '44px', fontWeight: 800, fontSize: '0.92rem', background: 'linear-gradient(135deg, #10b981, #059669)' }}
             >
-              Tham Gia Phòng
+              <KeyRound size={16} /> Tham Gia Phòng
             </button>
           </div>
         </form>
@@ -1370,7 +1374,7 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
             onLeaveRoom={handleLeaveRoom}
           />
         ) : (
-          <div>
+          <div className="has-dock-padding-fullscreen">
             {/* Card Mã Phòng & Link Chia Sẻ */}
             <div style={{
             background: 'linear-gradient(135deg, #1e1b4b, #0f172a)',
@@ -1533,19 +1537,8 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
             </div>
           )}
 
-          {/* Action Bar dưới cùng */}
-          <div style={{
-            position: 'sticky',
-            bottom: '16px',
-            background: 'rgba(10, 10, 18, 0.95)',
-            backdropFilter: 'blur(12px)',
-            border: '1px solid rgba(255,255,255,0.15)',
-            borderRadius: '16px',
-            padding: '14px',
-            display: 'flex',
-            gap: '10px',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-          }}>
+          {/* Action Bar dưới cùng ghim cố định */}
+          <div className="mobile-action-dock mobile-action-dock-fullscreen" style={{ padding: '10px 14px' }}>
             {isHost ? (
               <button
                 onClick={handleStartGame}

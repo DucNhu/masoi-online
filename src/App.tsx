@@ -405,7 +405,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${appMode === 'ONLINE' ? 'app-container-online' : ''}`}>
       {/* Top Header */}
       <Header
         round={gameState.round}

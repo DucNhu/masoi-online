@@ -1,5 +1,5 @@
 import React from 'react';
-import { Scroll, X, Clock, ShieldCheck, Skull, Trophy } from 'lucide-react';
+import { Scroll, X, ShieldCheck, Skull, Trophy } from 'lucide-react';
 import { soundEffects } from '../utils/soundEffects';
 
 interface MatchHistoryModalProps {
@@ -72,29 +72,27 @@ export const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({
       onClick={handleClose}
     >
       <div
+        className="modal-fixed-shell"
         style={{
           width: '100%',
           maxWidth: '520px',
-          maxHeight: '85vh',
           backgroundColor: '#0f172a',
           border: '1px solid rgba(255, 255, 255, 0.15)',
           borderRadius: '24px',
-          display: 'flex',
-          flexDirection: 'column',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
-          overflow: 'hidden',
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div
           style={{
-            padding: '18px 20px',
+            padding: '16px 20px',
             borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             background: 'linear-gradient(to right, rgba(99, 102, 241, 0.1), transparent)',
+            flexShrink: 0,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -145,7 +143,7 @@ export const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({
         {winnerBadge && (
           <div
             style={{
-              margin: '14px 20px 0',
+              margin: '12px 20px 0',
               padding: '10px 14px',
               borderRadius: '12px',
               background: winnerBadge.bg,
@@ -157,6 +155,7 @@ export const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({
               fontWeight: 800,
               fontSize: '0.88rem',
               color: winnerBadge.color,
+              flexShrink: 0,
             }}
           >
             {winnerBadge.icon}
@@ -166,10 +165,9 @@ export const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({
 
         {/* Timeline Log List */}
         <div
+          className="modal-scroll-body"
           style={{
             padding: '16px 20px',
-            overflowY: 'auto',
-            flex: 1,
             display: 'flex',
             flexDirection: 'column',
             gap: '10px',
@@ -241,31 +239,32 @@ export const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({
           )}
         </div>
 
-        {/* Footer */}
+        {/* Footer Ghim Đáy */}
         <div
+          className="modal-pinned-footer"
           style={{
-            padding: '14px 20px',
+            padding: '12px 20px',
             borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-            display: 'flex',
-            justifyContent: 'flex-end',
-            background: 'rgba(15, 23, 42, 0.8)',
+            background: 'rgba(15, 23, 42, 0.95)',
+            marginTop: 0,
           }}
         >
           <button
             type="button"
             onClick={handleClose}
+            className="btn btn-ghost"
             style={{
-              padding: '8px 20px',
-              borderRadius: '10px',
-              background: 'rgba(255, 255, 255, 0.1)',
-              border: 'none',
+              width: '100%',
+              minHeight: '44px',
+              borderRadius: '12px',
+              background: 'rgba(255, 255, 255, 0.08)',
               color: '#f8fafc',
-              fontWeight: 600,
-              fontSize: '0.85rem',
+              fontWeight: 700,
+              fontSize: '0.9rem',
               cursor: 'pointer',
             }}
           >
-            Đóng
+            Đóng Nhật Ký
           </button>
         </div>
       </div>

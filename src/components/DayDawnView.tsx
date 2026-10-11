@@ -42,7 +42,7 @@ export const DayDawnView: React.FC<Props> = ({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div className="has-dock-padding-offline" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* Dawn Banner */}
       <div className="card-glass" style={{
         textAlign: 'center',
@@ -194,34 +194,71 @@ export const DayDawnView: React.FC<Props> = ({
             })}
           </div>
 
-          <button
-            disabled={!selectedHunterTargetId}
-            onClick={() => setShowHunterConfirm(true)}
-            className="btn btn-danger"
-            style={{ width: '100%' }}
-          >
-            Xác Nhận Bắn Chết
-          </button>
         </div>
       )}
 
-      {/* Proceed Button */}
-      {!hunterPlayer && (
-        <div style={{
-          position: 'sticky',
-          bottom: '80px',
-          paddingTop: '8px',
-          zIndex: 50,
-        }}>
-          <button
-            onClick={onProceedToDiscussion}
-            className="btn btn-primary"
-            style={{ width: '100%', height: '52px', fontSize: '1.05rem' }}
-          >
-            Bắt Đầu Thảo Luận Ban Ngày <ArrowRight size={18} />
-          </button>
-        </div>
-      )}
+      {/* Fixed Mobile Action Dock */}
+      <div className="mobile-action-dock mobile-action-dock-offline">
+        {hunterPlayer ? (
+          <>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '0.72rem', color: '#f87171', fontWeight: 800 }}>
+                🏹 Phát Đạn Thợ Săn:
+              </div>
+              <div style={{ fontSize: '0.78rem', color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {selectedHunterTargetId
+                  ? `Nhắm: ${alivePlayers.find(p => p.id === selectedHunterTargetId)?.name}`
+                  : 'Chạm 1 người để bắn trả'}
+              </div>
+            </div>
+
+            <button
+              disabled={!selectedHunterTargetId}
+              onClick={() => setShowHunterConfirm(true)}
+              className="btn btn-danger pulse-animation"
+              style={{
+                minHeight: '44px',
+                padding: '8px 16px',
+                fontSize: '0.92rem',
+                fontWeight: 800,
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+                opacity: selectedHunterTargetId ? 1 : 0.5,
+              }}
+            >
+              <Crosshair size={16} />
+              <span>Bắn Chết</span>
+            </button>
+          </>
+        ) : (
+          <>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '0.72rem', color: 'var(--accent-gold)', fontWeight: 800 }}>
+                ☀️ Bình Minh Ngày {round}
+              </div>
+              <div style={{ fontSize: '0.78rem', color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {deadPlayers.length > 0 ? `${deadPlayers.length} người hy sinh trong đêm` : 'Đêm bình yên không ai hy sinh'}
+              </div>
+            </div>
+
+            <button
+              onClick={onProceedToDiscussion}
+              className="btn btn-primary pulse-animation"
+              style={{
+                minHeight: '44px',
+                padding: '8px 16px',
+                fontSize: '0.92rem',
+                fontWeight: 800,
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+              }}
+            >
+              <span>Vào Thảo Luận</span>
+              <ArrowRight size={16} />
+            </button>
+          </>
+        )}
+      </div>
 
       {/* Modal xác nhận phát đạn thợ săn */}
       {hunterPlayer && (

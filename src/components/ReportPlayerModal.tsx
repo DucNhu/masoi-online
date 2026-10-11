@@ -160,7 +160,7 @@ export const ReportPlayerModal: React.FC<Props> = ({ isOpen, onClose, playerName
                 type="button"
                 onClick={onClose}
                 className="btn btn-ghost"
-                style={{ flex: 1, fontSize: '0.82rem' }}
+                style={{ flex: 1, minHeight: '44px', fontSize: '0.85rem' }}
               >
                 Hủy Bỏ
               </button>
@@ -169,13 +169,14 @@ export const ReportPlayerModal: React.FC<Props> = ({ isOpen, onClose, playerName
                 disabled={!targetName}
                 style={{
                   flex: 1.5,
+                  minHeight: '44px',
                   padding: '10px',
-                  borderRadius: '8px',
+                  borderRadius: '10px',
                   background: 'linear-gradient(135deg, #ef4444, #991b1b)',
                   color: '#fff',
                   border: 'none',
                   fontWeight: 700,
-                  fontSize: '0.82rem',
+                  fontSize: '0.85rem',
                   cursor: targetName ? 'pointer' : 'not-allowed',
                 }}
               >

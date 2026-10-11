@@ -93,22 +93,20 @@ export const SoloPracticeModal: React.FC<SoloPracticeModalProps> = ({
       }}
     >
       <div
-        className="card-glass"
+        className="card-glass modal-fixed-shell"
         style={{
           width: '100%',
           maxWidth: '520px',
           background: 'linear-gradient(135deg, rgba(24, 20, 48, 0.98), rgba(12, 10, 24, 0.98))',
           border: '1px solid rgba(168, 85, 247, 0.35)',
           borderRadius: '24px',
-          padding: '20px',
+          padding: '16px 18px',
           color: '#fff',
           boxShadow: '0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(168, 85, 247, 0.2)',
-          maxHeight: '90vh',
-          overflowY: 'auto',
         }}
       >
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div
               style={{
@@ -153,8 +151,10 @@ export const SoloPracticeModal: React.FC<SoloPracticeModalProps> = ({
           </button>
         </div>
 
-        {/* 1. Chọn Vai Trò Muốn Luyện */}
-        <div style={{ marginBottom: '16px' }}>
+        {/* Scrollable Body */}
+        <div className="modal-scroll-body" style={{ paddingRight: '2px', paddingBottom: '4px' }}>
+          {/* 1. Chọn Vai Trò Muốn Luyện */}
+          <div style={{ marginBottom: '16px' }}>
           <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#cbd5e1', marginBottom: '8px', display: 'block' }}>
             CHỌN VAI TRÒ BẠN MUỐN LUYỆN TẬP:
           </label>
@@ -273,8 +273,10 @@ export const SoloPracticeModal: React.FC<SoloPracticeModalProps> = ({
             </button>
           </div>
         </div>
+      </div>
 
-        {/* Nút Bắt Đầu Tập Luyện */}
+      {/* Nút Bắt Đầu Tập Luyện Ghim Đáy */}
+      <div className="modal-pinned-footer" style={{ borderTop: '1px solid rgba(168, 85, 247, 0.25)', paddingTop: '12px' }}>
         <button
           type="button"
           onClick={handleStart}
@@ -301,5 +303,6 @@ export const SoloPracticeModal: React.FC<SoloPracticeModalProps> = ({
         </button>
       </div>
     </div>
-  );
+  </div>
+);
 };

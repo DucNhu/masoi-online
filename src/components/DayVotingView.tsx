@@ -68,7 +68,7 @@ export const DayVotingView: React.FC<Props> = ({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div className="has-dock-padding-offline" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* Header */}
       <div className="card-glass danger-pulse" style={{ 
         padding: '22px 16px', 
@@ -246,31 +246,62 @@ export const DayVotingView: React.FC<Props> = ({
         </div>
       )}
 
-      {/* Action Buttons */}
-      <div style={{
-        position: 'sticky',
-        bottom: '80px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px',
-        paddingTop: '8px',
-        zIndex: 50,
-      }}>
+      {/* Action Buttons Fixed Mobile Action Dock */}
+      <div className="mobile-action-dock mobile-action-dock-offline">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {targetPlayer ? (
+            <>
+              <div style={{ fontSize: '0.72rem', color: '#f87171', fontWeight: 800 }}>
+                ⚠️ Quyết định treo cổ:
+              </div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                #{targetPlayer.seatNumber} {targetPlayer.name}
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 800 }}>
+                Chưa chọn ai treo cổ
+              </div>
+              <div style={{ fontSize: '0.76rem', color: '#94a3b8' }}>
+                Chạm người hoặc bỏ qua
+              </div>
+            </>
+          )}
+        </div>
+
         {targetPlayer ? (
           <button
             onClick={() => setShowHangConfirm(true)}
-            className="btn btn-danger"
-            style={{ width: '100%', height: '52px', fontSize: '1.05rem' }}
+            className="btn btn-danger pulse-animation"
+            style={{
+              minHeight: '44px',
+              padding: '8px 16px',
+              fontSize: '0.92rem',
+              fontWeight: 800,
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+            }}
           >
-            <Skull size={20} /> Xác Nhận Treo Cổ {targetPlayer.name}
+            <Skull size={16} />
+            <span>Treo Cổ</span>
           </button>
         ) : (
           <button
             onClick={() => setShowSkipConfirm(true)}
             className="btn btn-ghost"
-            style={{ width: '100%', height: '52px', fontSize: '1rem', border: '1px dashed var(--border-subtle)' }}
+            style={{
+              minHeight: '44px',
+              padding: '8px 14px',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+              borderColor: 'rgba(255, 255, 255, 0.25)',
+            }}
           >
-            <ShieldCheck size={18} /> Không Treo Cổ Ai (Bỏ Qua & Vào Đêm)
+            <ShieldCheck size={16} color="#34d399" />
+            <span>Bỏ Qua & Vào Đêm</span>
           </button>
         )}
       </div>

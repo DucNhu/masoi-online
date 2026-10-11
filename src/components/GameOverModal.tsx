@@ -84,46 +84,48 @@ export const GameOverModal: React.FC<Props> = ({
       justifyContent: 'center',
       padding: '16px',
     }}>
-      <div style={{
-        background: '#121422',
-        border: config.border,
-        borderRadius: '24px',
-        width: '100%',
-        maxWidth: '440px',
-        maxHeight: '90vh',
-        display: 'flex',
-        flexDirection: 'column',
-        boxShadow: '0 25px 50px rgba(0,0,0,0.8)',
-        overflow: 'hidden',
-      }}>
+      <div 
+        className="modal-fixed-shell"
+        style={{
+          background: '#121422',
+          border: config.border,
+          borderRadius: '24px',
+          width: '100%',
+          maxWidth: '440px',
+          boxShadow: '0 25px 50px rgba(0,0,0,0.8)',
+        }}
+      >
         {/* Banner */}
         <div style={{
           textAlign: 'center',
-          padding: '28px 20px 20px 20px',
+          padding: '24px 20px 16px 20px',
           background: config.bg,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           borderBottom: '1px solid var(--border-subtle)',
+          flexShrink: 0,
         }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
             {config.icon}
           </div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: config.color, marginBottom: '6px' }} className="font-cinzel">
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: config.color, marginBottom: '6px' }} className="font-cinzel">
             {config.title}
           </h2>
-          <p style={{ fontSize: '0.85rem', color: '#e2e8f0', lineHeight: 1.4 }}>
+          <p style={{ fontSize: '0.82rem', color: '#e2e8f0', lineHeight: 1.4, margin: 0 }}>
             {winReason}
           </p>
         </div>
 
         {/* Players Reveal List */}
-        <div style={{
-          padding: '16px 20px',
-          overflowY: 'auto',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px',
-        }}>
+        <div 
+          className="modal-scroll-body"
+          style={{
+            padding: '16px 20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+          }}
+        >
           <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 800 }}>
             🃏 Danh Tính Thật Của Mọi Người:
           </div>
@@ -183,11 +185,11 @@ export const GameOverModal: React.FC<Props> = ({
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border-subtle)' }}>
+        <div className="modal-pinned-footer" style={{ padding: '14px 20px', borderTop: '1px solid var(--border-subtle)', marginTop: 0 }}>
           <button
             onClick={() => setShowConfirmNewGame(true)}
             className="btn btn-primary"
-            style={{ width: '100%', height: '50px', fontSize: '1.05rem' }}
+            style={{ width: '100%', height: '48px', fontSize: '1rem', fontWeight: 800 }}
           >
             <RotateCcw size={18} /> Bắt Đầu Ván Mới
           </button>

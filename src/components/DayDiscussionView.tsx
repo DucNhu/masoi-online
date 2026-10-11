@@ -73,7 +73,7 @@ export const DayDiscussionView: React.FC<Props> = ({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div className="has-dock-padding-offline" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* Discussion Header */}
       <div className="card-glass" style={{ 
         padding: '22px 16px', 
@@ -253,19 +253,31 @@ export const DayDiscussionView: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Button to Voting */}
-      <div style={{
-        position: 'sticky',
-        bottom: '80px',
-        paddingTop: '8px',
-        zIndex: 50,
-      }}>
+      {/* Button to Voting Fixed Action Dock */}
+      <div className="mobile-action-dock mobile-action-dock-offline">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: '0.72rem', color: secondsLeft <= 15 ? '#ef4444' : '#facc15', fontWeight: 800 }}>
+            ⏱️ {formatTime(secondsLeft)} {isRunning ? 'đang đếm ngược' : 'tạm dừng'}
+          </div>
+          <div style={{ fontSize: '0.78rem', color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {alivePlayers.length} người sống đang tranh luận
+          </div>
+        </div>
+
         <button
           onClick={onProceedToVoting}
-          className="btn btn-danger"
-          style={{ width: '100%', height: '52px', fontSize: '1.05rem' }}
+          className="btn btn-danger pulse-animation"
+          style={{
+            minHeight: '44px',
+            padding: '8px 16px',
+            fontSize: '0.92rem',
+            fontWeight: 800,
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+          }}
         >
-          Tiến Hành Bỏ Phiếu Treo Cổ <ArrowRight size={18} />
+          <span>Bỏ Phiếu Treo Cổ</span>
+          <ArrowRight size={16} />
         </button>
       </div>
 

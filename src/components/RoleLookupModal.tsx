@@ -302,22 +302,19 @@ export const RoleLookupModal: React.FC<Props> = ({ isOpen, onClose, cardMappings
           >
             <div 
               onClick={(e) => e.stopPropagation()}
+              className="modal-fixed-shell"
               style={{
                 width: '100%',
-                maxWidth: '340px',
+                maxWidth: '360px',
                 background: '#101322',
                 borderRadius: '24px',
                 border: `2px solid ${pDef.color}`,
                 boxShadow: `0 20px 50px rgba(0,0,0,0.9), 0 0 30px ${pDef.color}40`,
-                padding: '18px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                textAlign: 'center',
+                padding: '16px 18px',
                 position: 'relative',
               }}
             >
-              {/* Nút đóng */}
+              {/* Nút đóng góc phải */}
               <button
                 onClick={() => setPreviewRoleId(null)}
                 style={{
@@ -340,98 +337,117 @@ export const RoleLookupModal: React.FC<Props> = ({ isOpen, onClose, cardMappings
                 <X size={18} />
               </button>
 
-              {/* Lá bài Tarot lớn có thể lật */}
+              {/* Scrollable Content Body */}
               <div 
-                onClick={() => setShowCardBack(!showCardBack)}
-                title="Nhấn để lật mặt sau lá bài"
+                className="modal-scroll-body"
                 style={{
-                  width: '210px',
-                  height: '280px',
-                  borderRadius: '16px',
-                  overflow: 'hidden',
-                  border: `2px solid ${pDef.color}`,
-                  boxShadow: `0 8px 30px rgba(0,0,0,0.8), 0 0 20px ${pDef.color}50`,
-                  marginBottom: '14px',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  backgroundColor: '#0a0a14',
-                  transition: 'transform 0.2s ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  textAlign: 'center',
+                  paddingTop: '6px',
+                  paddingBottom: '4px',
                 }}
               >
-                <img 
-                  src={showCardBack ? CARD_BACK_IMAGE : pImg} 
-                  alt={pDef.name} 
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                />
-                {!showCardBack && (
+                {/* Lá bài Tarot lớn có thể lật */}
+                <div 
+                  onClick={() => setShowCardBack(!showCardBack)}
+                  title="Nhấn để lật mặt sau lá bài"
+                  style={{
+                    width: '180px',
+                    height: '240px',
+                    borderRadius: '16px',
+                    overflow: 'hidden',
+                    border: `2px solid ${pDef.color}`,
+                    boxShadow: `0 8px 30px rgba(0,0,0,0.8), 0 0 20px ${pDef.color}50`,
+                    marginBottom: '12px',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    backgroundColor: '#0a0a14',
+                    flexShrink: 0,
+                    transition: 'transform 0.2s ease',
+                  }}
+                >
+                  <img 
+                    src={showCardBack ? CARD_BACK_IMAGE : pImg} 
+                    alt={pDef.name} 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                  />
+                  {!showCardBack && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '8px',
+                      left: '8px',
+                      background: 'rgba(0,0,0,0.8)',
+                      backdropFilter: 'blur(4px)',
+                      color: pDef.color,
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      fontSize: '0.85rem',
+                      fontWeight: 900,
+                      border: `1px solid ${pDef.color}80`,
+                    }}>
+                      Lá {rankStr}
+                    </div>
+                  )}
                   <div style={{
                     position: 'absolute',
-                    top: '8px',
-                    left: '8px',
-                    background: 'rgba(0,0,0,0.8)',
-                    backdropFilter: 'blur(4px)',
-                    color: pDef.color,
-                    padding: '2px 8px',
-                    borderRadius: '6px',
-                    fontSize: '0.85rem',
-                    fontWeight: 900,
-                    border: `1px solid ${pDef.color}80`,
+                    bottom: '6px',
+                    left: 0,
+                    right: 0,
+                    fontSize: '0.7rem',
+                    color: 'rgba(255,255,255,0.7)',
+                    textShadow: '0 1px 3px rgba(0,0,0,0.9)',
                   }}>
-                    Lá {rankStr}
+                    {showCardBack ? '🔄 Chạm để xem mặt trước' : '🔄 Chạm để lật mặt sau'}
                   </div>
-                )}
-                <div style={{
-                  position: 'absolute',
-                  bottom: '6px',
-                  left: 0,
-                  right: 0,
-                  fontSize: '0.7rem',
-                  color: 'rgba(255,255,255,0.7)',
-                  textShadow: '0 1px 3px rgba(0,0,0,0.9)',
-                }}>
-                  {showCardBack ? '🔄 Chạm để xem mặt trước' : '🔄 Chạm để lật mặt sau'}
                 </div>
+
+                {/* Thông tin vai trò */}
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: pDef.color, margin: '0 0 4px 0' }}>
+                  {pDef.name} ({pDef.nameEn})
+                </h3>
+                <div style={{
+                  display: 'inline-block',
+                  background: pDef.badgeBg,
+                  color: pDef.color,
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  padding: '3px 12px',
+                  borderRadius: '20px',
+                  marginBottom: '10px',
+                  border: `1px solid ${pDef.color}40`,
+                }}>
+                  {pDef.team === 'WEREWOLF' ? '🐺 PHE MA SÓI' : pDef.team === 'VILLAGE' ? '👤 PHE DÂN LÀNG' : '✨ PHE THỨ BA'}
+                </div>
+
+                <p style={{
+                  fontSize: '0.82rem',
+                  color: '#cbd5e1',
+                  lineHeight: 1.45,
+                  margin: '0',
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  padding: '10px 12px',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  textAlign: 'left',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                }}>
+                  {pDef.description}
+                </p>
               </div>
 
-              {/* Thông tin vai trò */}
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: pDef.color, margin: '0 0 4px 0' }}>
-                {pDef.name} ({pDef.nameEn})
-              </h3>
-              <div style={{
-                display: 'inline-block',
-                background: pDef.badgeBg,
-                color: pDef.color,
-                fontSize: '0.75rem',
-                fontWeight: 800,
-                padding: '3px 12px',
-                borderRadius: '20px',
-                marginBottom: '10px',
-                border: `1px solid ${pDef.color}40`,
-              }}>
-                {pDef.team === 'WEREWOLF' ? '🐺 PHE MA SÓI' : pDef.team === 'VILLAGE' ? '👤 PHE DÂN LÀNG' : '✨ PHE THỨ BA'}
+              {/* Pinned Action Button */}
+              <div className="modal-pinned-footer" style={{ width: '100%', borderTop: `1px solid ${pDef.color}30`, paddingTop: '10px' }}>
+                <button
+                  onClick={() => setPreviewRoleId(null)}
+                  className="btn btn-primary"
+                  style={{ width: '100%', background: pDef.color, color: '#090a12', fontWeight: 800, minHeight: '44px' }}
+                >
+                  Đóng Xem Bài
+                </button>
               </div>
-
-              <p style={{
-                fontSize: '0.82rem',
-                color: '#cbd5e1',
-                lineHeight: 1.45,
-                margin: '0 0 16px 0',
-                background: 'rgba(255, 255, 255, 0.04)',
-                padding: '10px 12px',
-                borderRadius: '12px',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                textAlign: 'left',
-              }}>
-                {pDef.description}
-              </p>
-
-              <button
-                onClick={() => setPreviewRoleId(null)}
-                className="btn btn-primary"
-                style={{ width: '100%', background: pDef.color, color: '#090a12', fontWeight: 800 }}
-              >
-                Đóng Xem Bài
-              </button>
             </div>
           </div>
         );

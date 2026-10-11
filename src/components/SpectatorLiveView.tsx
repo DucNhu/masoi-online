@@ -5,22 +5,7 @@ import { soundEffects } from '../utils/soundEffects';
 import { NetworkStatusBadge } from './NetworkStatusBadge';
 import { MatchHistoryModal } from './MatchHistoryModal';
 import { ARENA_THEMES } from '../constants/arenaThemes';
-import { 
-  Eye, 
-  LogOut, 
-  Users, 
-  Send, 
-  MessageSquare, 
-  Scroll, 
-  Moon, 
-  Sun, 
-  Vote, 
-  Trophy, 
-  Crown, 
-  Heart, 
-  Flame, 
-  Sparkles 
-} from 'lucide-react';
+import { Eye, LogOut, Send, Scroll } from 'lucide-react';
 
 interface SpectatorLiveViewProps {
   gameState: ClientGameState;
@@ -122,7 +107,8 @@ export const SpectatorLiveView: React.FC<SpectatorLiveViewProps> = ({
       borderLeft: `1px solid ${arenaTheme.borderColor}`,
       borderRight: `1px solid ${arenaTheme.borderColor}`,
       boxShadow: `0 0 50px ${arenaTheme.accentGlow}`,
-      padding: '16px',
+      padding: '16px 16px calc(var(--safe-bottom) + 24px) 16px',
+      boxSizing: 'border-box',
     }}>
       {/* Hiệu ứng Floating Live Cheers */}
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', zIndex: 9999 }}>
@@ -365,19 +351,21 @@ export const SpectatorLiveView: React.FC<SpectatorLiveViewProps> = ({
                 background: 'rgba(255, 255, 255, 0.08)',
                 border: '1px solid rgba(255, 255, 255, 0.15)',
                 borderRadius: '10px',
-                padding: '6px 12px',
+                padding: '8px 12px',
                 fontSize: '1rem',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
+                gap: '5px',
                 color: '#fff',
+                minHeight: '44px',
+                flexShrink: 0,
                 transition: 'transform 0.15s ease',
               }}
               title={cheer.label}
             >
               <span>{cheer.emoji}</span>
-              <span style={{ fontSize: '0.7rem', fontWeight: 600 }}>{cheer.label}</span>
+              <span style={{ fontSize: '0.72rem', fontWeight: 600 }}>{cheer.label}</span>
             </button>
           ))}
         </div>
@@ -482,11 +470,13 @@ export const SpectatorLiveView: React.FC<SpectatorLiveViewProps> = ({
               flex: 1,
               background: 'rgba(255, 255, 255, 0.06)',
               border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '8px',
+              borderRadius: '10px',
               padding: '8px 12px',
               color: '#fff',
-              fontSize: '0.82rem',
+              fontSize: '0.85rem',
               outline: 'none',
+              minHeight: '44px',
+              boxSizing: 'border-box',
             }}
           />
           <button
@@ -495,16 +485,18 @@ export const SpectatorLiveView: React.FC<SpectatorLiveViewProps> = ({
             style={{
               background: activeTab === 'SPECTATOR' ? '#9333ea' : '#475569',
               border: 'none',
-              borderRadius: '8px',
-              padding: '8px 14px',
+              borderRadius: '10px',
+              padding: '8px 16px',
               color: '#fff',
               cursor: activeTab === 'SPECTATOR' ? 'pointer' : 'not-allowed',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              minHeight: '44px',
+              minWidth: '44px',
             }}
           >
-            <Send size={15} />
+            <Send size={16} />
           </button>
         </form>
       </div>
