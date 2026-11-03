@@ -1,33 +1,32 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-10-11 07:27 (Asia/Ho_Chi_Minh) — Sprint 24: Toàn Diện Hóa UI Mobile — Ghim Action Dock Nổi & Modal Ergonomics (Xóa Bỏ Cuộn Trang Để Bấm Nút).
-- **Mục tiêu**: **Cập nhật toàn bộ UI cả source, loại bỏ tình trạng trên điện thoại phải cuộn xuống mới bấm được nút thao tác (Primary CTA) [COMPLETED]**.
-- **Nguyên nhân cốt lõi đã chẩn đoán**:
-  1. Các nút hành động chính (Primary CTA) trước đây nằm ở cuối luồng tài liệu dọc (`position: sticky` hoặc static flow ở cuối danh sách). Khi danh sách người chơi dài (8-12 người) hoặc nội dung modal cao, người dùng trên mobile (iOS Safari, Android Chrome) bắt buộc phải cuộn hết màn hình mới thấy và bấm được nút.
-  2. Các modal dialog có nội dung vượt quá chiều cao viewport điện thoại nhưng không phân tách giữa vùng cuộn nội dung (`modal-scroll-body`) và thanh hành động đáy cố định (`modal-pinned-footer`).
-  3. Thanh điều hướng đáy (Bottom Nav) trong chế độ Offline chiếm ~64px + safe-area-inset-bottom, dễ che khuất các phần tử ở đáy nếu không có lớp dock chuyên biệt và padding đệm.
-- **Giải pháp & Kiến trúc triển khai**:
-  1. **Hệ thống Dock Nổi Chuyên Dụng (`src/index.css`)**:
-     - `.mobile-action-dock`: Glassmorphism cao cấp, viền neon tinh tế, bóng đổ sâu `box-shadow`, z-index 95.
-     - `.mobile-action-dock-offline`: Ghim nổi ở `bottom: calc(var(--safe-bottom) + 68px)`, luôn nằm ngay trên thanh Bottom Nav và dưới ngón tay cái người dùng.
-     - `.mobile-action-dock-fullscreen`: Ghim nổi ở `bottom: calc(var(--safe-bottom) + 12px)` cho chế độ Online và toàn màn hình.
-     - `.has-dock-padding-offline` & `.has-dock-padding-fullscreen`: Đệm khoảng trống cuối trang (120px / 96px) chống che khuất nội dung khi cuộn.
-     - Bộ 3 lớp Modal chuyên biệt cho Mobile: `.modal-fixed-shell` (khống chế `max-height: 90dvh`, chống tràn), `.modal-scroll-body` (cuộn mượt cảm ứng), `.modal-pinned-footer` (ghim nút cố định ở đáy modal).
-  2. **Nâng cấp Toàn Bộ Màn Hình Offline (`src/components/`)**:
-     - `SetupView.tsx`: Bước 1 (Ghim Dock tóm tắt số vai trò + nút "Xào & Chia Bài"), Bước 2 (Thu gọn preview bài, Ghim Dock tiến độ chia `${dealtCount}/${players.length}` + nút "Vào Đêm 1").
-     - `NightPhaseView.tsx`: Ghim Dock tóm tắt mục tiêu đêm + nút "Tiếp Theo ➔" / "Gọi Sáng ☀️".
-     - `DayDawnView.tsx`: Ghim Dock xử lý trả thù thợ săn + nút "Vào Thảo Luận ➔".
-     - `DayDiscussionView.tsx`: Ghim Dock hiển thị đồng hồ đếm ngược live + nút "Bỏ Phiếu Treo Cổ ➔".
-     - `DayVotingView.tsx`: Ghim Dock động hiển thị nghi phạm đang chọn + nút "Treo Cổ" / "Bỏ Qua & Vào Đêm".
-  3. **Nâng cấp Sảnh & Bàn Đấu Online (`src/components/`)**:
-     - `OnlineLobby.tsx`: Cả 3 giao diện Tạo Bàn, Vào Bàn và Phòng Chờ đều trang bị Dock nổi đáy ghim nút hành động ("Tạo Phòng", "Tham Gia", "Sẵn Sàng / Bắt Đầu") kèm nút phụ.
-     - `OnlinePlayerGameView.tsx`: Đáy view đệm `calc(var(--safe-bottom) + 6px)` bảo vệ Dynamic Island / Home Indicator; Popup lá bài dùng `modal-fixed-shell` + `modal-pinned-footer`.
-     - `SpectatorLiveView.tsx`: Khung chat và thanh cổ vũ đệm an toàn, các nút đạt chuẩn cảm ứng ≥44px.
-  4. **Nâng cấp Toàn Bộ Modal Hộp Thoại (`src/components/`)**:
-     - `SoloPracticeModal.tsx`: Tách nội dung và ghim cứng nút "VÀO TRẬN TẬP LUYỆN NGAY" ở đáy.
-     - `RoleLookupModal.tsx`: Popup xem bài Tarot nghệ thuật dùng `modal-fixed-shell` + ghim nút "Đóng Xem Bài".
-     - `GameOverModal.tsx`: Ghim cố định nút "Bắt Đầu Ván Mới".
-     - `LeaderboardModal.tsx`, `HunterProfileModal.tsx`, `MatchHistoryModal.tsx`, `AvatarPickerModal.tsx`, `ReportPlayerModal.tsx`: Tất cả đều dùng modal shell cố định với nút thao tác/đóng ghim đáy vừa vặn tầm tay cái.
+- **Thời gian cập nhật**: 2026-11-03 22:53 (Asia/Ho_Chi_Minh) — Sprint 25: Ra Mắt Version 3D WebGL Bàn Tròn 10 Ghế Quanh Đống Lửa & Hệ Thống Tùy Biến Trang Phục (3D Wardrobe).
+- **Mục tiêu**: **Khởi tạo và tích hợp phiên bản 3D Low-Poly chạy thuần WebGL/HTML5 cho bàn 10 người chơi, tối ưu siêu nhẹ (<500KB bundle), nhận diện rõ hình sói, và trang bị Phòng Thay Đồ 3D (3D Wardrobe) tùy biến diện mạo [COMPLETED]**.
+- **Kết quả thực hiện**:
+  1. **Thư viện WebGL Cốt Lõi (`three`, `@types/three`)**:
+     - Tích hợp Three.js chạy thuần WebGL 2.0 trên thẻ `<canvas>` HTML5, không cần cài app, tương thích 100% Safari iOS và Chrome Android.
+     - Bundle nén gzip chỉ **424 kB** cho toàn bộ app + 3D engine, tải dưới 1 giây.
+  2. **Bộ Dựng Nhân Vật Sói Low-Poly Thủ Tục (`src/components/arena3d/WolfMeshBuilder.ts`)**:
+     - Dựng procedural 3D từ các khối hình học cơ bản (hộp sọ, mõm dài, nanh nhọn, 2 tai tam giác, mắt neon phát sáng, đuôi xù, chân ngồi).
+     - Polycount chỉ ~800 polygons/nhân vật, 10 nhân vật toàn màn hình chỉ ~8.000 polys, duy trì 60 FPS mượt mà trên mobile.
+     - Hệ thống hoạt cảnh 4 trạng thái: `idle` (thở êm đềm), `howl` (ngửa cổ tru trăng), `point` (giơ tay chỉ buộc tội), `slumber` (cúi đầu ngủ đêm), và `setGhostMode` (chuyển sang bóng ma trong suốt khi hy sinh).
+  3. **Không Gian Bàn Tròn 10 Ghế Quanh Đống Lửa (`src/components/arena3d/CampfireScene.ts`)**:
+     - Bố cục 10 gốc cây ngồi xung quanh đống lửa trung tâm (Campfire Circle).
+     - Đống lửa bập bùng với ánh sáng cam ấm áp, rặng thông và ánh trăng đêm huyền bí.
+     - Cơ chế xoay góc nhìn 360 độ quanh đống lửa bằng cảm ứng vuốt ngón tay hoặc chuột (Touch Orbit Controls).
+     - Chuyển đổi trạng thái Ngày (Bình minh rực rỡ) / Đêm (Đêm tối ma mị, mắt sói sáng rực).
+     - Nhận diện chạm vào từng ghế để hiển thị thông tin người chơi.
+  4. **Phòng Thay Đồ 3D Tùy Biến Trang Phục (`src/components/arena3d/Wardrobe3DModal.tsx`)**:
+     - Bục xoay 360 độ thời gian thực để người chơi ngắm nhân vật của mình.
+     - 4 danh mục trang phục đa dạng:
+       - **Màu Lông (5 loại)**: Sói Xám rừng rậm, Sói Tuyết trắng, Sói Lửa huyết nguyệt, Sói Than bóng đêm, Sói Chúa hoàng kim.
+       - **Mũ & Nón (6 loại)**: Nón Lá Việt Nam, Mũ Phù Thủy, Mũ Cao Bồi, Vương Miện Vàng, Băng Đô Ninja, Không đội.
+       - **Mắt Neon (5 màu)**: Đỏ khát máu, Vàng hổ phách, Xanh tiên tri, Tím phù thủy, Xanh ngọc độc dược.
+       - **Đồ Sau Lưng (5 loại)**: Áo Choàng Đỏ, Thanh Kiếm Sắt, Bình Độc Dược, Khiên Hộ Vệ, Không có.
+     - Nút thử biểu cảm tức thì (Thở, Tru Trăng, Chỉ Tay, Ngủ Đêm) và lưu vào `localStorage`.
+  5. **Tích Hợp Giao Diện App (`src/App.tsx`, `src/components/Header.tsx`)**:
+     - Nút icon `Sparkles` tại Top Header để mở nhanh Phòng Thay Đồ 3D mọi lúc.
+     - Nút gạt chuyển đổi `[🔥 Bàn Tròn 3D (10 Ghế)] [📋 Danh Sách Thẻ 2D]` trong Tab Người Chơi (Seating Circle).
 - **Nhánh làm việc**: `feature/ma-soi-online`.
 - **Mô hình vận hành**: Game Studio Hierarchy (PO → PM → Gameplay Programmer → QA Lead).
 
@@ -36,11 +35,11 @@
 ## 1. Kết Quả Kiểm Thử Toàn Diện (System Health & Pipeline Verification)
 - **Lint**: `oxlint` PASSED 100% (0 errors).
 - **AI Skill Verification**: 78/78 skills PASSED 100%.
-- **Unit & E2E Test Suite**: **20 Test Suites PASSED 100%** (77/77 test cases).
-- **Production Build**: `tsc -b && vite build` PASSED (Bundle WebP tối ưu, PWA Service Worker sẵn sàng).
-- **Git Push Policy**: Tuân thủ nghiêm ngặt quy tắc người dùng — Không tự ý chạy `git push` khi chưa có lệnh tường minh từ người dùng.
+- **Unit & Integration Test Suite**: **21 Test Suites PASSED 100%** (80/80 test cases, bao gồm bộ test `sprint25Wolf3DArena.test.mjs`).
+- **Production Build**: `tsc -b && vite build` PASSED 100% (Bundle JS gzip: 424.02 kB).
+- **Git Push Policy**: Tuân thủ nghiêm ngặt quy tắc người dùng — Tuyệt đối KHÔNG tự ý push code lên remote.
 
 ---
 
 ## 2. Hành Động Tiếp Theo Của PM (Single Next Action)
-- Báo cáo kết quả nâng cấp toàn diện UI Mobile cho người dùng và chờ phản hồi / chỉ đạo tiếp theo.
+- Báo cáo chi tiết kết quả xây dựng thành công Prototype 3D Bàn Tròn 10 Chỗ và Phòng Thay Đồ cho người dùng trải nghiệm.

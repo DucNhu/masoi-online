@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "test": "tsx tests/gameEngine.test.mjs && tsx tests/roomProtocol.test.mjs && tsx tests/roomManager.test.mjs && tsx tests/multiplayerE2E.test.mjs && tsx tests/fullOnlineMatch.test.mjs && tsx tests/voiceSignaling.test.mjs && tsx tests/offlineGameFlow.test.mjs && tsx tests/sprint5ExpandedRules.test.mjs && tsx tests/sprint6AntiBotAndTableLobby.test.mjs && tsx tests/sprint7LeaderboardAndProfile.test.mjs && tsx tests/sprint8AudioAndEmotes.test.mjs && tsx tests/sprint9ShareAndHistory.test.mjs && tsx tests/sprint10MobileAndNetwork.test.mjs && tsx tests/sprint11SpectatorMode.test.mjs && tsx tests/sprint12SoloPractice.test.mjs && tsx tests/sprint13SpatialAudioAndThemes.test.mjs && tsx tests/sprint14CrossBrowserSync.test.mjs && tsx tests/sprint15WebRTCPeerMesh.test.mjs && tsx tests/sprint16AiArchitecture.test.mjs && tsx tests/sprint17WebRTCVoiceMesh.test.mjs",
+    "test": "tsx tests/gameEngine.test.mjs && tsx tests/roomProtocol.test.mjs && tsx tests/roomManager.test.mjs && tsx tests/multiplayerE2E.test.mjs && tsx tests/fullOnlineMatch.test.mjs && tsx tests/voiceSignaling.test.mjs && tsx tests/offlineGameFlow.test.mjs && tsx tests/sprint5ExpandedRules.test.mjs && tsx tests/sprint6AntiBotAndTableLobby.test.mjs && tsx tests/sprint7LeaderboardAndProfile.test.mjs && tsx tests/sprint8AudioAndEmotes.test.mjs && tsx tests/sprint9ShareAndHistory.test.mjs && tsx tests/sprint10MobileAndNetwork.test.mjs && tsx tests/sprint11SpectatorMode.test.mjs && tsx tests/sprint12SoloPractice.test.mjs && tsx tests/sprint13SpatialAudioAndThemes.test.mjs && tsx tests/sprint14CrossBrowserSync.test.mjs && tsx tests/sprint15WebRTCPeerMesh.test.mjs && tsx tests/sprint16AiArchitecture.test.mjs && tsx tests/sprint17WebRTCVoiceMesh.test.mjs && tsx tests/sprint25Wolf3DArena.test.mjs",
     "ai:verify": "node scripts/verify-ai-skills.mjs",
     "verify": "npm run lint && npm run ai:verify && npm test && npm run build",
     "daemon": "node scripts/studio-daemon.mjs",
@@ -21,12 +21,14 @@
     "@capacitor/core": "^8.5.2",
     "@capacitor/haptics": "^8.0.2",
     "@capacitor/status-bar": "^8.0.3",
+    "@types/three": "^0.187.0",
     "canvas-confetti": "^1.9.4",
     "lucide-react": "^1.49.0",
     "mqtt": "^5.16.0",
     "peerjs": "^1.5.5",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "three": "^0.187.0"
   },
   "devDependencies": {
     "@capacitor/android": "^8.5.2",

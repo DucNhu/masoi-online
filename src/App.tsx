@@ -19,8 +19,10 @@ import { DayVotingView } from './components/DayVotingView';
 import { GameOverModal } from './components/GameOverModal';
 import { HistoryLogView } from './components/HistoryLogView';
 import { OnlineLobby } from './components/OnlineLobby';
+import { CampfireArena3DView } from './components/arena3d/CampfireArena3DView';
+import { Wardrobe3DModal } from './components/arena3d/Wardrobe3DModal';
 import { soundEffects } from './utils/soundEffects';
-import { Gamepad2, Users, History, BookOpen, Heart } from 'lucide-react';
+import { Gamepad2, Users, History, BookOpen, Heart, Flame } from 'lucide-react';
 
 const INITIAL_STATE: GameState = {
   round: 1,
@@ -56,6 +58,8 @@ export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'GAME' | 'PLAYERS' | 'LOGS' | 'CARDS'>('GAME');
   const [appMode, setAppMode] = useState<'OFFLINE' | 'ONLINE'>('OFFLINE');
   const [isLookupOpen, setIsLookupOpen] = useState<boolean>(false);
+  const [isWardrobeOpen, setIsWardrobeOpen] = useState<boolean>(false);
+  const [playerViewMode, setPlayerViewMode] = useState<'3D' | '2D'>('3D');
 
   // Lưu lại người chết qua đêm để DayDawnView hiển thị
   const [overnightDeadIds, setOvernightDeadIds] = useState<string[]>([]);
@@ -416,6 +420,7 @@ export const App: React.FC = () => {
         onResetGame={handleResetGame}
         mode={appMode}
         onToggleMode={() => setAppMode(prev => prev === 'OFFLINE' ? 'ONLINE' : 'OFFLINE')}
+        onOpenWardrobe={() => setIsWardrobeOpen(true)}
       />
 
       {/* Main Content Area based on Active Tab & Mode */}
@@ -479,65 +484,145 @@ export const App: React.FC = () => {
         {/* Tab 2: PLAYER ROSTER / SEATING CIRCLE */}
         {activeTab === 'PLAYERS' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div className="card-glass" style={{ textAlign: 'center', padding: '14px' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }} className="font-cinzel">
-                Sơ Đồ Người Chơi ({gameState.players.length})
-              </h3>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                Sống: {gameState.players.filter(p => p.isAlive).length} | Chết: {gameState.players.filter(p => !p.isAlive).length}
-              </p>
+            {/* View Mode Switcher: 3D Campfire vs 2D Card List */}
+            <div
+              style={{
+                display: 'flex',
+                gap: '6px',
+                padding: '4px',
+                background: 'rgba(15, 23, 42, 0.75)',
+                borderRadius: '16px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+              }}
+            >
+              <button
+                onClick={() => {
+                  soundEffects.triggerHaptic('light');
+                  setPlayerViewMode('3D');
+                }}
+                className="btn"
+                style={{
+                  flex: 1,
+                  padding: '9px 12px',
+                  borderRadius: '12px',
+                  background:
+                    playerViewMode === '3D'
+                      ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
+                      : 'transparent',
+                  color: playerViewMode === '3D' ? '#fff' : '#94a3b8',
+                  fontWeight: 800,
+                  fontSize: '0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  border: 'none',
+                  boxShadow: playerViewMode === '3D' ? '0 4px 14px rgba(99, 102, 241, 0.4)' : 'none',
+                }}
+              >
+                <Flame size={16} color={playerViewMode === '3D' ? '#f59e0b' : '#94a3b8'} />
+                Bàn Tròn 3D (10 Ghế)
+              </button>
+
+              <button
+                onClick={() => {
+                  soundEffects.triggerHaptic('light');
+                  setPlayerViewMode('2D');
+                }}
+                className="btn"
+                style={{
+                  flex: 1,
+                  padding: '9px 12px',
+                  borderRadius: '12px',
+                  background:
+                    playerViewMode === '2D' ? 'rgba(255, 255, 255, 0.12)' : 'transparent',
+                  color: playerViewMode === '2D' ? '#fff' : '#94a3b8',
+                  fontWeight: 800,
+                  fontSize: '0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  border: 'none',
+                }}
+              >
+                <Users size={16} />
+                Danh Sách Thẻ 2D
+              </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {gameState.players.map(p => {
-                const roleDef = ROLE_DEFINITIONS[p.roleId];
-                return (
-                  <div
-                    key={p.id}
-                    className={`player-row ${!p.isAlive ? 'dead' : ''}`}
-                    style={{ borderLeft: `4px solid ${roleDef.color}` }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{
-                        width: '26px',
-                        height: '26px',
-                        borderRadius: '50%',
-                        background: 'rgba(255,255,255,0.08)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '0.8rem',
-                        fontWeight: 800,
-                        color: 'var(--accent-gold)',
-                      }}>
-                        {p.seatNumber}
-                      </span>
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>
-                          {p.name} {p.isLover && <Heart size={14} color="#ec4899" style={{ display: 'inline' }} />}
-                        </div>
-                        {!p.isAlive && (
-                          <div style={{ fontSize: '0.72rem', color: '#f87171' }}>
-                            {p.deathReason}
+            {/* 3D Campfire Arena Mode */}
+            {playerViewMode === '3D' ? (
+              <div style={{ width: '100%', height: 'calc(100dvh - 210px)', minHeight: '480px' }}>
+                <CampfireArena3DView
+                  players={gameState.players}
+                  isNight={gameState.phase.startsWith('NIGHT')}
+                  currentRound={gameState.round}
+                />
+              </div>
+            ) : (
+              <>
+                <div className="card-glass" style={{ textAlign: 'center', padding: '14px' }}>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }} className="font-cinzel">
+                    Sơ Đồ Người Chơi ({gameState.players.length})
+                  </h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    Sống: {gameState.players.filter(p => p.isAlive).length} | Chết: {gameState.players.filter(p => !p.isAlive).length}
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {gameState.players.map(p => {
+                    const roleDef = ROLE_DEFINITIONS[p.roleId];
+                    return (
+                      <div
+                        key={p.id}
+                        className={`player-row ${!p.isAlive ? 'dead' : ''}`}
+                        style={{ borderLeft: `4px solid ${roleDef.color}` }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{
+                            width: '26px',
+                            height: '26px',
+                            borderRadius: '50%',
+                            background: 'rgba(255,255,255,0.08)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.8rem',
+                            fontWeight: 800,
+                            color: 'var(--accent-gold)',
+                          }}>
+                            {p.seatNumber}
+                          </span>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>
+                              {p.name} {p.isLover && <Heart size={14} color="#ec4899" style={{ display: 'inline' }} />}
+                            </div>
+                            {!p.isAlive && (
+                              <div style={{ fontSize: '0.72rem', color: '#f87171' }}>
+                                {p.deathReason}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    </div>
+                        </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div className={gameState.privacyShield ? 'privacy-blur' : ''} style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: roleDef.color }}>
-                          {roleDef.name}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div className={gameState.privacyShield ? 'privacy-blur' : ''} style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '0.85rem', fontWeight: 700, color: roleDef.color }}>
+                              {roleDef.name}
+                            </div>
+                          </div>
+                          <div className="playing-card-badge" style={{ minWidth: '34px', height: '34px', fontSize: '0.9rem' }}>
+                            {p.card.rank}{p.card.suit}
+                          </div>
                         </div>
                       </div>
-                      <div className="playing-card-badge" style={{ minWidth: '34px', height: '34px', fontSize: '0.9rem' }}>
-                        {p.card.rank}{p.card.suit}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -620,6 +705,13 @@ export const App: React.FC = () => {
         isOpen={isLookupOpen}
         onClose={() => setIsLookupOpen(false)}
         cardMappings={gameState.cardMappings}
+      />
+
+      {/* Wardrobe 3D Modal (Customization) */}
+      <Wardrobe3DModal
+        isOpen={isWardrobeOpen}
+        onClose={() => setIsWardrobeOpen(false)}
+        onSaveOutfit={() => {}}
       />
 
       {/* Bottom Navigation Bar */}

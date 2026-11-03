@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, BookOpen, RotateCcw, Moon, Sun, Globe } from 'lucide-react';
+import { Eye, EyeOff, BookOpen, RotateCcw, Moon, Sun, Globe, Sparkles } from 'lucide-react';
 import { GamePhase } from '../types/game';
 import { ConfirmModal } from './ConfirmModal';
 
@@ -14,6 +14,7 @@ interface Props {
   onResetGame: () => void;
   mode?: 'OFFLINE' | 'ONLINE';
   onToggleMode?: () => void;
+  onOpenWardrobe?: () => void;
 }
 
 export const Header: React.FC<Props> = ({
@@ -25,6 +26,7 @@ export const Header: React.FC<Props> = ({
   onResetGame,
   mode = 'OFFLINE',
   onToggleMode,
+  onOpenWardrobe,
 }) => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
@@ -107,6 +109,21 @@ export const Header: React.FC<Props> = ({
               title={mode === 'ONLINE' ? 'Chuyển sang Chế độ Quản trò (Trực tiếp)' : 'Chuyển sang Chế độ Online (Sảnh bàn chơi)'}
             >
               <Globe size={18} color={mode === 'ONLINE' ? '#818cf8' : '#94a3b8'} />
+            </button>
+          )}
+
+          {/* Wardrobe 3D Modal */}
+          {onOpenWardrobe && (
+            <button
+              onClick={onOpenWardrobe}
+              className="btn btn-ghost btn-icon-only"
+              style={{
+                borderColor: 'rgba(165, 180, 252, 0.4)',
+                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%)',
+              }}
+              title="Phòng Thay Đồ 3D (Tùy biến Sói & Trang phục)"
+            >
+              <Sparkles size={18} color="#a5b4fc" />
             </button>
           )}
 
