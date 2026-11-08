@@ -100,7 +100,7 @@ export const Wardrobe3DModal: React.FC<Wardrobe3DModalProps> = ({
   });
 
   const [activeCategory, setActiveCategory] = useState<'SKIN' | 'HAT' | 'EYE' | 'BACK'>('SKIN');
-  const [currentEmote, setCurrentEmote] = useState<'idle' | 'howl' | 'point' | 'slumber'>('idle');
+  const [currentEmote, setCurrentEmote] = useState<'idle' | 'walk' | 'howl' | 'point' | 'slumber'>('idle');
   const [shopNotice, setShopNotice] = useState<string | null>(null);
 
   // Lắng nghe đổi ngôn ngữ từ cửa sổ chính
@@ -271,6 +271,7 @@ export const Wardrobe3DModal: React.FC<Wardrobe3DModalProps> = ({
 
     // Nhân vật 3D
     const character = new WolfCharacter(outfit);
+    character.setStanding(true);
     character.root.position.y = 0;
     character.setNameplate(playerName, 1, true);
     scene.add(character.root);
@@ -360,9 +361,14 @@ export const Wardrobe3DModal: React.FC<Wardrobe3DModalProps> = ({
     }
   };
 
-  const handleEmote = (emote: 'idle' | 'howl' | 'point' | 'slumber') => {
+  const handleEmote = (emote: 'idle' | 'walk' | 'howl' | 'point' | 'slumber') => {
     setCurrentEmote(emote);
     if (characterRef.current) {
+      if (emote === 'walk' || emote === 'idle') {
+        characterRef.current.setStanding(true);
+      } else {
+        characterRef.current.setStanding(false);
+      }
       characterRef.current.setAnimation(emote);
     }
     NativeBridge.hapticImpact('light');
@@ -659,9 +665,26 @@ export const Wardrobe3DModal: React.FC<Wardrobe3DModalProps> = ({
                   padding: '4px 8px',
                   borderRadius: '12px',
                   cursor: 'pointer',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                {lang === 'en' ? 'Breathe' : 'Thở'}
+                {lang === 'en' ? '🧍 Breathe' : '🧍 Đứng Thở'}
+              </button>
+              <button
+                onClick={() => handleEmote('walk')}
+                style={{
+                  background: currentEmote === 'walk' ? 'rgba(16, 185, 129, 0.5)' : 'transparent',
+                  border: 'none',
+                  color: '#f8fafc',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  padding: '4px 8px',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {lang === 'en' ? '🚶 Walk' : '🚶 Đi Bộ'}
               </button>
               <button
                 onClick={() => handleEmote('howl')}
@@ -674,9 +697,10 @@ export const Wardrobe3DModal: React.FC<Wardrobe3DModalProps> = ({
                   padding: '4px 8px',
                   borderRadius: '12px',
                   cursor: 'pointer',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                {lang === 'en' ? 'Moon Howl' : 'Tru Trăng'}
+                {lang === 'en' ? '🐺 Howl' : '🐺 Tru Trăng'}
               </button>
               <button
                 onClick={() => handleEmote('point')}
@@ -689,9 +713,10 @@ export const Wardrobe3DModal: React.FC<Wardrobe3DModalProps> = ({
                   padding: '4px 8px',
                   borderRadius: '12px',
                   cursor: 'pointer',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                {lang === 'en' ? 'Accuse' : 'Chỉ Tay'}
+                {lang === 'en' ? '👉 Point' : '👉 Chỉ Tay'}
               </button>
               <button
                 onClick={() => handleEmote('slumber')}
@@ -704,9 +729,10 @@ export const Wardrobe3DModal: React.FC<Wardrobe3DModalProps> = ({
                   padding: '4px 8px',
                   borderRadius: '12px',
                   cursor: 'pointer',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                {lang === 'en' ? 'Sleep' : 'Ngủ Đêm'}
+                {lang === 'en' ? '💤 Sleep' : '💤 Ngủ Đêm'}
               </button>
             </div>
           </div>

@@ -80,3 +80,48 @@ test('Sprint 25 - 3D Arena: WolfCharacter animations & ghost mode for dead playe
   wolf.setGhostMode(true);
   wolf.setGhostMode(false);
 });
+
+test('Sprint 31 - 3D Locomotion QA: Character must stand up before walking and swing legs/arms in opposition', () => {
+  const wolf = new WolfCharacter(DEFAULT_OUTFIT);
+
+  // 1. Kiểm tra khi mới tạo: isStanding === false, hai chân ở góc gập ngồi
+  assert.equal(wolf.isStanding, false, 'Default posture is sitting on tree stump');
+  assert.ok(wolf.leftLeg.rotation.x < -1.0, 'Left leg bent forward for sitting');
+  assert.ok(wolf.rightLeg.rotation.x < -1.0, 'Right leg bent forward for sitting');
+
+  // 2. Đứng dậy: setStanding(true)
+  wolf.setStanding(true);
+  assert.equal(wolf.isStanding, true, 'Character stands up tall');
+  assert.equal(wolf.leftLeg.rotation.x, 0, 'Left leg straight down');
+  assert.equal(wolf.rightLeg.rotation.x, 0, 'Right leg straight down');
+  assert.equal(wolf.bodyGroup.position.y, 0.22, 'Body lifted for standing');
+  assert.equal(wolf.headGroup.position.y, 1.20, 'Head at standing height');
+
+  // 3. Đang ngồi mà gọi setAnimation('walk'): tự động ép isStanding === true
+  wolf.setStanding(false);
+  assert.equal(wolf.isStanding, false, 'Character sat back down');
+
+  wolf.setAnimation('walk');
+  assert.equal(wolf.isStanding, true, 'Calling walk animation automatically forces standing posture');
+
+  wolf.update(0.1);
+  assert.equal(wolf.isStanding, true, 'Character remains standing during walk update');
+
+  // Hai chân vung ngược chiều nhau (opposite swing directions)
+  assert.ok(
+    wolf.leftLeg.rotation.x * wolf.rightLeg.rotation.x < 0,
+    `Legs swing in opposition: leftLeg=${wolf.leftLeg.rotation.x}, rightLeg=${wolf.rightLeg.rotation.x}`
+  );
+
+  // Hai tay vung ngược chiều nhau
+  assert.ok(
+    wolf.leftArm.rotation.x * wolf.rightArm.rotation.x < 0,
+    `Arms swing in opposition: leftArm=${wolf.leftArm.rotation.x}, rightArm=${wolf.rightArm.rotation.x}`
+  );
+
+  // Hai tay vung ngược chiều với hai chân cùng phía (leftArm opposed to leftLeg)
+  assert.ok(
+    wolf.leftArm.rotation.x * wolf.leftLeg.rotation.x < 0,
+    'Arm and leg on same side swing in opposition for natural humanoid walk'
+  );
+});

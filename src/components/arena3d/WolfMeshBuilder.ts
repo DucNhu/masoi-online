@@ -12,6 +12,9 @@ export class WolfCharacter {
   public bodyGroup: THREE.Group;
   public leftArm: THREE.Group;
   public rightArm: THREE.Group;
+  public leftLeg: THREE.Group;
+  public rightLeg: THREE.Group;
+  public isStanding = false;
   public eyes: THREE.Mesh[];
   public hatSlot: THREE.Group;
   public backSlot: THREE.Group;
@@ -35,7 +38,7 @@ export class WolfCharacter {
   private tailMesh?: THREE.Mesh;
 
   private animTime = 0;
-  private currentAnim: 'idle' | 'howl' | 'point' | 'slumber' = 'idle';
+  private currentAnim: 'idle' | 'howl' | 'point' | 'slumber' | 'walk' = 'idle';
 
   constructor(outfit: PlayerOutfitConfig) {
     this.outfit = outfit;
@@ -44,6 +47,8 @@ export class WolfCharacter {
     this.bodyGroup = new THREE.Group();
     this.leftArm = new THREE.Group();
     this.rightArm = new THREE.Group();
+    this.leftLeg = new THREE.Group();
+    this.rightLeg = new THREE.Group();
     this.hatSlot = new THREE.Group();
     this.backSlot = new THREE.Group();
     this.hairGroup = new THREE.Group();
@@ -146,33 +151,41 @@ export class WolfCharacter {
     scarfTail.rotation.x = 0.2;
     this.bodyGroup.add(scarfTail);
 
-    // Chân & Giày bốt cắm trại (Sitting Legs with Camping Boots)
+    // Chân & Giày bốt cắm trại (Hip Joint Groups, Legs and Boots)
     const legGeo = new THREE.CylinderGeometry(0.12, 0.14, 0.38, 16);
     const bootSoleGeo = new THREE.BoxGeometry(0.22, 0.12, 0.42);
 
-    // Chân trái
-    const leftLeg = new THREE.Mesh(legGeo, this.jacketMaterial);
-    leftLeg.position.set(-0.24, 0.19, 0.16);
-    leftLeg.rotation.x = Math.PI / 3;
-    leftLeg.castShadow = true;
-    this.bodyGroup.add(leftLeg);
+    // Khớp hông chân trái (-0.20, 0.34, 0)
+    this.leftLeg.position.set(-0.20, 0.34, 0);
+    const leftLegMesh = new THREE.Mesh(legGeo, this.jacketMaterial);
+    leftLegMesh.position.set(0, -0.16, 0);
+    leftLegMesh.castShadow = true;
+    this.leftLeg.add(leftLegMesh);
 
     const leftBoot = new THREE.Mesh(bootSoleGeo, this.bootMaterial);
-    leftBoot.position.set(-0.24, 0.06, 0.32);
+    leftBoot.position.set(0, -0.32, 0.05);
     leftBoot.castShadow = true;
-    this.bodyGroup.add(leftBoot);
+    this.leftLeg.add(leftBoot);
+    this.bodyGroup.add(this.leftLeg);
 
-    // Chân phải
-    const rightLeg = new THREE.Mesh(legGeo, this.jacketMaterial);
-    rightLeg.position.set(0.24, 0.19, 0.16);
-    rightLeg.rotation.x = Math.PI / 3;
-    rightLeg.castShadow = true;
-    this.bodyGroup.add(rightLeg);
+    // Khớp hông chân phải (0.20, 0.34, 0)
+    this.rightLeg.position.set(0.20, 0.34, 0);
+    const rightLegMesh = new THREE.Mesh(legGeo, this.jacketMaterial);
+    rightLegMesh.position.set(0, -0.16, 0);
+    rightLegMesh.castShadow = true;
+    this.rightLeg.add(rightLegMesh);
 
     const rightBoot = new THREE.Mesh(bootSoleGeo, this.bootMaterial);
-    rightBoot.position.set(0.24, 0.06, 0.32);
+    rightBoot.position.set(0, -0.32, 0.05);
     rightBoot.castShadow = true;
-    this.bodyGroup.add(rightBoot);
+    this.rightLeg.add(rightBoot);
+    this.bodyGroup.add(this.rightLeg);
+
+    // Mặc định khởi tạo ngồi (isStanding = false):
+    this.leftLeg.rotation.x = -Math.PI / 2.2;
+    this.rightLeg.rotation.x = -Math.PI / 2.2;
+    this.bodyGroup.position.y = 0;
+    this.headGroup.position.y = 0.98;
 
     // === 2. TAY ÁO & BÀN TAY CHIBI BO TRÒN (ARMS & CHIBI HANDS) ===
     const sleeveGeo = new THREE.CylinderGeometry(0.095, 0.11, 0.46, 16);
@@ -650,50 +663,124 @@ export class WolfCharacter {
     const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
     const sprite = new THREE.Sprite(spriteMat);
     sprite.scale.set(1.05, 0.26, 1.0);
-    sprite.position.set(0, 1.48, 0);
+    sprite.position.set(0, this.isStanding ? 1.68 : 1.48, 0);
 
     this.nameplateSprite = sprite;
     this.root.add(sprite);
   }
 
-  public setAnimation(anim: 'idle' | 'howl' | 'point' | 'slumber'): void {
+  public setStanding(standing: boolean): void {
+    this.isStanding = standing;
+    if (standing) {
+      this.leftLeg.rotation.x = 0;
+      this.rightLeg.rotation.x = 0;
+      this.bodyGroup.position.y = 0.22;
+      this.headGroup.position.y = 1.20;
+    } else {
+      this.leftLeg.rotation.x = -Math.PI / 2.2;
+      this.rightLeg.rotation.x = -Math.PI / 2.2;
+      this.bodyGroup.position.y = 0;
+      this.headGroup.position.y = 0.98;
+    }
+    if (this.nameplateSprite) {
+      this.nameplateSprite.position.y = standing ? 1.68 : 1.48;
+    }
+  }
+
+  public setAnimation(anim: 'idle' | 'howl' | 'point' | 'slumber' | 'walk'): void {
+    if (anim === 'walk' && !this.isStanding) {
+      this.setStanding(true);
+    }
     this.currentAnim = anim;
   }
 
   public update(delta: number): void {
     this.animTime += delta;
+    const baseHeadY = this.isStanding ? 1.20 : 0.98;
+    const baseBodyY = this.isStanding ? 0.22 : 0;
 
     switch (this.currentAnim) {
       case 'idle': {
         const breathe = Math.sin(this.animTime * 2.5) * 0.025;
-        this.headGroup.position.y = 0.98 + breathe * 0.5;
+        this.bodyGroup.position.y = baseBodyY;
+        this.headGroup.position.y = baseHeadY + breathe * 0.5;
         this.headGroup.rotation.x = breathe * 0.3;
         this.headGroup.rotation.z = Math.sin(this.animTime * 1.2) * 0.02;
         this.leftArm.rotation.x = 0;
         this.rightArm.rotation.x = 0;
+        if (this.isStanding) {
+          this.leftLeg.rotation.x = 0;
+          this.rightLeg.rotation.x = 0;
+        } else {
+          this.leftLeg.rotation.x = -Math.PI / 2.2;
+          this.rightLeg.rotation.x = -Math.PI / 2.2;
+        }
         this.eyeMaterial.emissiveIntensity = 1.2 + Math.sin(this.animTime * 4) * 0.3;
         break;
       }
       case 'howl': {
+        this.bodyGroup.position.y = baseBodyY;
         this.headGroup.rotation.x = -Math.PI / 4 + Math.sin(this.animTime * 6) * 0.05;
-        this.headGroup.position.y = 1.05;
+        this.headGroup.position.y = baseHeadY + 0.07;
         this.leftArm.rotation.x = -Math.PI / 6;
         this.rightArm.rotation.x = -Math.PI / 6;
+        if (this.isStanding) {
+          this.leftLeg.rotation.x = 0;
+          this.rightLeg.rotation.x = 0;
+        } else {
+          this.leftLeg.rotation.x = -Math.PI / 2.2;
+          this.rightLeg.rotation.x = -Math.PI / 2.2;
+        }
         this.eyeMaterial.emissiveIntensity = 2.0;
         break;
       }
       case 'point': {
+        this.bodyGroup.position.y = baseBodyY;
         this.rightArm.rotation.x = -Math.PI / 2;
+        this.leftArm.rotation.x = 0;
+        this.headGroup.position.y = baseHeadY;
         this.headGroup.rotation.x = 0.08;
+        if (this.isStanding) {
+          this.leftLeg.rotation.x = 0;
+          this.rightLeg.rotation.x = 0;
+        } else {
+          this.leftLeg.rotation.x = -Math.PI / 2.2;
+          this.rightLeg.rotation.x = -Math.PI / 2.2;
+        }
         this.eyeMaterial.emissiveIntensity = 1.5;
         break;
       }
       case 'slumber': {
+        this.bodyGroup.position.y = baseBodyY;
         this.headGroup.rotation.x = Math.PI / 5;
-        this.headGroup.position.y = 0.90;
+        this.headGroup.position.y = baseHeadY - 0.08;
         this.leftArm.rotation.x = 0.08;
         this.rightArm.rotation.x = 0.08;
+        if (this.isStanding) {
+          this.leftLeg.rotation.x = 0;
+          this.rightLeg.rotation.x = 0;
+        } else {
+          this.leftLeg.rotation.x = -Math.PI / 2.2;
+          this.rightLeg.rotation.x = -Math.PI / 2.2;
+        }
         this.eyeMaterial.emissiveIntensity = 0.15;
+        break;
+      }
+      case 'walk': {
+        if (!this.isStanding) {
+          this.setStanding(true);
+        }
+        const walkCycle = this.animTime * 11;
+        this.leftLeg.rotation.x = Math.sin(walkCycle) * 0.65;
+        this.rightLeg.rotation.x = -Math.sin(walkCycle) * 0.65;
+        this.leftArm.rotation.x = -Math.sin(walkCycle) * 0.5;
+        this.rightArm.rotation.x = Math.sin(walkCycle) * 0.5;
+        const bob = Math.abs(Math.sin(walkCycle)) * 0.045;
+        this.bodyGroup.position.y = 0.22 + bob;
+        this.headGroup.position.y = 1.20 + bob;
+        this.headGroup.rotation.x = 0;
+        this.headGroup.rotation.z = Math.sin(walkCycle * 0.5) * 0.03;
+        this.eyeMaterial.emissiveIntensity = 1.2 + Math.sin(this.animTime * 4) * 0.3;
         break;
       }
     }

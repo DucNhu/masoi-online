@@ -47,8 +47,10 @@ export class CampfireScene {
 
   // Chế độ Tự Do Đi Dạo (Free Roam / Walk Mode)
   public isRoaming = false;
-  private roamPosition = new THREE.Vector3(0, 0.38, 5.8);
+  private roamPosition = new THREE.Vector3(0, 0.05, 5.8);
   private roamFacingAngle = Math.PI;
+  private roamTargetPos: THREE.Vector3 | null = null;
+  private pointerDownCoord = { x: 0, y: 0 };
   private keysPressed: Record<string, boolean> = {};
   private onTentNearbyCallback?: (tentId: CampTentId) => void;
   private onRoamStateChangeCallback?: (isRoaming: boolean) => void;
@@ -541,7 +543,9 @@ export class CampfireScene {
 
     const onPointerDown = (e: MouseEvent | TouchEvent) => {
       this.isDragging = true;
-      this.previousMousePosition = getPos(e);
+      const pos = getPos(e);
+      this.previousMousePosition = pos;
+      this.pointerDownCoord = pos;
       canvas.style.cursor = 'grabbing';
     };
 
@@ -564,22 +568,39 @@ export class CampfireScene {
       this.isDragging = false;
       canvas.style.cursor = this.hoveredSeat !== null ? 'pointer' : 'grab';
 
-      // Bắt sự kiện click vào ghế
       const rect = canvas.getBoundingClientRect();
       const pos = 'changedTouches' in e ? e.changedTouches[0] : (e as MouseEvent);
       if (!pos) return;
+
+      const currentPos = { x: pos.clientX, y: pos.clientY };
+      const dragDist = Math.hypot(currentPos.x - this.pointerDownCoord.x, currentPos.y - this.pointerDownCoord.y);
+
+      // Nếu kéo xoay camera quá xa (> 6px), coi là thao tác xoay, bỏ qua click/tap
+      if (dragDist > 6) return;
 
       const mouseX = ((pos.clientX - rect.left) / rect.width) * 2 - 1;
       const mouseY = -((pos.clientY - rect.top) / rect.height) * 2 + 1;
 
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), this.camera);
-      const intersects = raycaster.intersectObjects(this.seatMeshes);
 
-      if (intersects.length > 0) {
-        const clickedSeat = intersects[0].object.userData.seatNumber;
-        if (clickedSeat && this.onSeatClickCallback) {
-          this.onSeatClickCallback(clickedSeat);
+      if (this.isRoaming) {
+        // Chế độ Đi Dạo: Click/Tap xuống mặt đất y = 0 để đi bộ tới điểm chạm
+        const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        const intersectPoint = new THREE.Vector3();
+        if (raycaster.ray.intersectPlane(groundPlane, intersectPoint)) {
+          const clampedX = Math.max(-28, Math.min(28, intersectPoint.x));
+          const clampedZ = Math.max(-36, Math.min(14, intersectPoint.z));
+          this.roamTargetPos = new THREE.Vector3(clampedX, 0.05, clampedZ);
+        }
+      } else {
+        // Chế độ Quản Trò / Đấu Trường: Click chọn ghế người chơi
+        const intersects = raycaster.intersectObjects(this.seatMeshes);
+        if (intersects.length > 0) {
+          const clickedSeat = intersects[0].object.userData.seatNumber;
+          if (clickedSeat && this.onSeatClickCallback) {
+            this.onSeatClickCallback(clickedSeat);
+          }
         }
       }
     };
@@ -673,13 +694,15 @@ export class CampfireScene {
 
   public setRoaming(enable: boolean): void {
     this.isRoaming = enable;
+    this.roamTargetPos = null;
     const player1 = this.characters.get(1);
 
     if (enable) {
-      // Đứng dậy khỏi Ghế #1 và tiến ra bãi cỏ
-      this.roamPosition.set(0, 0.38, 5.8);
+      // Đứng dậy khỏi Ghế #1 và tiến ra bãi cỏ (chạm mặt đất y = 0.05)
+      this.roamPosition.set(0, 0.05, 5.8);
       this.roamFacingAngle = Math.PI;
       if (player1) {
+        player1.setStanding(true);
         player1.root.position.copy(this.roamPosition);
         player1.root.rotation.y = this.roamFacingAngle;
         player1.setAnimation('idle');
@@ -691,8 +714,10 @@ export class CampfireScene {
       if (player1) {
         const stump = this.seatMeshes[0];
         if (stump) {
+          player1.setStanding(false);
           player1.root.position.set(stump.position.x, 0.38, stump.position.z);
           player1.root.rotation.y = Math.PI;
+          player1.setAnimation('idle');
         }
       }
       this.resetCamera();
@@ -712,7 +737,8 @@ export class CampfireScene {
 
     // Nếu đang ở chế độ đi dạo, hướng nhân vật bước tới gần lều mới
     if (this.isRoaming) {
-      this.roamPosition.set(tent.position[0], 0.38, tent.position[2] + 4.5);
+      this.roamPosition.set(tent.position[0], 0.05, tent.position[2] + 4.5);
+      this.roamTargetPos = null;
       const player1 = this.characters.get(1);
       if (player1) {
         player1.root.position.copy(this.roamPosition);
@@ -771,6 +797,12 @@ export class CampfireScene {
 
       // Cập nhật Bảng Tên Nổi 3D lơ lửng trên đầu nhân vật
       char.setNameplate(info.name, info.seatNumber, info.isAlive);
+
+      // Nếu là người chơi số 1 và đang ở chế độ Đi Dạo (isRoaming):
+      // Chỉ cập nhật outfit / nameplate / ghostMode, KHÔNG ép animation về slumber hay tư thế ngồi!
+      if (info.seatNumber === 1 && this.isRoaming) {
+        return;
+      }
 
       // Đặt hoạt cảnh theo thời điểm
       if (!info.isAlive) {
@@ -911,7 +943,12 @@ export class CampfireScene {
         moveX += 1;
       }
 
+      const player1 = this.characters.get(1);
+
       if (moveX !== 0 || moveZ !== 0) {
+        // Phím bàn phím: hủy bỏ đích chạm Click/Tap-to-Walk
+        this.roamTargetPos = null;
+
         // Chuẩn hóa vector di chuyển
         const len = Math.hypot(moveX, moveZ);
         const normX = moveX / len;
@@ -931,9 +968,12 @@ export class CampfireScene {
 
         // Xoay hướng mặt nhân vật theo hướng di chuyển
         this.roamFacingAngle = Math.atan2(dirX, dirZ);
+        this.roamPosition.y = 0.05;
 
-        // Nhấp nhô nhịp bước chân
-        this.roamPosition.y = 0.38 + Math.abs(Math.sin(now * 0.012)) * 0.07;
+        if (player1) {
+          player1.setStanding(true);
+          player1.setAnimation('walk');
+        }
 
         // Kiểm tra xem đã tới gần Túp Lều nào chưa
         for (const tent of CAMP_TENTS) {
@@ -946,12 +986,61 @@ export class CampfireScene {
             }
           }
         }
+      } else if (this.roamTargetPos) {
+        // Di chuyển tự động tới điểm chạm đất (Click / Tap-to-Walk cho Mobile & PC)
+        const distToTarget = Math.hypot(
+          this.roamTargetPos.x - this.roamPosition.x,
+          this.roamTargetPos.z - this.roamPosition.z
+        );
+
+        if (distToTarget > 0.25) {
+          const dirX = (this.roamTargetPos.x - this.roamPosition.x) / distToTarget;
+          const dirZ = (this.roamTargetPos.z - this.roamPosition.z) / distToTarget;
+          const step = Math.min(distToTarget, moveSpeed);
+
+          this.roamPosition.x += dirX * step;
+          this.roamPosition.z += dirZ * step;
+          this.roamPosition.x = Math.max(-28, Math.min(28, this.roamPosition.x));
+          this.roamPosition.z = Math.max(-36, Math.min(14, this.roamPosition.z));
+
+          this.roamFacingAngle = Math.atan2(dirX, dirZ);
+          this.roamPosition.y = 0.05;
+
+          if (player1) {
+            player1.setStanding(true);
+            player1.setAnimation('walk');
+          }
+
+          // Kiểm tra xem đã tới gần Túp Lều nào chưa
+          for (const tent of CAMP_TENTS) {
+            const dist = Math.hypot(this.roamPosition.x - tent.position[0], this.roamPosition.z - tent.position[2]);
+            if (dist < 5.2 && this.activeTentId !== tent.id) {
+              this.activeTentId = tent.id;
+              this.targetCameraCenter.set(tent.lookAt[0], tent.lookAt[1], tent.lookAt[2]);
+              if (this.onTentNearbyCallback) {
+                this.onTentNearbyCallback(tent.id);
+              }
+            }
+          }
+        } else {
+          // Đã tới đích chạm đất: dừng lại đứng thở trên mặt cỏ
+          this.roamTargetPos = null;
+          this.roamPosition.y = 0.05;
+          if (player1) {
+            player1.setStanding(true);
+            player1.setAnimation('idle');
+          }
+        }
       } else {
-        this.roamPosition.y = 0.38;
+        // Đứng yên thẳng người thở nhẹ
+        this.roamPosition.y = 0.05;
+        if (player1) {
+          player1.setStanding(true);
+          player1.setAnimation('idle');
+        }
       }
 
       // Cập nhật vị trí nhân vật người chơi #1
-      const player1 = this.characters.get(1);
       if (player1) {
         player1.root.position.copy(this.roamPosition);
         player1.root.rotation.y = this.roamFacingAngle;
