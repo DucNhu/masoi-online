@@ -839,9 +839,22 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
           bottom: auto;
           top: calc(100% + 8px);
         }
+        .has-tooltip.tooltip-left::after {
+          bottom: auto;
+          top: 50%;
+          left: auto;
+          right: calc(100% + 8px);
+          transform: translateY(-50%);
+        }
+        .has-tooltip.tooltip-left:hover::after {
+          transform: translateY(-50%) translateX(-2px);
+        }
         @keyframes pulseBorder {
           0%, 100% { box-shadow: 0 0 12px rgba(129, 140, 248, 0.4); }
           50% { box-shadow: 0 0 24px rgba(168, 85, 247, 0.8); }
+        }
+        @media (max-width: 640px) {
+          .roam-label { display: none !important; }
         }
       `}</style>
 
@@ -856,491 +869,391 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
         }}
       />
 
-      {/* === THANH HUD TRÊN CÙNG (TOP HUD TOOLBAR - BỐ CỤC 3D GAME PORTAL) === */}
+      {/* === GÓC TRÁI TRÊN: 1 PILL TÚP LỀU DROPDOWN + MỜI BẠN + ĐI DẠO === */}
       <div
         style={{
           position: 'absolute',
-          top: isFullscreen ? '14px' : '76px',
-          left: '14px',
-          right: '14px',
+          top: isFullscreen ? '14px' : '68px',
+          left: '12px',
           display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          pointerEvents: 'none',
-          zIndex: 20,
-          gap: '12px',
-          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '8px',
+          zIndex: 25,
+          pointerEvents: 'auto',
         }}
       >
-        {/* Góc Trái Trên: Sảnh 4 Túp Lều Cắm Trại + Mời Bạn Vào Lều + Đi Dạo WASD */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
-            pointerEvents: 'auto',
-            maxWidth: '100%',
-          }}
-        >
-          {/* Bảng Sảnh 4 Túp Lều Cắm Trại */}
-          <div
+        {/* Dropdown 4 Túp Lều Cắm Trại */}
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => setIsTentMenuOpen((prev) => !prev)}
+            className="btn btn-ghost has-tooltip tooltip-bottom"
+            data-tooltip={lang === 'en' ? 'Click to change Camp Tent' : 'Nhấp để chọn đổi Túp Lều'}
             style={{
+              background: 'rgba(10, 15, 29, 0.90)',
+              backdropFilter: 'blur(16px)',
+              border: `1.5px solid ${currentTent.themeColor || 'rgba(255,255,255,0.15)'}`,
+              borderRadius: '16px',
+              padding: '6px 12px',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              background: 'rgba(10, 15, 29, 0.92)',
-              backdropFilter: 'blur(16px)',
-              border: '1.5px solid rgba(255, 255, 255, 0.12)',
-              borderRadius: '18px',
-              padding: '5px 8px',
-              boxShadow: '0 8px 30px rgba(0,0,0,0.7)',
-              overflowX: 'auto',
-              maxWidth: 'calc(100vw - 28px)',
+              gap: '7px',
+              cursor: 'pointer',
+              color: '#f8fafc',
+              boxShadow: '0 4px 18px rgba(0,0,0,0.6)',
+              transition: 'all 0.18s ease',
             }}
           >
-            {/* Label Sảnh 4 Túp Lều */}
-            <div
+            <span style={{ fontSize: '0.95rem' }}>{currentTent.banner}</span>
+            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f8fafc', whiteSpace: 'nowrap' }}>
+              {lang === 'en' ? currentTent.nameEn : currentTent.name}
+            </span>
+            <span
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '0 6px',
-                marginRight: '2px',
-                flexShrink: 0,
+                fontSize: '0.68rem',
+                fontWeight: 800,
+                padding: '1px 6px',
+                borderRadius: '8px',
+                background: `${currentTent.themeColor}33`,
+                color: currentTent.themeColor,
+                border: `1px solid ${currentTent.themeColor}66`,
               }}
             >
-              <Tent size={16} color="#f59e0b" />
-              <span
+              {currentTent.playerCount}/{currentTent.maxPlayers}
+            </span>
+            <ChevronDown
+              size={14}
+              color="#cbd5e1"
+              style={{
+                transform: isTentMenuOpen ? 'rotate(180deg)' : 'none',
+                transition: 'transform 0.2s ease',
+                marginLeft: '2px',
+              }}
+            />
+          </button>
+
+          {/* Popover Menu 4 Túp Lều */}
+          {isTentMenuOpen && (
+            <>
+              {/* Invisible Backdrop để đóng popover khi click ngoài */}
+              <div
+                onClick={() => setIsTentMenuOpen(false)}
+                style={{ position: 'fixed', inset: 0, zIndex: 90 }}
+              />
+              <div
                 style={{
-                  fontSize: '0.74rem',
-                  fontWeight: 900,
-                  letterSpacing: '0.5px',
-                  color: '#fef08a',
-                  textTransform: 'uppercase',
+                  position: 'absolute',
+                  top: 'calc(100% + 6px)',
+                  left: 0,
+                  background: 'rgba(10, 15, 29, 0.96)',
+                  backdropFilter: 'blur(20px)',
+                  border: '1.5px solid rgba(255, 255, 255, 0.15)',
+                  borderRadius: '16px',
+                  padding: '6px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px',
+                  boxShadow: '0 12px 36px rgba(0,0,0,0.85)',
+                  minWidth: '230px',
+                  zIndex: 100,
                 }}
               >
-                {lang === 'en' ? 'Camp Tents' : 'Sảnh Lều'}
-              </span>
-            </div>
-
-            {/* 4 Nút Túp Lều: Trăng Máu, Sương Mù, Rừng Thông, Đom Đóm */}
-            {CAMP_TENTS.map((tent) => {
-              const isActive = tent.id === activeTentId;
-              return (
-                <button
-                  key={tent.id}
-                  onClick={() => handleTentSelect(tent.id)}
-                  className="btn btn-ghost has-tooltip tooltip-bottom"
-                  data-tooltip={`${lang === 'en' ? tent.nameEn : tent.name} (${tent.playerCount}/${tent.maxPlayers}) • ${
-                    lang === 'en' ? tent.taglineEn : tent.tagline
-                  }`}
+                <div
                   style={{
-                    background: isActive
-                      ? `linear-gradient(135deg, ${tent.themeColor}38 0%, ${tent.themeColor}75 100%)`
-                      : 'rgba(30, 41, 59, 0.65)',
-                    border: `1.5px solid ${isActive ? tent.themeColor : 'rgba(255,255,255,0.08)'}`,
-                    borderRadius: '12px',
-                    padding: '6px 11px',
+                    padding: '4px 8px 6px',
+                    fontSize: '0.68rem',
+                    fontWeight: 800,
+                    color: '#94a3b8',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    borderBottom: '1px solid rgba(255,255,255,0.08)',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '6px',
-                    cursor: 'pointer',
-                    color: '#f8fafc',
-                    flexShrink: 0,
-                    transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
-                    boxShadow: isActive ? `0 0 16px ${tent.themeColor}77, inset 0 1px 0 rgba(255,255,255,0.3)` : 'none',
-                    transform: isActive ? 'scale(1.02)' : 'scale(1)',
+                    gap: '5px',
                   }}
                 >
-                  <span style={{ fontSize: '0.84rem', fontWeight: 900 }}>{tent.banner}</span>
-                  <span
-                    style={{
-                      fontSize: '0.68rem',
-                      fontWeight: 800,
-                      padding: '1px 6px',
-                      borderRadius: '8px',
-                      background: isActive ? 'rgba(0,0,0,0.4)' : 'rgba(15, 23, 42, 0.6)',
-                      color: isActive ? '#ffffff' : tent.themeColor,
-                      border: `1px solid ${isActive ? 'rgba(255,255,255,0.2)' : 'transparent'}`,
-                    }}
-                  >
-                    {tent.playerCount}/{tent.maxPlayers}
-                  </span>
-                </button>
-              );
-            })}
-
-            {/* Vạch ngăn cách */}
-            <div style={{ width: '1px', height: '22px', background: 'rgba(255,255,255,0.12)', margin: '0 2px', flexShrink: 0 }} />
-
-            {/* Nút 🔗 Mời Bạn Vào Lều (Share / Copy Tent Link) */}
-            <button
-              onClick={handleShareTentLink}
-              className="btn btn-ghost has-tooltip tooltip-bottom"
-              data-tooltip={
-                lang === 'en'
-                  ? `Copy invite link for ${currentTent.nameEn} (?tent=${activeTentId})`
-                  : `Sao chép link mời bạn bè vào ${currentTent.name} (?tent=${activeTentId})`
-              }
-              style={{
-                background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-                border: '1px solid #38bdf8',
-                borderRadius: '12px',
-                padding: '6px 12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                color: '#ffffff',
-                fontWeight: 800,
-                fontSize: '0.74rem',
-                cursor: 'pointer',
-                boxShadow: '0 2px 12px rgba(56, 189, 248, 0.4)',
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-              }}
-            >
-              <Share2 size={13} color="#ffffff" />
-              <span>{lang === 'en' ? '🔗 Invite to Tent' : '🔗 Mời Bạn Vào Lều'}</span>
-            </button>
-          </div>
-
-          {/* Dòng Dưới: Đi Dạo WASD & Profile Badge */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            {/* Nút Đứng Lên Đi Dạo (WASD) */}
-            <button
-              onClick={toggleRoamMode}
-              className="btn btn-ghost has-tooltip tooltip-bottom"
-              data-tooltip={
-                isRoaming
-                  ? lang === 'en' ? 'Sit back by the campfire' : 'Ngồi xuống quanh đống lửa'
-                  : lang === 'en' ? 'Stand up & walk around camp freely (WASD)' : 'Đứng dậy đi bộ khám phá toàn khu cắm trại (WASD)'
-              }
-              style={{
-                background: isRoaming
-                  ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-                  : 'rgba(10, 15, 29, 0.90)',
-                border: `1.5px solid ${isRoaming ? '#34d399' : 'rgba(255, 255, 255, 0.16)'}`,
-                borderRadius: '14px',
-                padding: '6px 13px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                color: '#f8fafc',
-                fontWeight: 800,
-                fontSize: '0.74rem',
-                cursor: 'pointer',
-                boxShadow: isRoaming ? '0 0 16px rgba(16, 185, 129, 0.5)' : '0 4px 14px rgba(0,0,0,0.5)',
-              }}
-            >
-              <Footprints size={15} color={isRoaming ? '#ffffff' : '#38bdf8'} />
-              <span>
-                {isRoaming
-                  ? lang === 'en' ? '🪑 Sit Down' : '🪑 Ngồi Vào Lều'
-                  : lang === 'en' ? '🚶 Walk Around (WASD)' : '🚶 Đứng Lên Đi Dạo (WASD)'}
-              </span>
-            </button>
-
-            {/* Badge Tên Nhân Vật & Số Dư Coin */}
-            <div
-              onClick={() => setIsWardrobeOpen(true)}
-              className="has-tooltip tooltip-bottom"
-              data-tooltip={lang === 'en' ? 'Click to open 3D Wardrobe' : 'Bấm để mở Phòng Thay Đồ 3D'}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: 'rgba(10, 15, 29, 0.90)',
-                backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(129, 140, 248, 0.35)',
-                borderRadius: '14px',
-                padding: '5px 12px',
-                cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(0,0,0,0.5)',
-              }}
-            >
-              <span style={{ fontSize: '0.85rem' }}>
-                {OUTFIT_SKINS.find((s) => s.id === myOutfit.skinId)?.icon || '🏕️'}
-              </span>
-              <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#f8fafc' }}>
-                {playerName}
-              </span>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '3px',
-                  background: 'rgba(250, 204, 21, 0.18)',
-                  borderRadius: '8px',
-                  padding: '2px 6px',
-                  marginLeft: '2px',
-                  color: '#fef08a',
-                  fontSize: '0.68rem',
-                  fontWeight: 800,
-                }}
-              >
-                <Coins size={11} color="#facc15" />
-                <span>{coins.toLocaleString()}</span>
+                  <Tent size={12} color="#f59e0b" />
+                  <span>{lang === 'en' ? 'Select Camp Tent' : 'Chọn Túp Lều Cắm Trại'}</span>
+                </div>
+                {CAMP_TENTS.map((tent) => {
+                  const isActive = tent.id === activeTentId;
+                  return (
+                    <button
+                      key={tent.id}
+                      onClick={() => {
+                        handleTentSelect(tent.id);
+                        setIsTentMenuOpen(false);
+                      }}
+                      style={{
+                        background: isActive
+                          ? `linear-gradient(135deg, ${tent.themeColor}33 0%, ${tent.themeColor}66 100%)`
+                          : 'transparent',
+                        border: `1px solid ${isActive ? tent.themeColor : 'transparent'}`,
+                        borderRadius: '12px',
+                        padding: '8px 10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer',
+                        color: '#f8fafc',
+                        transition: 'all 0.15s ease',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '1.1rem' }}>{tent.banner}</span>
+                        <div>
+                          <div style={{ fontSize: '0.78rem', fontWeight: 800, color: isActive ? '#ffffff' : '#e2e8f0' }}>
+                            {lang === 'en' ? tent.nameEn : tent.name}
+                          </div>
+                          <div style={{ fontSize: '0.64rem', color: '#94a3b8' }}>
+                            {lang === 'en' ? tent.taglineEn : tent.tagline}
+                          </div>
+                        </div>
+                      </div>
+                      <span
+                        style={{
+                          fontSize: '0.68rem',
+                          fontWeight: 800,
+                          padding: '2px 6px',
+                          borderRadius: '6px',
+                          background: 'rgba(0,0,0,0.4)',
+                          color: tent.themeColor,
+                          border: `1px solid ${tent.themeColor}55`,
+                        }}
+                      >
+                        {tent.playerCount}/{tent.maxPlayers}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
-            </div>
-          </div>
+            </>
+          )}
         </div>
 
-        {/* Góc Phải Trên: Công cụ điều khiển 3D + Đêm Đồng Thời + Thử Mẫu + Tủ Đồ + Phím tắt */}
-        <div
+        {/* Nút 🔗 Mời Bạn Vào Lều (Sao Chép Link) */}
+        <button
+          onClick={handleShareTentLink}
+          className="btn btn-ghost btn-icon-only has-tooltip tooltip-bottom"
+          data-tooltip={
+            lang === 'en'
+              ? `Copy invite link for ${currentTent.nameEn} (?tent=${activeTentId})`
+              : `Sao chép link mời bạn bè vào ${currentTent.name} (?tent=${activeTentId})`
+          }
           style={{
+            width: '34px',
+            height: '34px',
+            borderRadius: '12px',
+            background: 'rgba(10, 15, 29, 0.90)',
+            border: '1.5px solid rgba(56, 189, 248, 0.4)',
+            color: '#38bdf8',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            pointerEvents: 'auto',
-            flexWrap: 'wrap',
-            justifyContent: 'flex-end',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.5)',
+            transition: 'all 0.15s ease',
           }}
         >
-          {/* Nút Bắt Đầu Đêm Đồng Thời (25s) hoặc Ticker đếm ngược */}
-          {!isSimultaneousNight ? (
-            <button
-              onClick={startSimultaneousNight}
-              className="btn btn-ghost has-tooltip tooltip-bottom"
-              data-tooltip={
-                lang === 'en'
-                  ? 'Start Simultaneous Night: All roles act together in 25s'
-                  : 'Bắt đầu Đêm Đồng Thời: Tất cả vai trò hành động cùng lúc trong 25 giây'
-              }
-              style={{
-                background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.9) 0%, rgba(79, 70, 229, 0.9) 100%)',
-                border: '1.5px solid rgba(192, 132, 252, 0.5)',
-                borderRadius: '14px',
-                padding: '7px 14px',
-                fontSize: '0.78rem',
-                fontWeight: 800,
-                color: '#ffffff',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 4px 18px rgba(147, 51, 234, 0.45)',
-                cursor: 'pointer',
-              }}
-            >
-              <Moon size={15} color="#fef08a" />
-              <span>{lang === 'en' ? '🌙 Night Phase (25s)' : '🌙 Đêm Đồng Thời (25s)'}</span>
-            </button>
-          ) : (
-            <div
-              style={{
-                background: 'rgba(10, 15, 29, 0.94)',
-                backdropFilter: 'blur(12px)',
-                border: '1.5px solid #a855f7',
-                borderRadius: '16px',
-                padding: '5px 12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                animation: 'pulseBorder 1.5s infinite',
-                boxShadow: '0 4px 18px rgba(168, 85, 247, 0.45)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ fontSize: '0.85rem' }}>⏱️</span>
-                <span style={{ fontSize: '0.92rem', fontWeight: 900, color: '#facc15' }}>
-                  {nightCountdown}s
-                </span>
-              </div>
-              <div
-                style={{
-                  fontSize: '0.7rem',
-                  color: '#cbd5e1',
-                  fontWeight: 700,
-                  maxWidth: '180px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {botLiveTicker || (lang === 'en' ? 'Acting in parallel...' : 'Hành động song song...')}
-              </div>
-              <button
-                onClick={resolveSimultaneousNight}
-                className="btn btn-ghost has-tooltip tooltip-bottom"
-                data-tooltip={lang === 'en' ? 'Resolve all actions immediately' : 'Tổng hợp ngay lập tức các hành động mà không cần chờ hết 25s'}
-                style={{
-                  background: 'rgba(239, 68, 68, 0.25)',
-                  border: '1px solid #ef4444',
-                  borderRadius: '9px',
-                  padding: '3px 8px',
-                  fontSize: '0.68rem',
-                  fontWeight: 800,
-                  color: '#fca5a5',
-                  cursor: 'pointer',
-                }}
-              >
-                <Zap size={11} color="#f87171" />
-                <span>{lang === 'en' ? 'Resolve' : 'Tổng Hợp'}</span>
-              </button>
-            </div>
-          )}
+          <Share2 size={15} color="#38bdf8" />
+        </button>
 
-          {/* Nút Thử Mẫu Nhân Vật */}
-          <button
-            onClick={() => setIsWardrobeOpen(true)}
-            className="btn btn-ghost has-tooltip tooltip-bottom"
-            data-tooltip={lang === 'en' ? 'Try different character models & outfits' : 'Thử các mẫu nhân vật & trang phục khác nhau'}
-            style={{
-              background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
-              border: '1px solid #34d399',
-              borderRadius: '14px',
-              padding: '7px 12px',
-              fontSize: '0.74rem',
-              fontWeight: 800,
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
-            }}
-          >
-            <Palette size={14} color="#ffffff" />
-            <span>{lang === 'en' ? '🎭 Try Models' : '🎭 Thử Mẫu'}</span>
-          </button>
+        {/* Nút 🚶 Đứng Lên Đi Dạo WASD / Ngồi Xuống */}
+        <button
+          onClick={toggleRoamMode}
+          className="btn btn-ghost has-tooltip tooltip-bottom"
+          data-tooltip={
+            isRoaming
+              ? lang === 'en' ? 'Sit back by the campfire' : 'Ngồi xuống quanh đống lửa'
+              : lang === 'en' ? 'Stand up & walk around camp freely (WASD)' : 'Đứng dậy đi bộ khám phá khu cắm trại (WASD)'
+          }
+          style={{
+            height: '34px',
+            padding: '0 10px',
+            borderRadius: '12px',
+            background: isRoaming
+              ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+              : 'rgba(10, 15, 29, 0.90)',
+            border: `1.5px solid ${isRoaming ? '#34d399' : 'rgba(255, 255, 255, 0.16)'}`,
+            color: '#f8fafc',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            cursor: 'pointer',
+            boxShadow: isRoaming ? '0 0 16px rgba(16, 185, 129, 0.5)' : '0 4px 14px rgba(0,0,0,0.5)',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <Footprints size={15} color={isRoaming ? '#ffffff' : '#38bdf8'} />
+          <span className="roam-label" style={{ fontSize: '0.74rem', fontWeight: 800 }}>
+            {isRoaming
+              ? (lang === 'en' ? 'Sit' : 'Ngồi')
+              : (lang === 'en' ? 'Walk' : 'Đi dạo')}
+          </span>
+        </button>
+      </div>
 
-          {/* Nút Tủ Đồ 3D */}
-          <button
-            onClick={() => {
-              setIsWardrobeOpen(true);
-              NativeBridge.hapticImpact('medium');
-            }}
-            className="btn btn-ghost has-tooltip tooltip-bottom"
-            data-tooltip={lang === 'en' ? '3D Camp Wardrobe Studio' : 'Tủ Đồ & Tùy biến nhân vật 3D'}
-            style={{
-              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.35) 0%, rgba(168, 85, 247, 0.35) 100%)',
-              border: '1px solid rgba(165, 180, 252, 0.4)',
-              borderRadius: '14px',
-              padding: '7px 12px',
-              fontSize: '0.74rem',
-              fontWeight: 800,
-              color: '#f8fafc',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              cursor: 'pointer',
-            }}
-          >
-            <Sparkles size={14} color="#a5b4fc" />
-            <span>{lang === 'en' ? '✨ Wardrobe' : '✨ Tủ Đồ 3D'}</span>
-          </button>
+      {/* === CẠNH PHẢI: THANH CÔNG CỤ DỌC MẢNH (VERTICAL COMPACT TOOLBAR - 38px) === */}
+      <div
+        style={{
+          position: 'absolute',
+          top: isFullscreen ? '14px' : '68px',
+          right: '12px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '6px',
+          background: 'rgba(10, 15, 29, 0.88)',
+          backdropFilter: 'blur(16px)',
+          border: '1.5px solid rgba(255, 255, 255, 0.12)',
+          borderRadius: '16px',
+          padding: '4px',
+          boxShadow: '0 8px 30px rgba(0,0,0,0.6)',
+          zIndex: 25,
+          pointerEvents: 'auto',
+          width: '38px',
+          boxSizing: 'border-box',
+        }}
+      >
+        {/* Nút ✨ Mở Tủ Đồ & Thử Mẫu 3D (Viền tím neon nổi bật) */}
+        <button
+          onClick={() => {
+            setIsWardrobeOpen(true);
+            NativeBridge.hapticImpact('medium');
+          }}
+          className="btn btn-ghost btn-icon-only has-tooltip tooltip-left"
+          data-tooltip={lang === 'en' ? '✨ 3D Wardrobe & Character Studio' : '✨ Tủ Đồ & Thử Mẫu Nhân Vật 3D'}
+          style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '12px',
+            padding: 0,
+            background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(99, 102, 241, 0.25) 100%)',
+            border: '1.5px solid #c084fc',
+            boxShadow: '0 0 12px rgba(192, 132, 252, 0.4)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Sparkles size={16} color="#e9d5ff" />
+        </button>
 
-          {/* Cụm công cụ Zoom, Reset [R], Fullscreen [F], Đổi Ngày/Đêm [N], Đổi Ngôn Ngữ */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              background: 'rgba(10, 15, 29, 0.90)',
-              backdropFilter: 'blur(14px)',
-              border: '1px solid rgba(255,255,255,0.14)',
-              borderRadius: '14px',
-              padding: '2px 4px',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
-              gap: '2px',
-            }}
-          >
-            {/* Zoom In */}
-            <button
-              onClick={() => {
-                sceneRef.current?.zoom(-1.2);
-                NativeBridge.hapticImpact('light');
-              }}
-              className="btn btn-ghost btn-icon-only has-tooltip tooltip-bottom"
-              data-tooltip={lang === 'en' ? 'Zoom in (Scroll up / Key W)' : 'Phóng to góc nhìn (Cuộn chuột lên / Phím W)'}
-              style={{ width: '32px', height: '32px', borderRadius: '8px', padding: 0 }}
-            >
-              <ZoomIn size={15} color="#cbd5e1" />
-            </button>
+        <div style={{ width: '22px', height: '1px', background: 'rgba(255,255,255,0.12)', margin: '1px 0' }} />
 
-            {/* Zoom Out */}
-            <button
-              onClick={() => {
-                sceneRef.current?.zoom(1.2);
-                NativeBridge.hapticImpact('light');
-              }}
-              className="btn btn-ghost btn-icon-only has-tooltip tooltip-bottom"
-              data-tooltip={lang === 'en' ? 'Zoom out (Scroll down / Key S)' : 'Thu nhỏ góc nhìn (Cuộn chuột xuống / Phím S)'}
-              style={{ width: '32px', height: '32px', borderRadius: '8px', padding: 0 }}
-            >
-              <ZoomOut size={15} color="#cbd5e1" />
-            </button>
+        {/* Nút 🌙 / ☀️ Đổi Ngày / Đêm */}
+        <button
+          onClick={toggleNightDay}
+          className="btn btn-ghost btn-icon-only has-tooltip tooltip-left"
+          data-tooltip={
+            isNightMode
+              ? (lang === 'en' ? '☀️ Switch to Day [Key N]' : '☀️ Chuyển sang Ban Ngày [Phím N]')
+              : (lang === 'en' ? '🌙 Switch to Night [Key N]' : '🌙 Chuyển sang Ban Đêm [Phím N]')
+          }
+          style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '10px',
+            padding: 0,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {isNightMode ? <Sun size={16} color="#facc15" /> : <Moon size={16} color="#a5b4fc" />}
+        </button>
 
-            <div style={{ width: '1px', height: '18px', background: 'rgba(255,255,255,0.1)' }} />
+        {/* Nút ➕ Zoom In */}
+        <button
+          onClick={() => {
+            sceneRef.current?.zoom(-1.2);
+            NativeBridge.hapticImpact('light');
+          }}
+          className="btn btn-ghost btn-icon-only has-tooltip tooltip-left"
+          data-tooltip={lang === 'en' ? 'Zoom in (Scroll up / Key W)' : 'Phóng to (Cuộn chuột lên / Phím W)'}
+          style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '10px',
+            padding: 0,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <ZoomIn size={16} color="#cbd5e1" />
+        </button>
 
-            {/* Reset View [R] */}
-            <button
-              onClick={() => {
-                sceneRef.current?.resetCamera();
-                NativeBridge.hapticImpact('light');
-              }}
-              className="btn btn-ghost btn-icon-only has-tooltip tooltip-bottom"
-              data-tooltip={lang === 'en' ? 'Reset Camera [Key R]' : 'Đặt lại góc nhìn camera [Phím R]'}
-              style={{ width: '32px', height: '32px', borderRadius: '8px', padding: 0 }}
-            >
-              <RotateCcw size={15} color="#cbd5e1" />
-            </button>
+        {/* Nút ➖ Zoom Out */}
+        <button
+          onClick={() => {
+            sceneRef.current?.zoom(1.2);
+            NativeBridge.hapticImpact('light');
+          }}
+          className="btn btn-ghost btn-icon-only has-tooltip tooltip-left"
+          data-tooltip={lang === 'en' ? 'Zoom out (Scroll down / Key S)' : 'Thu nhỏ (Cuộn chuột xuống / Phím S)'}
+          style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '10px',
+            padding: 0,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <ZoomOut size={16} color="#cbd5e1" />
+        </button>
 
-            {/* Fullscreen [F] */}
-            <button
-              onClick={toggleFullscreen}
-              className="btn btn-ghost btn-icon-only has-tooltip tooltip-bottom"
-              data-tooltip={
-                isFullscreen
-                  ? lang === 'en' ? 'Exit Fullscreen' : 'Thu nhỏ cửa sổ'
-                  : lang === 'en' ? 'Fullscreen PC [Key F]' : 'Toàn màn hình máy tính [Phím F]'
-              }
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                padding: 0,
-                background: isFullscreen ? 'rgba(99, 102, 241, 0.3)' : 'transparent',
-              }}
-            >
-              {isFullscreen ? <Minimize2 size={15} color="#818cf8" /> : <Maximize2 size={15} color="#cbd5e1" />}
-            </button>
+        {/* Nút 🔄 Reset Camera */}
+        <button
+          onClick={() => {
+            sceneRef.current?.resetCamera();
+            NativeBridge.hapticImpact('light');
+          }}
+          className="btn btn-ghost btn-icon-only has-tooltip tooltip-left"
+          data-tooltip={lang === 'en' ? 'Reset Camera [Key R]' : 'Đặt lại góc nhìn [Phím R]'}
+          style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '10px',
+            padding: 0,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <RotateCcw size={16} color="#cbd5e1" />
+        </button>
 
-            {/* Day / Night [N] */}
-            <button
-              onClick={toggleNightDay}
-              className="btn btn-ghost btn-icon-only has-tooltip tooltip-bottom"
-              data-tooltip={
-                isNightMode
-                  ? lang === 'en' ? 'Switch to Daytime [Key N]' : 'Chuyển sang Ban Ngày [Phím N]'
-                  : lang === 'en' ? 'Switch to Nighttime [Key N]' : 'Chuyển sang Ban Đêm [Phím N]'
-              }
-              style={{ width: '32px', height: '32px', borderRadius: '8px', padding: 0 }}
-            >
-              {isNightMode ? <Sun size={15} color="#facc15" /> : <Moon size={15} color="#a5b4fc" />}
-            </button>
-
-            <div style={{ width: '1px', height: '18px', background: 'rgba(255,255,255,0.1)' }} />
-
-            {/* Nút Chuyển Đổi Ngôn Ngữ VI / EN */}
-            <button
-              onClick={toggleLang}
-              className="btn btn-ghost has-tooltip tooltip-bottom"
-              data-tooltip={lang === 'vi' ? 'Switch to English' : 'Chuyển sang Tiếng Việt'}
-              style={{
-                padding: '3px 8px',
-                borderRadius: '8px',
-                color: '#f8fafc',
-                fontSize: '0.72rem',
-                fontWeight: 800,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-            >
-              <Globe size={13} color="#38bdf8" />
-              <span>{lang === 'vi' ? 'VI' : 'EN'}</span>
-            </button>
-          </div>
-        </div>
+        {/* Nút ⛶ Toàn Màn Hình */}
+        <button
+          onClick={toggleFullscreen}
+          className="btn btn-ghost btn-icon-only has-tooltip tooltip-left"
+          data-tooltip={
+            isFullscreen
+              ? (lang === 'en' ? 'Exit Fullscreen [Key F]' : 'Thu nhỏ cửa sổ [Phím F]')
+              : (lang === 'en' ? 'Fullscreen [Key F]' : 'Toàn màn hình [Phím F]')
+          }
+          style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '10px',
+            padding: 0,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: isFullscreen ? 'rgba(99, 102, 241, 0.3)' : 'transparent',
+          }}
+        >
+          {isFullscreen ? <Minimize2 size={16} color="#818cf8" /> : <Maximize2 size={16} color="#cbd5e1" />}
+        </button>
       </div>
 
       {/* Thông Báo Sao Chép Link Túp Lều Thành Công */}
@@ -1348,7 +1261,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
         <div
           style={{
             position: 'absolute',
-            top: isFullscreen ? '72px' : '136px',
+            top: isFullscreen ? '64px' : '72px',
             left: '50%',
             transform: 'translateX(-50%)',
             background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.96) 0%, rgba(5, 150, 105, 0.96) 100%)',
@@ -1380,7 +1293,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
         <div
           style={{
             position: 'absolute',
-            top: isFullscreen ? '72px' : '136px',
+            top: isFullscreen ? '64px' : '72px',
             left: '50%',
             transform: 'translateX(-50%)',
             background: 'rgba(10, 15, 29, 0.92)',
@@ -1412,7 +1325,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
         <div
           style={{
             position: 'absolute',
-            top: isFullscreen ? '72px' : '136px',
+            top: isFullscreen ? '64px' : '72px',
             left: '50%',
             transform: 'translateX(-50%)',
             background: 'rgba(239, 68, 68, 0.95)',
@@ -1435,7 +1348,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
         <div
           style={{
             position: 'absolute',
-            top: isFullscreen ? '72px' : '136px',
+            top: isFullscreen ? '64px' : '72px',
             left: '50%',
             transform: 'translateX(-50%)',
             background: 'rgba(10, 15, 29, 0.92)',
@@ -1472,7 +1385,87 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
         </div>
       )}
 
-      {/* === THANH KỸ NĂNG ĐÊM ĐỒNG THỜI (POKÉMON-COMBAT STYLE SKILL DOCK) === */}
+      {/* === THANH HÀNH ĐỘNG CHÍNH (CLEAN BOTTOM ACTION DOCK - TRẠNG THÁI BÌNH THƯỜNG) === */}
+      {!isSimultaneousNight && !isDayDiscussion && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '16px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            background: 'rgba(10, 15, 29, 0.92)',
+            backdropFilter: 'blur(16px)',
+            border: '1.5px solid rgba(129, 140, 248, 0.35)',
+            borderRadius: '20px',
+            padding: '6px 14px',
+            boxShadow: '0 12px 36px rgba(0,0,0,0.7)',
+            zIndex: 25,
+            pointerEvents: 'auto',
+            maxWidth: '92%',
+          }}
+        >
+          {/* Nút chính: Bắt Đầu Đêm Đồng Thời (25s) */}
+          <button
+            onClick={startSimultaneousNight}
+            className="btn btn-ghost has-tooltip"
+            data-tooltip={
+              lang === 'en'
+                ? 'Start Simultaneous Night: All roles act together in 25s'
+                : 'Bắt đầu Đêm Đồng Thời: Tất cả vai trò hành động cùng lúc trong 25 giây'
+            }
+            style={{
+              background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.95) 0%, rgba(79, 70, 229, 0.95) 100%)',
+              border: '1.5px solid rgba(192, 132, 252, 0.6)',
+              borderRadius: '14px',
+              padding: '8px 18px',
+              fontSize: '0.82rem',
+              fontWeight: 800,
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 18px rgba(147, 51, 234, 0.5)',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <Moon size={16} color="#fef08a" />
+            <span>{lang === 'en' ? '🌙 Start Simultaneous Night (25s)' : '🌙 Bắt Đầu Đêm Đồng Thời (25s)'}</span>
+          </button>
+
+          {/* Nút phụ: Đổi Nhân Vật / Tủ Đồ */}
+          <button
+            onClick={() => {
+              setIsWardrobeOpen(true);
+              NativeBridge.hapticImpact('light');
+            }}
+            className="btn btn-ghost has-tooltip"
+            data-tooltip={lang === 'en' ? 'Open 3D Wardrobe & Character Studio' : 'Mở Tủ Đồ & Đổi Mẫu Nhân Vật 3D'}
+            style={{
+              background: 'rgba(30, 41, 59, 0.8)',
+              border: '1px solid rgba(255, 255, 255, 0.16)',
+              borderRadius: '14px',
+              padding: '8px 14px',
+              fontSize: '0.78rem',
+              fontWeight: 800,
+              color: '#cbd5e1',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <Palette size={15} color="#c084fc" />
+            <span>{lang === 'en' ? '🎭 Wardrobe / Outfit' : '🎭 Đổi Nhân Vật / Tủ Đồ'}</span>
+          </button>
+        </div>
+      )}
+
+      {/* === THANH KỸ NĂNG ĐÊM ĐỒNG THỜI (SIMULTANEOUS NIGHT ACTION DOCK) === */}
       {isSimultaneousNight && (
         <div
           style={{
@@ -1485,249 +1478,243 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
             alignItems: 'center',
             gap: '8px',
             zIndex: 35,
-            width: '92%',
-            maxWidth: '780px',
+            width: '95%',
+            maxWidth: '680px',
             pointerEvents: 'none',
           }}
         >
-          {/* Hướng dẫn nhắm mục tiêu & Thông tin chiêu thức */}
+          {/* Header Đếm Ngược + Trạng Thái Chiêu + Nút Tổng Hợp Ngay */}
           <div
             style={{
               pointerEvents: 'auto',
               background: 'rgba(10, 15, 29, 0.94)',
               backdropFilter: 'blur(16px)',
-              border: `1.5px solid ${selectedSkill ? selectedSkill.color : '#818cf8'}`,
+              border: `1.5px solid ${selectedSkill ? selectedSkill.color : '#a855f7'}`,
               borderRadius: '20px',
-              padding: '6px 18px',
-              fontSize: '0.78rem',
-              fontWeight: 800,
-              color: '#f8fafc',
+              padding: '6px 14px',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              boxShadow: `0 4px 20px ${selectedSkill ? selectedSkill.color + '44' : 'rgba(0,0,0,0.6)'}`,
-              transition: 'all 0.2s ease',
+              justifyContent: 'space-between',
+              gap: '10px',
+              boxShadow: `0 4px 20px ${selectedSkill ? selectedSkill.color + '44' : 'rgba(168, 85, 247, 0.45)'}`,
+              width: '100%',
+              boxSizing: 'border-box',
+              animation: 'pulseBorder 1.5s infinite',
             }}
           >
-            <span style={{ fontSize: '1rem' }}>⚔️</span>
-            <span>
-              {selectedSkill
-                ? lang === 'en'
-                  ? `Active [${selectedSkill.nameEn}]: Click on 3D seat or seat # below to ${selectedSkill.actionTextEn}`
-                  : `Đang dùng [${selectedSkill.name}]: Nhấp vào ghế 3D hoặc số ghế bên dưới để ${selectedSkill.actionText}`
-                : lang === 'en'
-                ? 'Choose a night skill to cast in simultaneous phase:'
-                : 'Hãy chọn 1 kỹ năng để thi triển trong đêm đồng thời:'}
-            </span>
-            {lockedAction && (
-              <span
-                style={{
-                  background: 'rgba(74, 222, 128, 0.2)',
-                  color: '#4ade80',
-                  border: '1px solid #4ade80',
-                  borderRadius: '10px',
-                  padding: '2px 8px',
-                  fontSize: '0.72rem',
-                  fontWeight: 800,
-                  marginLeft: '4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                }}
-              >
-                <Check size={12} strokeWidth={3} />
-                {lang === 'en' ? `Target Locked: Seat #${lockedAction.targetSeat}` : `Đã Khóa: Ghế #${lockedAction.targetSeat}`}
+            {/* Countdown Badge */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+              <span style={{ fontSize: '1rem' }}>⏱️</span>
+              <span style={{ fontSize: '1rem', fontWeight: 900, color: '#facc15' }}>
+                {nightCountdown}s
               </span>
-            )}
+            </div>
+
+            {/* Hint / Target locked text */}
+            <div
+              style={{
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                color: '#cbd5e1',
+                textAlign: 'center',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                flex: 1,
+              }}
+            >
+              {lockedAction ? (
+                <span style={{ color: '#4ade80', fontWeight: 800 }}>
+                  <Check size={12} strokeWidth={3} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />
+                  {lang === 'en'
+                    ? `Locked [${selectedSkill?.nameEn || 'Skill'}] ➔ Seat #${lockedAction.targetSeat}`
+                    : `Đã khóa [${selectedSkill?.name || 'Chiêu'}] ➔ Ghế #${lockedAction.targetSeat}`}
+                </span>
+              ) : selectedSkill ? (
+                <span style={{ color: selectedSkill.color, fontWeight: 800 }}>
+                  {lang === 'en'
+                    ? `[${selectedSkill.nameEn}]: Tap seat on 3D or below`
+                    : `[${selectedSkill.name}]: Bấm ghế 3D hoặc số ghế bên dưới`}
+                </span>
+              ) : (
+                <span>
+                  {botLiveTicker || (lang === 'en' ? 'Select a skill to cast:' : 'Chọn 1 kỹ năng để thi triển:')}
+                </span>
+              )}
+            </div>
+
+            {/* Nút Tổng Hợp Ngay */}
+            <button
+              onClick={resolveSimultaneousNight}
+              className="btn btn-ghost has-tooltip tooltip-bottom"
+              data-tooltip={lang === 'en' ? 'Resolve all actions immediately' : 'Tổng hợp ngay lập tức các hành động'}
+              style={{
+                background: 'rgba(239, 68, 68, 0.3)',
+                border: '1px solid #ef4444',
+                borderRadius: '10px',
+                padding: '4px 10px',
+                fontSize: '0.7rem',
+                fontWeight: 800,
+                color: '#fca5a5',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <Zap size={12} color="#f87171" />
+              <span>{lang === 'en' ? '⚡ Resolve' : '⚡ Tổng Hợp'}</span>
+            </button>
           </div>
 
-          {/* Bàn Dock Kính Mờ: Ghế Mục Tiêu 1-10 + 5 Chiêu Thức Q, W, E, R, T */}
+          {/* Dải 10 Ghế Siêu Mảnh (26px) — Hỗ trợ touch mobile & keyboard */}
+          <div
+            style={{
+              pointerEvents: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              justifyContent: 'center',
+              overflowX: 'auto',
+              width: '100%',
+              padding: '2px 0',
+            }}
+          >
+            {seatsData.map((seat) => {
+              const isLocked = lockedAction?.targetSeat === seat.seatNumber;
+              const isSelected = selectedSeat === seat.seatNumber;
+              return (
+                <button
+                  key={seat.seatNumber}
+                  onClick={() => handleSeatInteraction(seat.seatNumber)}
+                  disabled={!seat.isAlive}
+                  className="has-tooltip tooltip-bottom"
+                  data-tooltip={`#${seat.seatNumber} ${seat.name} (${seat.isAlive ? (lang === 'en' ? 'Alive' : 'Sống') : (lang === 'en' ? 'Dead' : 'Chết')})`}
+                  style={{
+                    width: '26px',
+                    height: '26px',
+                    minWidth: '26px',
+                    borderRadius: '7px',
+                    border: isLocked
+                      ? `2px solid ${selectedSkill?.color || '#38bdf8'}`
+                      : isSelected
+                      ? '1.5px solid #818cf8'
+                      : '1px solid rgba(255,255,255,0.12)',
+                    background: isLocked
+                      ? `${selectedSkill?.color || '#38bdf8'}44`
+                      : seat.isAlive
+                      ? 'rgba(15, 23, 42, 0.85)'
+                      : 'rgba(51, 65, 85, 0.4)',
+                    color: seat.isAlive ? '#f8fafc' : '#64748b',
+                    fontSize: '0.72rem',
+                    fontWeight: 900,
+                    cursor: seat.isAlive ? 'pointer' : 'not-allowed',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 0,
+                    boxShadow: isLocked
+                      ? `0 0 10px ${selectedSkill?.color || '#38bdf8'}`
+                      : 'none',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {seat.seatNumber}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 5 Kỹ Năng Đêm Đồng Thời trên 1 hàng duy nhất */}
           <div
             style={{
               pointerEvents: 'auto',
               background: 'rgba(10, 15, 30, 0.94)',
               backdropFilter: 'blur(20px)',
-              border: '1.5px solid rgba(129, 140, 248, 0.4)',
-              boxShadow: '0 16px 40px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.15)',
-              borderRadius: '22px',
-              padding: '10px 16px',
+              border: '1.5px solid rgba(129, 140, 248, 0.35)',
+              boxShadow: '0 12px 36px rgba(0, 0, 0, 0.85)',
+              borderRadius: '20px',
+              padding: '6px 10px',
               display: 'flex',
-              flexDirection: 'column',
               alignItems: 'center',
-              gap: '8px',
+              gap: '6px',
+              justifyContent: 'center',
               width: '100%',
               boxSizing: 'border-box',
+              overflowX: 'auto',
             }}
           >
-            {/* Hàng 1: Dải 10 Ghế Mục Tiêu */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                width: '100%',
-                justifyContent: 'center',
-                overflowX: 'auto',
-                paddingBottom: '2px',
-              }}
-            >
-              <span
-                style={{
-                  fontSize: '0.68rem',
-                  fontWeight: 800,
-                  color: '#94a3b8',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  marginRight: '4px',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {lang === 'en' ? 'Target Seat:' : 'Mục Tiêu Ghế:'}
-              </span>
-              {seatsData.map((seat) => {
-                const isLocked = lockedAction?.targetSeat === seat.seatNumber;
-                const isSelected = selectedSeat === seat.seatNumber;
-                return (
-                  <button
-                    key={seat.seatNumber}
-                    onClick={() => handleSeatInteraction(seat.seatNumber)}
-                    disabled={!seat.isAlive}
-                    className="has-tooltip tooltip-bottom"
-                    data-tooltip={`#${seat.seatNumber} ${seat.name} - ${
-                      seat.isAlive ? (lang === 'en' ? 'Alive' : 'Còn sống') : (lang === 'en' ? 'Fallen' : 'Đã hy sinh')
-                    }`}
+            {NIGHT_COMBAT_SKILLS.map((skill) => {
+              const isSelected = selectedSkill?.id === skill.id;
+              return (
+                <button
+                  key={skill.id}
+                  onClick={() => handleSelectSkill(skill)}
+                  className="btn btn-ghost has-tooltip"
+                  data-tooltip={`[${skill.hotkey}] ${lang === 'en' ? skill.nameEn : skill.name} • ${lang === 'en' ? skill.actionTextEn : skill.actionText}`}
+                  style={{
+                    background: isSelected
+                      ? `linear-gradient(135deg, ${skill.color}40 0%, ${skill.color}75 100%)`
+                      : 'rgba(22, 30, 49, 0.7)',
+                    border: `1.5px solid ${isSelected ? skill.color : 'rgba(255,255,255,0.1)'}`,
+                    borderRadius: '14px',
+                    padding: '6px 10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    color: '#f8fafc',
+                    cursor: 'pointer',
+                    transform: isSelected ? 'scale(1.03)' : 'scale(1)',
+                    transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+                    boxShadow: isSelected
+                      ? `0 0 16px ${skill.color}66`
+                      : 'none',
+                    whiteSpace: 'nowrap',
+                    position: 'relative',
+                    flex: '1 1 auto',
+                    justifyContent: 'center',
+                    minWidth: '68px',
+                  }}
+                >
+                  {/* Badge Hotkey */}
+                  <div
                     style={{
-                      width: '34px',
-                      height: '34px',
-                      borderRadius: '10px',
-                      border: isLocked
-                        ? `2px solid ${selectedSkill?.color || '#38bdf8'}`
-                        : isSelected
-                        ? '2px solid #818cf8'
-                        : '1px solid rgba(255,255,255,0.12)',
-                      background: isLocked
-                        ? `${selectedSkill?.color || '#38bdf8'}33`
-                        : seat.isAlive
-                        ? 'rgba(30, 41, 59, 0.85)'
-                        : 'rgba(100, 116, 139, 0.25)',
-                      color: seat.isAlive ? '#f8fafc' : '#64748b',
-                      fontSize: '0.8rem',
+                      position: 'absolute',
+                      top: '-6px',
+                      left: '6px',
+                      background: isSelected ? skill.color : 'rgba(15, 23, 42, 0.95)',
+                      border: `1px solid ${isSelected ? '#ffffff' : 'rgba(255,255,255,0.2)'}`,
+                      color: isSelected ? '#ffffff' : '#94a3b8',
+                      borderRadius: '5px',
+                      padding: '0 4px',
+                      fontSize: '0.58rem',
                       fontWeight: 900,
-                      cursor: seat.isAlive ? 'pointer' : 'not-allowed',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      position: 'relative',
-                      boxShadow: isLocked
-                        ? `0 0 14px ${selectedSkill?.color || '#38bdf8'}88`
-                        : 'none',
-                      transition: 'all 0.15s ease',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
                     }}
                   >
-                    {seat.seatNumber}
-                    {isLocked && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: '-4px',
-                          right: '-4px',
-                          width: '10px',
-                          height: '10px',
-                          borderRadius: '50%',
-                          background: selectedSkill?.color || '#38bdf8',
-                          border: '1.5px solid #0f172a',
-                        }}
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+                    {skill.hotkey}
+                  </div>
 
-            <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                  <span style={{ fontSize: '1.2rem' }}>{skill.icon}</span>
 
-            {/* Hàng 2: Dải 5 Kỹ Năng Đêm Đồng Thời Kiểu Pokémon / Liên Minh */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                justifyContent: 'center',
-                width: '100%',
-                overflowX: 'auto',
-                padding: '2px 0',
-              }}
-            >
-              {NIGHT_COMBAT_SKILLS.map((skill) => {
-                const isSelected = selectedSkill?.id === skill.id;
-                return (
-                  <button
-                    key={skill.id}
-                    onClick={() => handleSelectSkill(skill)}
-                    className="btn btn-ghost has-tooltip"
-                    data-tooltip={`[${skill.hotkey}] ${lang === 'en' ? skill.descriptionEn : skill.description}`}
-                    style={{
-                      background: isSelected
-                        ? `linear-gradient(135deg, ${skill.color}40 0%, ${skill.color}75 100%)`
-                        : 'rgba(22, 30, 49, 0.75)',
-                      border: `1.5px solid ${isSelected ? skill.color : 'rgba(255,255,255,0.12)'}`,
-                      borderRadius: '16px',
-                      padding: '8px 14px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      color: '#f8fafc',
-                      cursor: 'pointer',
-                      transform: isSelected ? 'scale(1.04)' : 'scale(1)',
-                      transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
-                      boxShadow: isSelected
-                        ? `0 0 20px ${skill.color}66, inset 0 1px 0 rgba(255,255,255,0.3)`
-                        : 'none',
-                      whiteSpace: 'nowrap',
-                      position: 'relative',
-                    }}
-                  >
-                    {/* Badge Hotkey Góc Phím Q, W, E, R, T */}
+                  <div style={{ textAlign: 'left' }}>
                     <div
                       style={{
-                        position: 'absolute',
-                        top: '-7px',
-                        left: '10px',
-                        background: isSelected ? skill.color : 'rgba(15, 23, 42, 0.95)',
-                        border: `1px solid ${isSelected ? '#ffffff' : 'rgba(255,255,255,0.2)'}`,
-                        color: isSelected ? '#ffffff' : '#94a3b8',
-                        borderRadius: '6px',
-                        padding: '1px 5px',
-                        fontSize: '0.62rem',
+                        fontSize: '0.74rem',
                         fontWeight: 900,
-                        letterSpacing: '0.5px',
-                        boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
+                        color: isSelected ? '#ffffff' : skill.color,
+                        letterSpacing: '0.2px',
+                        lineHeight: 1.1,
                       }}
                     >
-                      {skill.hotkey}
+                      {lang === 'en' ? skill.nameEn : skill.name}
                     </div>
-
-                    <span style={{ fontSize: '1.35rem', marginTop: '2px' }}>{skill.icon}</span>
-
-                    <div style={{ textAlign: 'left' }}>
-                      <div
-                        style={{
-                          fontSize: '0.8rem',
-                          fontWeight: 900,
-                          color: isSelected ? '#ffffff' : skill.color,
-                          letterSpacing: '0.3px',
-                        }}
-                      >
-                        {lang === 'en' ? skill.nameEn : skill.name}
-                      </div>
-                      <div style={{ fontSize: '0.66rem', color: '#cbd5e1' }}>
-                        {lang === 'en' ? skill.actionTextEn : skill.actionText}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -1928,7 +1915,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
         <div
           style={{
             position: 'absolute',
-            bottom: isDayDiscussion ? '72px' : '16px',
+            bottom: '72px',
             left: '16px',
             background: 'rgba(15, 23, 42, 0.95)',
             backdropFilter: 'blur(12px)',

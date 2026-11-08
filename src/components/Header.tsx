@@ -6,10 +6,8 @@ import {
   Moon,
   Sun,
   Globe,
-  Sparkles,
   Tent,
   Gamepad2,
-  Users,
   History,
   BookOpen,
 } from 'lucide-react';
@@ -30,7 +28,7 @@ export interface HeaderProps {
   onNavigateTo3DCamp: () => void;
   onNavigateToOnline: () => void;
   onNavigateToGameMaster: () => void;
-  onNavigateToPlayers2D: () => void;
+  onNavigateToPlayers2D?: () => void;
   onNavigateToLoreOrLogs: () => void;
   onOpenWardrobe?: () => void;
   onOpenCampgrounds3D?: () => void;
@@ -49,7 +47,6 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigateTo3DCamp,
   onNavigateToOnline,
   onNavigateToGameMaster,
-  onNavigateToPlayers2D,
   onNavigateToLoreOrLogs,
   onOpenWardrobe,
 }) => {
@@ -109,10 +106,10 @@ export const Header: React.FC<HeaderProps> = ({
 
   const getPhaseSubtitle = () => {
     if (mode === 'ONLINE') {
-      return lang === 'vi' ? 'SẢNH 100% NGƯỜI THẬT' : 'REAL PLAYERS LOBBY';
+      return lang === 'vi' ? 'SẢNH ONLINE' : 'ONLINE LOBBY';
     }
     if (phase === 'SETUP') {
-      return lang === 'vi' ? 'KHU CẮM TRẠI ĐÊM' : 'NIGHT CAMPGROUNDS';
+      return lang === 'vi' ? 'TRẠI ĐÊM 3D' : 'NIGHT CAMP';
     }
     if (lang === 'en') {
       switch (phase) {
@@ -129,7 +126,7 @@ export const Header: React.FC<HeaderProps> = ({
         case 'DAY_VOTING': return `Day ${round} • Village Trial`;
         case 'DAY_EXECUTION': return `Day ${round} • Lynch Execution`;
         case 'GAME_OVER': return 'Match Concluded';
-        default: return 'NIGHT CAMPGROUNDS';
+        default: return 'NIGHT CAMP';
       }
     }
     switch (phase) {
@@ -146,7 +143,7 @@ export const Header: React.FC<HeaderProps> = ({
       case 'DAY_VOTING': return `Ngày ${round} • Bỏ Phiếu Treo Cổ`;
       case 'DAY_EXECUTION': return `Ngày ${round} • Xử Tử Nghi Can`;
       case 'GAME_OVER': return 'Ván Đấu Kết Thúc';
-      default: return 'KHU CẮM TRẠI ĐÊM';
+      default: return 'TRẠI ĐÊM 3D';
     }
   };
 
@@ -154,12 +151,11 @@ export const Header: React.FC<HeaderProps> = ({
   const is3DCampActive = mode === 'OFFLINE' && activeTab === 'PLAYERS' && playerViewMode === '3D';
   const isOnlineActive = mode === 'ONLINE';
   const isGameMasterActive = mode === 'OFFLINE' && activeTab === 'GAME';
-  const is2DActive = mode === 'OFFLINE' && activeTab === 'PLAYERS' && playerViewMode === '2D';
   const isLoreOrLogsActive = mode === 'OFFLINE' && (activeTab === 'CARDS' || activeTab === 'LOGS');
 
   return (
     <>
-      <header className="floating-top-gamebar">
+      <header className="floating-top-gamebar portal-floating-bar top-header">
         {/* Cụm Trái: Brand Icon & Title */}
         <div
           className="gamebar-brand-cluster has-tooltip tooltip-bottom"
@@ -170,7 +166,7 @@ export const Header: React.FC<HeaderProps> = ({
             className="gamebar-brand-icon-box"
             style={{
               borderColor: isNight ? 'rgba(165, 180, 252, 0.45)' : 'rgba(245, 158, 11, 0.45)',
-              boxShadow: isNight ? '0 0 16px rgba(99, 102, 241, 0.4)' : '0 0 16px rgba(245, 158, 11, 0.4)',
+              boxShadow: isNight ? '0 0 12px rgba(99, 102, 241, 0.35)' : '0 0 12px rgba(245, 158, 11, 0.35)',
             }}
           >
             <img
@@ -184,21 +180,21 @@ export const Header: React.FC<HeaderProps> = ({
                 background: isNight ? '#312e81' : '#78350f',
               }}
             >
-              {isNight ? <Moon size={8} color="#a5b4fc" /> : <Sun size={8} color="#fde047" />}
+              {isNight ? <Moon size={7} color="#a5b4fc" /> : <Sun size={7} color="#fde047" />}
             </div>
           </div>
 
           <div className="gamebar-brand-text">
             <div className="gamebar-brand-title">MA SÓI 3D</div>
-            <div className="gamebar-brand-subtitle">
+            <div className="gamebar-brand-subtitle hide-on-mobile">
               {getPhaseSubtitle()}
             </div>
           </div>
         </div>
 
-        {/* Cụm Giữa: Center Navigation Pills (Thay thế toàn bộ bottom-nav) */}
+        {/* Cụm Giữa: Segmented Switcher gọn nhẹ — chỉ 4 mục cốt lõi */}
         <nav className="gamebar-nav-pills" aria-label="Game Navigation">
-          {/* Pill 1: Khu Cắm Trại 3D */}
+          {/* Mục 1: ⛺ Trại 3D */}
           <button
             type="button"
             onClick={onNavigateTo3DCamp}
@@ -209,11 +205,12 @@ export const Header: React.FC<HeaderProps> = ({
                 : '3D Night Campgrounds (Multi-Tents • Simultaneous Night)'
             }
           >
-            <Tent size={16} color={is3DCampActive ? '#facc15' : '#818cf8'} />
-            <span>{lang === 'vi' ? '⛺ Khu Cắm Trại 3D' : '⛺ 3D Campgrounds'}</span>
+            <Tent size={15} color={is3DCampActive ? '#facc15' : '#818cf8'} />
+            <span className="nav-text-desktop">{lang === 'vi' ? '⛺ Trại 3D' : '⛺ 3D Camp'}</span>
+            <span className="nav-text-mobile">{lang === 'vi' ? 'Trại' : 'Camp'}</span>
           </button>
 
-          {/* Pill 2: Sảnh Online */}
+          {/* Mục 2: 🌐 Online */}
           <button
             type="button"
             onClick={onNavigateToOnline}
@@ -224,41 +221,28 @@ export const Header: React.FC<HeaderProps> = ({
                 : 'Online Multiplayer Lobby (100% Real Players)'
             }
           >
-            <Globe size={16} color={isOnlineActive ? '#38bdf8' : '#94a3b8'} />
-            <span>{lang === 'vi' ? '🌐 Sảnh Online' : '🌐 Online Lobby'}</span>
+            <Globe size={15} color={isOnlineActive ? '#38bdf8' : '#94a3b8'} />
+            <span className="nav-text-desktop">🌐 Online</span>
+            <span className="nav-text-mobile">Online</span>
           </button>
 
-          {/* Pill 3: Quản Trò Bài */}
+          {/* Mục 3: 🃏 Quản Trò */}
           <button
             type="button"
             onClick={onNavigateToGameMaster}
             className={`gamebar-nav-pill ${isGameMasterActive ? 'active' : ''} has-tooltip tooltip-bottom`}
             data-tooltip={
               lang === 'vi'
-                ? 'Quản Trò Ván Đấu & Các Pha Ngày Đêm Bằng Bài Tú'
-                : 'Game Master & Day/Night Phases with Playing Cards'
+                ? 'Bàn Bài Tây Offline & Quản Trò Ván Đấu'
+                : 'Offline Playing Cards & Game Master'
             }
           >
-            <Gamepad2 size={16} color={isGameMasterActive ? '#c084fc' : '#94a3b8'} />
-            <span>{lang === 'vi' ? '🃏 Quản Trò Bài' : '🃏 Game Master'}</span>
+            <Gamepad2 size={15} color={isGameMasterActive ? '#c084fc' : '#94a3b8'} />
+            <span className="nav-text-desktop">{lang === 'vi' ? '🃏 Quản Trò' : '🃏 Master'}</span>
+            <span className="nav-text-mobile">{lang === 'vi' ? 'Quản Trò' : 'Master'}</span>
           </button>
 
-          {/* Pill 4: Sơ Đồ 2D */}
-          <button
-            type="button"
-            onClick={onNavigateToPlayers2D}
-            className={`gamebar-nav-pill ${is2DActive ? 'active' : ''} has-tooltip tooltip-bottom`}
-            data-tooltip={
-              lang === 'vi'
-                ? 'Danh Sách Thẻ Bài 2D Truyền Thống & Vị Trí Ghế'
-                : 'Classic 2D Player Roster & Card Badges'
-            }
-          >
-            <Users size={16} color={is2DActive ? '#34d399' : '#94a3b8'} />
-            <span>{lang === 'vi' ? '👥 Sơ Đồ 2D' : '👥 2D Roster'}</span>
-          </button>
-
-          {/* Pill 5: Bí Kíp & Nhật Ký */}
+          {/* Mục 4: 📖 Bí Kíp */}
           <button
             type="button"
             onClick={onNavigateToLoreOrLogs}
@@ -270,106 +254,97 @@ export const Header: React.FC<HeaderProps> = ({
             }
           >
             {activeTab === 'LOGS' ? (
-              <History size={16} color={isLoreOrLogsActive ? '#fbbf24' : '#94a3b8'} />
+              <History size={15} color={isLoreOrLogsActive ? '#fbbf24' : '#94a3b8'} />
             ) : (
-              <BookOpen size={16} color={isLoreOrLogsActive ? '#fbbf24' : '#94a3b8'} />
+              <BookOpen size={15} color={isLoreOrLogsActive ? '#fbbf24' : '#94a3b8'} />
             )}
-            <span>
+            <span className="nav-text-desktop">
               {activeTab === 'LOGS'
                 ? (lang === 'vi' ? '📜 Nhật Ký' : '📜 Logs')
                 : (lang === 'vi' ? '📖 Bí Kíp' : '📖 Lore')}
             </span>
+            <span className="nav-text-mobile">
+              {activeTab === 'LOGS'
+                ? (lang === 'vi' ? 'Nhật Ký' : 'Logs')
+                : (lang === 'vi' ? 'Bí Kíp' : 'Lore')}
+            </span>
           </button>
         </nav>
 
-        {/* Cụm Phải: Player Profile & Quick Tools */}
+        {/* Cụm Phải: Chỉ giữ đúng 3 nút tinh gọn — XÓA các nút thừa/trùng lặp */}
         <div className="gamebar-tools-cluster">
-          {/* Badge Tên Nhân Vật • Số Coin (Bấm mở Tủ Đồ 3D) */}
+          {/* Nút 1: Hồ Sơ & Tủ Đồ hợp nhất (👤 Tên • 🪙 Coin) -> Bấm mở ngay Phòng Thay Đồ 3D */}
           <button
             type="button"
             onClick={onOpenWardrobe}
             className="gamebar-profile-badge has-tooltip tooltip-bottom"
             data-tooltip={
               lang === 'vi'
-                ? 'Hồ Sơ Nhân Vật • Mở Tủ Đồ 3D (Đổi tên & ngoại hình)'
-                : 'Player Profile • Open 3D Wardrobe (Edit name & outfit)'
+                ? 'Hồ Sơ & Tủ Đồ 3D (Đổi tên & ngoại hình)'
+                : 'Player Profile & 3D Wardrobe (Edit name & outfit)'
             }
           >
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontWeight: 700, fontSize: '0.82rem', color: '#f1f5f9' }}>
-              <span style={{ fontSize: '0.95rem' }}>👤</span>
-              <span style={{ maxWidth: '90px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {playerName}
-              </span>
+            <span className="profile-badge-user">
+              <span style={{ fontSize: '0.88rem' }}>👤</span>
+              <span className="profile-badge-name hide-on-mobile">{playerName}</span>
             </span>
-            <span style={{ width: '1px', height: '14px', background: 'rgba(255, 255, 255, 0.2)' }} />
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 800, fontSize: '0.82rem', color: '#facc15' }}>
+            <span className="profile-badge-sep hide-on-mobile" style={{ width: '1px', height: '12px', background: 'rgba(255, 255, 255, 0.2)' }} />
+            <span className="profile-badge-coins">
               <span>🪙</span>
               <span>{Number(playerCoins || 1500).toLocaleString()}</span>
             </span>
           </button>
 
-          {/* Nút ✨ Tủ Đồ 3D */}
-          {onOpenWardrobe && (
-            <button
-              type="button"
-              onClick={onOpenWardrobe}
-              className="gamebar-action-btn has-tooltip tooltip-bottom"
-              data-tooltip={
-                lang === 'vi'
-                  ? 'Phòng Thay Đồ 3D (Đổi trang phục & Chibi nhân vật)'
-                  : '3D Wardrobe (Wolf Outfits & Customization)'
-              }
-            >
-              <Sparkles size={16} color="#a5b4fc" />
-              <span className="gamebar-btn-text">{lang === 'vi' ? 'Tủ Đồ 3D' : 'Wardrobe'}</span>
-            </button>
-          )}
-
-          {/* Nút 🇻🇳 VI / 🇬🇧 EN */}
+          {/* Nút 2: Ngôn Ngữ (VI / EN) tròn/pill nhỏ 32px */}
           <button
             type="button"
             onClick={handleToggleLang}
-            className="gamebar-action-btn has-tooltip tooltip-bottom"
+            className="gamebar-lang-btn has-tooltip tooltip-bottom"
             data-tooltip={
               lang === 'vi'
                 ? 'Chuyển sang Tiếng Anh (Switch to English)'
-                : 'Switch to Vietnamese (Chuyển sang Tiếng Việt)'
+                : 'Chuyển sang Tiếng Việt (Switch to Vietnamese)'
             }
           >
-            <span>{lang === 'vi' ? '🇻🇳 VI' : '🇬🇧 EN'}</span>
+            <span>{lang === 'vi' ? 'VI' : 'EN'}</span>
           </button>
 
-          {/* Nút 👁️ Che Bài Chống Nhìn Trộm */}
-          <button
-            type="button"
-            onClick={onTogglePrivacy}
-            className="btn btn-ghost btn-icon-only has-tooltip tooltip-bottom"
-            data-tooltip={
-              lang === 'vi'
-                ? 'Chế Độ Che Bài Chống Nhìn Trộm'
-                : 'Privacy Shield (Anti-Peeking)'
-            }
-            style={{
-              borderColor: privacyShield ? 'var(--accent-seer)' : 'rgba(255, 255, 255, 0.15)',
-              background: privacyShield ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-            }}
-          >
-            {privacyShield ? <EyeOff size={16} color="#38bdf8" /> : <Eye size={16} color="#94a3b8" />}
-          </button>
+          {/* Nút 3: Chỉ hiện khi đang ở chế độ 🃏 Quản Trò (ẩn ở ⛺ Trại 3D) */}
+          {isGameMasterActive && (
+            <>
+              {/* Nút Che Bài Chống Nhìn Trộm (chỉ hiện khi Quản Trò) */}
+              <button
+                type="button"
+                onClick={onTogglePrivacy}
+                className="gamebar-icon-btn has-tooltip tooltip-bottom hide-on-mobile"
+                data-tooltip={
+                  lang === 'vi'
+                    ? 'Chế Độ Che Bài Chống Nhìn Trộm'
+                    : 'Privacy Shield (Anti-Peeking)'
+                }
+                style={{
+                  borderColor: privacyShield ? 'var(--accent-seer)' : 'rgba(255, 255, 255, 0.15)',
+                  background: privacyShield ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                }}
+              >
+                {privacyShield ? <EyeOff size={15} color="#38bdf8" /> : <Eye size={15} color="#94a3b8" />}
+              </button>
 
-          {/* Nút 🔄 Ván Mới */}
-          <button
-            type="button"
-            onClick={() => setShowResetConfirm(true)}
-            className="btn btn-ghost btn-icon-only has-tooltip tooltip-bottom tooltip-end"
-            data-tooltip={
-              lang === 'vi'
-                ? 'Làm Mới / Bắt Đầu Ván Mới'
-                : 'Reset / Start New Game'
-            }
-          >
-            <RotateCcw size={16} color="#94a3b8" />
-          </button>
+              {/* Nút Làm Mới / Ván Mới */}
+              <button
+                type="button"
+                onClick={() => setShowResetConfirm(true)}
+                className="gamebar-icon-btn has-tooltip tooltip-bottom tooltip-end"
+                data-tooltip={
+                  lang === 'vi'
+                    ? 'Làm Mới / Bắt Đầu Ván Mới'
+                    : 'Reset / Start New Game'
+                }
+              >
+                <RotateCcw size={15} color="#94a3b8" />
+              </button>
+            </>
+          )}
         </div>
       </header>
 

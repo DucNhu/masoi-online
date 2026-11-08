@@ -625,9 +625,9 @@ export class WolfCharacter {
     // Vẽ nền bo góc
     ctx.clearRect(0, 0, 256, 64);
     const r = 16;
-    ctx.fillStyle = isAlive ? 'rgba(15, 23, 42, 0.85)' : 'rgba(239, 68, 68, 0.35)';
+    ctx.fillStyle = isAlive ? 'rgba(10, 15, 29, 0.72)' : 'rgba(239, 68, 68, 0.35)';
     ctx.strokeStyle = isAlive ? '#38bdf8' : '#ef4444';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2.5;
 
     ctx.beginPath();
     ctx.roundRect(8, 8, 240, 48, r);
@@ -649,8 +649,8 @@ export class WolfCharacter {
     texture.minFilter = THREE.LinearFilter;
     const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
     const sprite = new THREE.Sprite(spriteMat);
-    sprite.scale.set(1.4, 0.35, 1.0);
-    sprite.position.set(0, 1.62, 0);
+    sprite.scale.set(1.05, 0.26, 1.0);
+    sprite.position.set(0, 1.48, 0);
 
     this.nameplateSprite = sprite;
     this.root.add(sprite);

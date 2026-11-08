@@ -22,7 +22,7 @@ import { OnlineLobby } from './components/OnlineLobby';
 import { CampfireArena3DView } from './components/arena3d/CampfireArena3DView';
 import { Wardrobe3DModal } from './components/arena3d/Wardrobe3DModal';
 import { soundEffects } from './utils/soundEffects';
-import { Gamepad2, Users, History, BookOpen, Heart, Flame } from 'lucide-react';
+import { Heart, Flame } from 'lucide-react';
 
 const INITIAL_STATE: GameState = {
   round: 1,
@@ -751,56 +751,6 @@ export const App: React.FC = () => {
           window.dispatchEvent(new CustomEvent('ma-soi-profile-update'));
         }}
       />
-
-      {/* Bottom Navigation Bar (Ẩn hoàn toàn khi ở màn hình Khu Cắm Trại 3D) */}
-      {!is3DCampgroundsActive && appMode === 'OFFLINE' && (
-        <nav className="bottom-nav">
-          <button
-            onClick={() => {
-              soundEffects.triggerHaptic('light');
-              setActiveTab('GAME');
-            }}
-            className={`nav-item has-tooltip ${activeTab === 'GAME' ? 'active' : ''}`}
-            data-tooltip={lang === 'vi' ? 'Tiến Trình Ván Đấu & Các Pha Ngày Đêm' : 'Gameplay Flow & Day/Night Phases'}
-          >
-            <Gamepad2 size={20} />
-            <span>{lang === 'vi' ? 'Ván Đấu' : 'Game'}</span>
-          </button>
-
-          <button
-            onClick={handleNavigateTo3DCamp}
-            className={`nav-item has-tooltip ${activeTab === 'PLAYERS' && playerViewMode === '3D' ? 'active' : ''}`}
-            data-tooltip={lang === 'vi' ? 'Khu Cắm Trại Đêm 3D (Đa Túp Lều)' : '3D Night Campgrounds (Multi-Tents)'}
-          >
-            <Flame size={20} color={activeTab === 'PLAYERS' && playerViewMode === '3D' ? '#f59e0b' : '#94a3b8'} />
-            <span>{lang === 'vi' ? 'Trại Lửa 3D' : '3D Camp'}</span>
-          </button>
-
-          <button
-            onClick={() => {
-              soundEffects.triggerHaptic('light');
-              setActiveTab('LOGS');
-            }}
-            className={`nav-item has-tooltip ${activeTab === 'LOGS' ? 'active' : ''}`}
-            data-tooltip={lang === 'vi' ? 'Nhật Ký & Lịch Sử Từng Vòng Đấu' : 'Activity & Round Logs'}
-          >
-            <History size={20} />
-            <span>{lang === 'vi' ? 'Nhật Ký' : 'Logs'}</span>
-          </button>
-
-          <button
-            onClick={() => {
-              soundEffects.triggerHaptic('light');
-              setActiveTab('CARDS');
-            }}
-            className={`nav-item has-tooltip ${activeTab === 'CARDS' ? 'active' : ''}`}
-            data-tooltip={lang === 'vi' ? 'Bí Kíp Các Vai Trò & Thẻ Bài' : 'Roles & Cards Lore'}
-          >
-            <BookOpen size={20} />
-            <span>{lang === 'vi' ? 'Vai Trò' : 'Roles'}</span>
-          </button>
-        </nav>
-      )}
     </div>
   );
 };
