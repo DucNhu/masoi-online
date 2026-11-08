@@ -20,9 +20,9 @@ Mỗi chu kỳ thực thi task ngày đêm bắt buộc tuân theo 6 bước chu
    - Đánh dấu task thành `DONE` trong `studio-terminal-backlog.md`.
    - Cập nhật mục tiêu, kết quả, và hành động kế tiếp vào `production/session-state/active.md`.
    - Ghi log vào `production/session-state/daemon-heartbeat.log`.
-6. **Local Commit (Kỷ Luật Git)**:
+6. **Continuous Commit & Deploy (Phục Vụ Test Điện Thoại Liên Tục)**:
    - Tạo commit cục bộ (Local Commit) với message chuẩn Conventional Commits (ví dụ: `feat(mobile): ...` hoặc `fix(engine): ...`).
-   - **QUY TẮC BẤT DI BẤT DỊCH**: TUYỆT ĐỐI KHÔNG TỰ Ý CHẠY `git push` LÊN REMOTE KHI CHƯA ĐƯỢC NGƯỜI DÙNG PHÊ DUYỆT TRỰC TIẾP.
+   - **Continuous Deploy đã được người dùng phê duyệt tường minh cho `ma-soi-online`**: Sau khi `npm run verify` PASS 100%, tự động đẩy commit (`git push origin <branch>`) để GitHub Actions (`.github/workflows/deploy.yml`) build và cập nhật ngay lập tức lên GitHub Pages (`https://ducnhu.github.io/masoi-online/`) cho người dùng test trên điện thoại.
 
 ## 2. Cơ Chế Xử Lý Lỗi & Tự Phục Hồi (Fault Recovery & Rollback)
 - **3-Strike Rule**: Nếu sau 3 lần sửa mà `npm run verify` vẫn không vượt qua:

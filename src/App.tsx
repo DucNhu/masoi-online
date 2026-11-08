@@ -55,7 +55,7 @@ export const App: React.FC = () => {
     return saved || INITIAL_STATE;
   });
 
-  const [activeTab, setActiveTab] = useState<'GAME' | 'PLAYERS' | 'LOGS' | 'CARDS'>('GAME');
+  const [activeTab, setActiveTab] = useState<'GAME' | 'PLAYERS' | 'LOGS' | 'CARDS'>('PLAYERS');
   const [appMode, setAppMode] = useState<'OFFLINE' | 'ONLINE'>('OFFLINE');
   const [isLookupOpen, setIsLookupOpen] = useState<boolean>(false);
   const [isWardrobeOpen, setIsWardrobeOpen] = useState<boolean>(false);
@@ -65,6 +65,27 @@ export const App: React.FC = () => {
   const [overnightDeadIds, setOvernightDeadIds] = useState<string[]>([]);
   const [overnightReasons, setOvernightReasons] = useState<Record<string, string>>({});
   const [hunterPendingId, setHunterPendingId] = useState<string | null>(null);
+
+  // i18n Language State ('vi' | 'en')
+  const [lang, setLang] = useState<'vi' | 'en'>(() => {
+    return (localStorage.getItem('ma_soi_lang') as 'vi' | 'en') || 'vi';
+  });
+
+  useEffect(() => {
+    const handleLangChange = (e: Event) => {
+      const customEvt = e as CustomEvent<string>;
+      const newLang = (customEvt.detail || localStorage.getItem('ma_soi_lang') || 'vi') as 'vi' | 'en';
+      setLang(newLang === 'en' ? 'en' : 'vi');
+    };
+
+    window.addEventListener('ma-soi-lang-change', handleLangChange);
+    window.addEventListener('storage', handleLangChange);
+
+    return () => {
+      window.removeEventListener('ma-soi-lang-change', handleLangChange);
+      window.removeEventListener('storage', handleLangChange);
+    };
+  }, []);
 
   // Tự động sync vào LocalStorage mỗi khi gameState thay đổi
   useEffect(() => {
@@ -408,9 +429,51 @@ export const App: React.FC = () => {
     setActiveTab('GAME');
   };
 
+  // Navigation Handlers for Floating Top Glass Game Bar
+  const handleNavigateTo3DCamp = () => {
+    soundEffects.triggerHaptic('medium');
+    setAppMode('OFFLINE');
+    setActiveTab('PLAYERS');
+    setPlayerViewMode('3D');
+  };
+
+  const handleNavigateToOnline = () => {
+    soundEffects.triggerHaptic('medium');
+    setAppMode('ONLINE');
+  };
+
+  const handleNavigateToGameMaster = () => {
+    soundEffects.triggerHaptic('light');
+    setAppMode('OFFLINE');
+    setActiveTab('GAME');
+  };
+
+  const handleNavigateToPlayers2D = () => {
+    soundEffects.triggerHaptic('light');
+    setAppMode('OFFLINE');
+    setActiveTab('PLAYERS');
+    setPlayerViewMode('2D');
+  };
+
+  const handleNavigateToLoreOrLogs = () => {
+    soundEffects.triggerHaptic('light');
+    setAppMode('OFFLINE');
+    if (activeTab === 'CARDS') {
+      setActiveTab('LOGS');
+    } else {
+      setActiveTab('CARDS');
+    }
+  };
+
+  const is3DCampgroundsActive = appMode === 'OFFLINE' && activeTab === 'PLAYERS' && playerViewMode === '3D';
+
   return (
-    <div className={`app-container ${appMode === 'ONLINE' ? 'app-container-online' : ''}`}>
-      {/* Top Header */}
+    <div
+      className={`app-container ${appMode === 'ONLINE' ? 'app-container-online' : ''} ${
+        is3DCampgroundsActive ? 'arena-3d-active' : ''
+      }`}
+    >
+      {/* Floating Top Glass Game Bar */}
       <Header
         round={gameState.round}
         phase={gameState.phase}
@@ -419,19 +482,27 @@ export const App: React.FC = () => {
         onOpenLookup={() => setIsLookupOpen(true)}
         onResetGame={handleResetGame}
         mode={appMode}
-        onToggleMode={() => setAppMode(prev => prev === 'OFFLINE' ? 'ONLINE' : 'OFFLINE')}
+        activeTab={activeTab}
+        playerViewMode={playerViewMode}
+        onNavigateTo3DCamp={handleNavigateTo3DCamp}
+        onNavigateToOnline={handleNavigateToOnline}
+        onNavigateToGameMaster={handleNavigateToGameMaster}
+        onNavigateToPlayers2D={handleNavigateToPlayers2D}
+        onNavigateToLoreOrLogs={handleNavigateToLoreOrLogs}
         onOpenWardrobe={() => setIsWardrobeOpen(true)}
       />
 
       {/* Main Content Area based on Active Tab & Mode */}
-      <main style={{ flex: 1, paddingBottom: '24px' }}>
+      <main style={{ flex: 1, padding: 0, margin: 0, overflow: is3DCampgroundsActive ? 'hidden' : 'visible' }}>
         {appMode === 'ONLINE' ? (
-          <OnlineLobby onBackToOffline={() => setAppMode('OFFLINE')} />
+          <div className="portal-content-stage stage-wide">
+            <OnlineLobby onBackToOffline={handleNavigateTo3DCamp} />
+          </div>
         ) : (
           <>
-            {/* Tab 1: GAMEPLAY FLOW */}
+            {/* Tab 1: GAMEPLAY FLOW (Quản Trò Bài) */}
             {activeTab === 'GAME' && (
-              <>
+              <div className="portal-content-stage stage-narrow">
                 {gameState.phase === 'SETUP' && (
                   <SetupView
                     cardMappings={gameState.cardMappings}
@@ -440,254 +511,216 @@ export const App: React.FC = () => {
                   />
                 )}
 
-            {gameState.phase.startsWith('NIGHT') && (
-              <NightPhaseView
-                gameState={gameState}
-                onUpdateNightAction={handleUpdateNightAction}
-                onFinishNight={handleFinishNight}
-                onSetLovers={handleSetLovers}
-                privacyShield={gameState.privacyShield}
-                onPhaseChange={(newPhase) => setGameState(prev => ({ ...prev, phase: newPhase }))}
-              />
+                {gameState.phase.startsWith('NIGHT') && (
+                  <NightPhaseView
+                    gameState={gameState}
+                    onUpdateNightAction={handleUpdateNightAction}
+                    onFinishNight={handleFinishNight}
+                    onSetLovers={handleSetLovers}
+                    privacyShield={gameState.privacyShield}
+                    onPhaseChange={(newPhase) => setGameState(prev => ({ ...prev, phase: newPhase }))}
+                  />
+                )}
+
+                {gameState.phase === 'DAY_DAWN' && (
+                  <DayDawnView
+                    gameState={gameState}
+                    overnightDeadIds={overnightDeadIds}
+                    overnightReasons={overnightReasons}
+                    hunterPendingId={hunterPendingId}
+                    onHunterShoot={handleHunterShoot}
+                    onProceedToDiscussion={handleProceedToDiscussion}
+                    privacyShield={gameState.privacyShield}
+                  />
+                )}
+
+                {gameState.phase === 'DAY_DISCUSSION' && (
+                  <DayDiscussionView
+                    gameState={gameState}
+                    onProceedToVoting={handleProceedToVoting}
+                    privacyShield={gameState.privacyShield}
+                  />
+                )}
+
+                {gameState.phase === 'DAY_VOTING' && (
+                  <DayVotingView
+                    gameState={gameState}
+                    onExecuteHanging={handleExecuteHanging}
+                    privacyShield={gameState.privacyShield}
+                  />
+                )}
+              </div>
             )}
 
-            {gameState.phase === 'DAY_DAWN' && (
-              <DayDawnView
-                gameState={gameState}
-                overnightDeadIds={overnightDeadIds}
-                overnightReasons={overnightReasons}
-                hunterPendingId={hunterPendingId}
-                onHunterShoot={handleHunterShoot}
-                onProceedToDiscussion={handleProceedToDiscussion}
-                privacyShield={gameState.privacyShield}
-              />
+            {/* Tab 2: PLAYER ROSTER: 3D FULL VIEWPORT vs 2D ROSTER STAGE */}
+            {activeTab === 'PLAYERS' && (
+              playerViewMode === '3D' ? (
+                /* 3D Campfire Arena Mode — Full Viewport 100vw x 100vh (Bỏ thanh chuyển đổi dư thừa, chiếm trọn 100% màn hình) */
+                <div className="arena-3d-wrapper">
+                  <CampfireArena3DView
+                    players={gameState.players}
+                    isNight={gameState.phase.startsWith('NIGHT')}
+                    currentRound={gameState.round}
+                  />
+                </div>
+              ) : (
+                /* 2D Player Roster Stage */
+                <div className="portal-content-stage stage-wide">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                    <button
+                      onClick={handleNavigateTo3DCamp}
+                      className="btn btn-ghost has-tooltip tooltip-bottom"
+                      data-tooltip={lang === 'vi' ? 'Mở lại Khu Cắm Trại 3D Toàn Màn Hình' : 'Return to Fullscreen 3D Campgrounds'}
+                      style={{
+                        borderRadius: '12px',
+                        border: '1.5px solid #818cf8',
+                        background: 'rgba(99, 102, 241, 0.25)',
+                        fontWeight: 800,
+                        fontSize: '0.84rem',
+                        color: '#f8fafc',
+                        padding: '8px 16px',
+                      }}
+                    >
+                      <Flame size={16} color="#f59e0b" />
+                      <span>{lang === 'vi' ? '⛺ Mở Lại Khu Cắm Trại 3D' : '⛺ Open 3D Campgrounds'}</span>
+                    </button>
+                  </div>
+
+                  <div className="card-glass" style={{ textAlign: 'center', padding: '14px', marginBottom: '12px' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }} className="font-cinzel">
+                      {lang === 'vi'
+                        ? `Sơ Đồ Người Chơi (${gameState.players.length})`
+                        : `Player Seating Chart (${gameState.players.length})`}
+                    </h3>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                      {lang === 'vi'
+                        ? `Sống: ${gameState.players.filter(p => p.isAlive).length} | Chết: ${gameState.players.filter(p => !p.isAlive).length}`
+                        : `Alive: ${gameState.players.filter(p => p.isAlive).length} | Dead: ${gameState.players.filter(p => !p.isAlive).length}`}
+                    </p>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {gameState.players.map(p => {
+                      const roleDef = ROLE_DEFINITIONS[p.roleId];
+                      return (
+                        <div
+                          key={p.id}
+                          className={`player-row ${!p.isAlive ? 'dead' : ''}`}
+                          style={{ borderLeft: `4px solid ${roleDef.color}` }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <span style={{
+                              width: '26px',
+                              height: '26px',
+                              borderRadius: '50%',
+                              background: 'rgba(255,255,255,0.08)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '0.8rem',
+                              fontWeight: 800,
+                              color: 'var(--accent-gold)',
+                            }}>
+                              {p.seatNumber}
+                            </span>
+                            <div>
+                              <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>
+                                {p.name} {p.isLover && <Heart size={14} color="#ec4899" style={{ display: 'inline' }} />}
+                              </div>
+                              {!p.isAlive && (
+                                <div style={{ fontSize: '0.72rem', color: '#f87171' }}>
+                                  {p.deathReason}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div className={gameState.privacyShield ? 'privacy-blur' : ''} style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: roleDef.color }}>
+                                {roleDef.name}
+                              </div>
+                            </div>
+                            <div className="playing-card-badge" style={{ minWidth: '34px', height: '34px', fontSize: '0.9rem' }}>
+                              {p.card.rank}{p.card.suit}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )
             )}
 
-            {gameState.phase === 'DAY_DISCUSSION' && (
-              <DayDiscussionView
-                gameState={gameState}
-                onProceedToVoting={handleProceedToVoting}
-                privacyShield={gameState.privacyShield}
-              />
-            )}
-
-            {gameState.phase === 'DAY_VOTING' && (
-              <DayVotingView
-                gameState={gameState}
-                onExecuteHanging={handleExecuteHanging}
-                privacyShield={gameState.privacyShield}
-              />
-            )}
-          </>
-        )}
-
-        {/* Tab 2: PLAYER ROSTER / SEATING CIRCLE */}
-        {activeTab === 'PLAYERS' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {/* View Mode Switcher: 3D Campfire vs 2D Card List */}
-            <div
-              style={{
-                display: 'flex',
-                gap: '6px',
-                padding: '4px',
-                background: 'rgba(15, 23, 42, 0.75)',
-                borderRadius: '16px',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-              }}
-            >
-              <button
-                onClick={() => {
-                  soundEffects.triggerHaptic('light');
-                  setPlayerViewMode('3D');
-                }}
-                className="btn"
-                style={{
-                  flex: 1,
-                  padding: '9px 12px',
-                  borderRadius: '12px',
-                  background:
-                    playerViewMode === '3D'
-                      ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
-                      : 'transparent',
-                  color: playerViewMode === '3D' ? '#fff' : '#94a3b8',
-                  fontWeight: 800,
-                  fontSize: '0.85rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  border: 'none',
-                  boxShadow: playerViewMode === '3D' ? '0 4px 14px rgba(99, 102, 241, 0.4)' : 'none',
-                }}
-              >
-                <Flame size={16} color={playerViewMode === '3D' ? '#f59e0b' : '#94a3b8'} />
-                Bàn Tròn 3D (10 Ghế)
-              </button>
-
-              <button
-                onClick={() => {
-                  soundEffects.triggerHaptic('light');
-                  setPlayerViewMode('2D');
-                }}
-                className="btn"
-                style={{
-                  flex: 1,
-                  padding: '9px 12px',
-                  borderRadius: '12px',
-                  background:
-                    playerViewMode === '2D' ? 'rgba(255, 255, 255, 0.12)' : 'transparent',
-                  color: playerViewMode === '2D' ? '#fff' : '#94a3b8',
-                  fontWeight: 800,
-                  fontSize: '0.85rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  border: 'none',
-                }}
-              >
-                <Users size={16} />
-                Danh Sách Thẻ 2D
-              </button>
-            </div>
-
-            {/* 3D Campfire Arena Mode */}
-            {playerViewMode === '3D' ? (
-              <div style={{ width: '100%', height: 'calc(100dvh - 210px)', minHeight: '480px' }}>
-                <CampfireArena3DView
-                  players={gameState.players}
-                  isNight={gameState.phase.startsWith('NIGHT')}
-                  currentRound={gameState.round}
+            {/* Tab 3: HISTORY LOGS */}
+            {activeTab === 'LOGS' && (
+              <div className="portal-content-stage stage-medium">
+                <HistoryLogView
+                  logs={gameState.historyLogs}
+                  onBack={() => setActiveTab('GAME')}
                 />
               </div>
-            ) : (
-              <>
-                <div className="card-glass" style={{ textAlign: 'center', padding: '14px' }}>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }} className="font-cinzel">
-                    Sơ Đồ Người Chơi ({gameState.players.length})
-                  </h3>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                    Sống: {gameState.players.filter(p => p.isAlive).length} | Chết: {gameState.players.filter(p => !p.isAlive).length}
-                  </p>
-                </div>
+            )}
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {gameState.players.map(p => {
-                    const roleDef = ROLE_DEFINITIONS[p.roleId];
+            {/* Tab 4: ROLE LORE CHEATSHEET */}
+            {activeTab === 'CARDS' && (
+              <div className="portal-content-stage stage-medium">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div className="card-glass" style={{ padding: '16px', textAlign: 'center' }}>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }} className="font-cinzel">
+                      {lang === 'vi' ? '🐺 Bí Kíp Thẻ Bài Ma Sói' : '🐺 Werewolf Role & Card Compendium'}
+                    </h3>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                      {lang === 'vi'
+                        ? 'Tra cứu danh sách vai trò, kỹ năng thần bí và điều kiện thắng của từng phe.'
+                        : 'Look up roles, mystical night abilities, and win conditions for each faction.'}
+                    </p>
+                  </div>
+
+                  {['WEREWOLF', 'SEER', 'BODYGUARD', 'WITCH', 'HUNTER', 'MAYOR', 'IDIOT', 'VILLAGER'].map(roleKey => {
+                    const roleDef = ROLE_DEFINITIONS[roleKey as keyof typeof ROLE_DEFINITIONS];
+                    if (!roleDef) return null;
                     return (
-                      <div
-                        key={p.id}
-                        className={`player-row ${!p.isAlive ? 'dead' : ''}`}
-                        style={{ borderLeft: `4px solid ${roleDef.color}` }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{
-                            width: '26px',
-                            height: '26px',
-                            borderRadius: '50%',
-                            background: 'rgba(255,255,255,0.08)',
+                      <div key={roleKey} className="card-glass" style={{ padding: '12px 14px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{
+                            minWidth: '46px',
+                            height: '46px',
+                            borderRadius: '12px',
+                            background: 'rgba(255, 255, 255, 0.06)',
+                            border: `1.5px solid ${roleDef.color}`,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            fontSize: '0.8rem',
-                            fontWeight: 800,
-                            color: 'var(--accent-gold)',
+                            fontSize: '1.4rem',
+                            boxShadow: `0 0 10px ${roleDef.color}30`,
                           }}>
-                            {p.seatNumber}
-                          </span>
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>
-                              {p.name} {p.isLover && <Heart size={14} color="#ec4899" style={{ display: 'inline' }} />}
-                            </div>
-                            {!p.isAlive && (
-                              <div style={{ fontSize: '0.72rem', color: '#f87171' }}>
-                                {p.deathReason}
-                              </div>
-                            )}
+                            {roleDef.name.includes('Sói') ? '🐺' :
+                             roleDef.name.includes('Tiên Tri') ? '🔮' :
+                             roleDef.name.includes('Bảo Vệ') ? '🛡️' :
+                             roleDef.name.includes('Phù Thủy') ? '🧙‍♀️' :
+                             roleDef.name.includes('Thợ Săn') ? '🏹' :
+                             roleDef.name.includes('Thị Trưởng') ? '👑' :
+                             roleDef.name.includes('Kẻ Ngốc') ? '🃏' : '👨‍🌾'}
                           </div>
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div className={gameState.privacyShield ? 'privacy-blur' : ''} style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: '0.85rem', fontWeight: 700, color: roleDef.color }}>
+                          <div>
+                            <div style={{ fontWeight: 800, fontSize: '1rem', color: roleDef.color }}>
                               {roleDef.name}
                             </div>
-                          </div>
-                          <div className="playing-card-badge" style={{ minWidth: '34px', height: '34px', fontSize: '0.9rem' }}>
-                            {p.card.rank}{p.card.suit}
+                            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.35 }}>
+                              {roleDef.description}
+                            </p>
                           </div>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              </>
+              </div>
             )}
-          </div>
+          </>
         )}
-
-        {/* Tab 3: HISTORY LOGS */}
-        {activeTab === 'LOGS' && (
-          <HistoryLogView
-            logs={gameState.historyLogs}
-            onBack={() => setActiveTab('GAME')}
-          />
-        )}
-
-        {/* Tab 4: ROLE LORE CHEATSHEET */}
-        {activeTab === 'CARDS' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div className="card-glass" style={{ padding: '16px', textAlign: 'center' }}>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }} className="font-cinzel">
-                🐺 Bí Kíp Thẻ Bài Ma Sói
-              </h3>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                Tra cứu danh sách vai trò, kỹ năng thần bí và điều kiện thắng của từng phe.
-              </p>
-            </div>
-
-            {['WEREWOLF', 'SEER', 'BODYGUARD', 'WITCH', 'HUNTER', 'MAYOR', 'IDIOT', 'VILLAGER'].map(roleKey => {
-              const roleDef = ROLE_DEFINITIONS[roleKey as keyof typeof ROLE_DEFINITIONS];
-              if (!roleDef) return null;
-              return (
-                <div key={roleKey} className="card-glass" style={{ padding: '12px 14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{
-                      minWidth: '46px',
-                      height: '46px',
-                      borderRadius: '12px',
-                      background: 'rgba(255, 255, 255, 0.06)',
-                      border: `1.5px solid ${roleDef.color}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '1.4rem',
-                      boxShadow: `0 0 10px ${roleDef.color}30`,
-                    }}>
-                      {roleDef.name.includes('Sói') ? '🐺' :
-                       roleDef.name.includes('Tiên Tri') ? '🔮' :
-                       roleDef.name.includes('Bảo Vệ') ? '🛡️' :
-                       roleDef.name.includes('Phù Thủy') ? '🧙‍♀️' :
-                       roleDef.name.includes('Thợ Săn') ? '🏹' :
-                       roleDef.name.includes('Thị Trưởng') ? '👑' :
-                       roleDef.name.includes('Kẻ Ngốc') ? '🃏' : '👨‍🌾'}
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 800, fontSize: '1rem', color: roleDef.color }}>
-                        {roleDef.name}
-                      </div>
-                      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.35 }}>
-                        {roleDef.description}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-            </div>
-          )}
-        </>
-      )}
       </main>
 
       {/* Game Over Modal */}
@@ -710,33 +743,37 @@ export const App: React.FC = () => {
       {/* Wardrobe 3D Modal (Customization) */}
       <Wardrobe3DModal
         isOpen={isWardrobeOpen}
-        onClose={() => setIsWardrobeOpen(false)}
-        onSaveOutfit={() => {}}
+        onClose={() => {
+          setIsWardrobeOpen(false);
+          window.dispatchEvent(new CustomEvent('ma-soi-profile-update'));
+        }}
+        onSaveOutfit={() => {
+          window.dispatchEvent(new CustomEvent('ma-soi-profile-update'));
+        }}
       />
 
-      {/* Bottom Navigation Bar */}
-      {appMode === 'OFFLINE' && (
+      {/* Bottom Navigation Bar (Ẩn hoàn toàn khi ở màn hình Khu Cắm Trại 3D) */}
+      {!is3DCampgroundsActive && appMode === 'OFFLINE' && (
         <nav className="bottom-nav">
           <button
             onClick={() => {
               soundEffects.triggerHaptic('light');
               setActiveTab('GAME');
             }}
-            className={`nav-item ${activeTab === 'GAME' ? 'active' : ''}`}
+            className={`nav-item has-tooltip ${activeTab === 'GAME' ? 'active' : ''}`}
+            data-tooltip={lang === 'vi' ? 'Tiến Trình Ván Đấu & Các Pha Ngày Đêm' : 'Gameplay Flow & Day/Night Phases'}
           >
             <Gamepad2 size={20} />
-            <span>Ván Đấu</span>
+            <span>{lang === 'vi' ? 'Ván Đấu' : 'Game'}</span>
           </button>
 
           <button
-            onClick={() => {
-              soundEffects.triggerHaptic('light');
-              setActiveTab('PLAYERS');
-            }}
-            className={`nav-item ${activeTab === 'PLAYERS' ? 'active' : ''}`}
+            onClick={handleNavigateTo3DCamp}
+            className={`nav-item has-tooltip ${activeTab === 'PLAYERS' && playerViewMode === '3D' ? 'active' : ''}`}
+            data-tooltip={lang === 'vi' ? 'Khu Cắm Trại Đêm 3D (Đa Túp Lều)' : '3D Night Campgrounds (Multi-Tents)'}
           >
-            <Users size={20} />
-            <span>Người Chơi</span>
+            <Flame size={20} color={activeTab === 'PLAYERS' && playerViewMode === '3D' ? '#f59e0b' : '#94a3b8'} />
+            <span>{lang === 'vi' ? 'Trại Lửa 3D' : '3D Camp'}</span>
           </button>
 
           <button
@@ -744,10 +781,11 @@ export const App: React.FC = () => {
               soundEffects.triggerHaptic('light');
               setActiveTab('LOGS');
             }}
-            className={`nav-item ${activeTab === 'LOGS' ? 'active' : ''}`}
+            className={`nav-item has-tooltip ${activeTab === 'LOGS' ? 'active' : ''}`}
+            data-tooltip={lang === 'vi' ? 'Nhật Ký & Lịch Sử Từng Vòng Đấu' : 'Activity & Round Logs'}
           >
             <History size={20} />
-            <span>Nhật Ký</span>
+            <span>{lang === 'vi' ? 'Nhật Ký' : 'Logs'}</span>
           </button>
 
           <button
@@ -755,10 +793,11 @@ export const App: React.FC = () => {
               soundEffects.triggerHaptic('light');
               setActiveTab('CARDS');
             }}
-            className={`nav-item ${activeTab === 'CARDS' ? 'active' : ''}`}
+            className={`nav-item has-tooltip ${activeTab === 'CARDS' ? 'active' : ''}`}
+            data-tooltip={lang === 'vi' ? 'Bí Kíp Các Vai Trò & Thẻ Bài' : 'Roles & Cards Lore'}
           >
             <BookOpen size={20} />
-            <span>Vai Trò</span>
+            <span>{lang === 'vi' ? 'Vai Trò' : 'Roles'}</span>
           </button>
         </nav>
       )}
