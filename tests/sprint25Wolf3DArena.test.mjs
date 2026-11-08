@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import * as THREE from 'three';
 import {
   DEFAULT_OUTFIT,
   OUTFIT_SKINS,
@@ -124,4 +125,87 @@ test('Sprint 31 - 3D Locomotion QA: Character must stand up before walking and s
     wolf.leftArm.rotation.x * wolf.leftLeg.rotation.x < 0,
     'Arm and leg on same side swing in opposition for natural humanoid walk'
   );
+});
+
+test('Sprint 32 - 3D Hat & Nameplate Clearance QA: Every hat and archetype keeps nameplate strictly above head/hat geometry with depthTest disabled', () => {
+  const hatIds = ['NONE', 'CONICAL_HAT', 'WITCH', 'COWBOY', 'CROWN', 'BANDANA'];
+  const skinIds = ['WOLF_GRAY', 'WOLF_BLOOD', 'KITSUNE_FOX'];
+
+  for (const skinId of skinIds) {
+    for (const hatId of hatIds) {
+      const char = new WolfCharacter({
+        skinId,
+        hatId,
+        eyeGlowId: 'RED',
+        backItemId: 'NONE',
+      });
+      char.setNameplate('Thợ Săn #1', 1, true);
+
+      assert.ok(char.nameplateSprite, `Nameplate sprite created for ${skinId} + ${hatId}`);
+      assert.equal(
+        char.nameplateSprite.material.depthTest,
+        false,
+        `depthTest must be false for ${skinId} + ${hatId} to prevent 3D occlusion`
+      );
+      assert.equal(
+        char.nameplateSprite.material.depthWrite,
+        false,
+        `depthWrite must be false for ${skinId} + ${hatId}`
+      );
+      assert.equal(
+        char.nameplateSprite.renderOrder,
+        999,
+        `renderOrder must be 999 for high priority rendering`
+      );
+
+      // 1. Kiểm tra ở tư thế NGỒI (sitting)
+      char.setStanding(false);
+      char.root.updateMatrixWorld(true);
+      const sittingHeadBox = new THREE.Box3().setFromObject(char.headGroup);
+      const sittingSpriteBottomY = char.nameplateSprite.position.y - 0.13;
+      assert.ok(
+        sittingSpriteBottomY > sittingHeadBox.max.y,
+        `Sitting: Nameplate bottom (${sittingSpriteBottomY.toFixed(3)}) must be strictly above head/hat top (${sittingHeadBox.max.y.toFixed(3)}) for ${skinId} + ${hatId}`
+      );
+
+      // 2. Kiểm tra ở tư thế ĐỨNG / ĐI BỘ (standing & walk animation)
+      char.setStanding(true);
+      char.setAnimation('walk');
+      char.update(0.1);
+      char.root.updateMatrixWorld(true);
+      const walkingHeadBox = new THREE.Box3().setFromObject(char.headGroup);
+      const walkingSpriteBottomY = char.nameplateSprite.position.y - 0.13;
+      assert.ok(
+        walkingSpriteBottomY > walkingHeadBox.max.y,
+        `Walking: Nameplate bottom (${walkingSpriteBottomY.toFixed(3)}) must be strictly above head/hat top (${walkingHeadBox.max.y.toFixed(3)}) for ${skinId} + ${hatId}`
+      );
+    }
+  }
+});
+
+test('Sprint 32 - 3D Character Raycast & Seat Interaction QA: Raycast hits on character body or limbs resolve seatNumber', () => {
+  const char = new WolfCharacter(DEFAULT_OUTFIT);
+  char.root.userData = { seatNumber: 5 };
+
+  // Helper walk-up test simulating getSeatFromIntersects
+  const getSeatFromObject = (obj) => {
+    let curr = obj;
+    while (curr) {
+      if (typeof curr.userData?.seatNumber === 'number') {
+        return curr.userData.seatNumber;
+      }
+      curr = curr.parent;
+    }
+    return null;
+  };
+
+  // Check from limb (leftHand -> leftArm -> bodyGroup -> root)
+  const leftHandMesh = char.leftArm.children[1];
+  assert.ok(leftHandMesh, 'Character has hand mesh');
+  assert.equal(getSeatFromObject(leftHandMesh), 5, 'Limb hit resolves seatNumber 5');
+
+  // Check from head (headGroup -> root)
+  const headMesh = char.headGroup.children[0];
+  assert.ok(headMesh, 'Character has head mesh');
+  assert.equal(getSeatFromObject(headMesh), 5, 'Head hit resolves seatNumber 5');
 });

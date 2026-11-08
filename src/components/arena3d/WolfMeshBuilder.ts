@@ -275,7 +275,7 @@ export class WolfCharacter {
     this.headGroup.add(this.faceFeaturesGroup);
 
     // Socket gắn Mũ
-    this.hatSlot.position.set(0, 0.34, 0);
+    this.hatSlot.position.set(0, 0.24, 0);
     this.headGroup.add(this.hatSlot);
 
     // Socket gắn Đồ Sau Lưng
@@ -327,6 +327,11 @@ export class WolfCharacter {
     this.hairGroup.add(rightSideBang);
 
     // 4. Đặc điểm riêng từng nhân vật
+    const flaredEars =
+      this.outfit.hatId === 'CONICAL_HAT' ||
+      this.outfit.hatId === 'WITCH' ||
+      this.outfit.hatId === 'COWBOY';
+
     if (skinData.id === 'WOLF_BLOOD') {
       // DẠNG SÓI HỒNG NGUYỆT: Có mõm sói bo tròn mịn màng + tai sói ngầu
       const muzzleGeo = new THREE.CylinderGeometry(0.12, 0.18, 0.28, 16);
@@ -343,13 +348,20 @@ export class WolfCharacter {
       // Tai sói nhọn mềm mại
       const earGeo = new THREE.ConeGeometry(0.12, 0.35, 12);
       const leftEar = new THREE.Mesh(earGeo, this.hairMaterial);
-      leftEar.position.set(-0.2, 0.38, -0.05);
-      leftEar.rotation.z = 0.25;
-      this.faceFeaturesGroup.add(leftEar);
-
       const rightEar = new THREE.Mesh(earGeo, this.hairMaterial);
-      rightEar.position.set(0.2, 0.38, -0.05);
-      rightEar.rotation.z = -0.25;
+
+      if (flaredEars) {
+        leftEar.position.set(-0.24, 0.26, -0.02);
+        leftEar.rotation.z = 0.58;
+        rightEar.position.set(0.24, 0.26, -0.02);
+        rightEar.rotation.z = -0.58;
+      } else {
+        leftEar.position.set(-0.2, 0.38, -0.05);
+        leftEar.rotation.z = 0.25;
+        rightEar.position.set(0.2, 0.38, -0.05);
+        rightEar.rotation.z = -0.25;
+      }
+      this.faceFeaturesGroup.add(leftEar);
       this.faceFeaturesGroup.add(rightEar);
 
       // Đuôi sói xù sau lưng
@@ -368,16 +380,24 @@ export class WolfCharacter {
       const leftInner = new THREE.Mesh(innerEarGeo, innerEarMat);
       leftInner.position.set(0, 0, 0.03);
       leftEar.add(leftInner);
-      leftEar.position.set(-0.19, 0.38, -0.02);
-      leftEar.rotation.z = 0.28;
-      this.faceFeaturesGroup.add(leftEar);
 
       const rightEar = new THREE.Mesh(earGeo, this.hairMaterial);
       const rightInner = new THREE.Mesh(innerEarGeo, innerEarMat);
       rightInner.position.set(0, 0, 0.03);
       rightEar.add(rightInner);
-      rightEar.position.set(0.19, 0.38, -0.02);
-      rightEar.rotation.z = -0.28;
+
+      if (flaredEars) {
+        leftEar.position.set(-0.24, 0.26, -0.02);
+        leftEar.rotation.z = 0.58;
+        rightEar.position.set(0.24, 0.26, -0.02);
+        rightEar.rotation.z = -0.58;
+      } else {
+        leftEar.position.set(-0.19, 0.38, -0.02);
+        leftEar.rotation.z = 0.28;
+        rightEar.position.set(0.19, 0.38, -0.02);
+        rightEar.rotation.z = -0.28;
+      }
+      this.faceFeaturesGroup.add(leftEar);
       this.faceFeaturesGroup.add(rightEar);
 
       // Đuôi hồ ly cong mềm mại
@@ -428,6 +448,11 @@ export class WolfCharacter {
     // 5. Cập nhật Đồ sau lưng
     this.backSlot.clear();
     this.buildBackMesh(newOutfit.backItemId);
+
+    // 6. Cập nhật lại độ cao bảng tên tránh mũ và tai đâm xuyên
+    if (this.nameplateSprite) {
+      this.nameplateSprite.position.y = this.getTopClearanceY();
+    }
   }
 
   private buildHatMesh(hatId: string): void {
@@ -440,16 +465,16 @@ export class WolfCharacter {
           roughness: 0.75,
           metalness: 0.05,
         });
-        const cone = new THREE.ConeGeometry(0.68, 0.32, 28);
+        const cone = new THREE.ConeGeometry(0.60, 0.26, 28);
         const mesh = new THREE.Mesh(cone, mat);
-        mesh.position.y = 0.14;
+        mesh.position.y = 0.10;
         mesh.castShadow = true;
         hatGroup.add(mesh);
 
         // Chóp nón lá
         const tipMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.6 });
-        const tip = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 12), tipMat);
-        tip.position.y = 0.3;
+        const tip = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 12), tipMat);
+        tip.position.y = 0.23;
         hatGroup.add(tip);
 
         this.hatSlot.add(hatGroup);
@@ -459,24 +484,25 @@ export class WolfCharacter {
         // Mũ phù thủy tím huyền bí
         const hatGroup = new THREE.Group();
         const mat = new THREE.MeshStandardMaterial({ color: 0x1e1b4b, roughness: 0.55 });
-        const brim = new THREE.CylinderGeometry(0.55, 0.55, 0.04, 24);
+        const brim = new THREE.CylinderGeometry(0.50, 0.50, 0.035, 24);
         const brimMesh = new THREE.Mesh(brim, mat);
+        brimMesh.position.y = 0.02;
         brimMesh.castShadow = true;
-
-        const tip = new THREE.ConeGeometry(0.28, 0.72, 20);
-        const tipMesh = new THREE.Mesh(tip, mat);
-        tipMesh.position.set(-0.04, 0.36, 0);
-        tipMesh.rotation.z = -0.18;
-        tipMesh.castShadow = true;
 
         // Dải ruy băng vàng quanh mũ
         const ribbonMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.6, roughness: 0.3 });
-        const ribbon = new THREE.Mesh(new THREE.CylinderGeometry(0.29, 0.29, 0.06, 20), ribbonMat);
+        const ribbon = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.27, 0.05, 20), ribbonMat);
         ribbon.position.y = 0.05;
 
+        const tip = new THREE.ConeGeometry(0.25, 0.46, 20);
+        const tipMesh = new THREE.Mesh(tip, mat);
+        tipMesh.position.set(-0.03, 0.25, 0);
+        tipMesh.rotation.z = -0.16;
+        tipMesh.castShadow = true;
+
         hatGroup.add(brimMesh);
-        hatGroup.add(tipMesh);
         hatGroup.add(ribbon);
+        hatGroup.add(tipMesh);
         this.hatSlot.add(hatGroup);
         break;
       }
@@ -484,13 +510,14 @@ export class WolfCharacter {
         // Mũ cao bồi dã ngoại da bò
         const hatGroup = new THREE.Group();
         const mat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.85 });
-        const brim = new THREE.CylinderGeometry(0.62, 0.62, 0.04, 24);
+        const brim = new THREE.CylinderGeometry(0.54, 0.54, 0.035, 24);
         const brimMesh = new THREE.Mesh(brim, mat);
+        brimMesh.position.y = 0.02;
         brimMesh.castShadow = true;
 
-        const crown = new THREE.CylinderGeometry(0.26, 0.3, 0.28, 16);
+        const crown = new THREE.CylinderGeometry(0.24, 0.28, 0.22, 16);
         const crownMesh = new THREE.Mesh(crown, mat);
-        crownMesh.position.y = 0.14;
+        crownMesh.position.y = 0.13;
         crownMesh.castShadow = true;
 
         hatGroup.add(brimMesh);
@@ -506,7 +533,7 @@ export class WolfCharacter {
           metalness: 0.85,
           roughness: 0.25,
         });
-        const ring = new THREE.CylinderGeometry(0.34, 0.34, 0.15, 12, 1, true);
+        const ring = new THREE.CylinderGeometry(0.30, 0.30, 0.14, 12, 1, true);
         const crownMesh = new THREE.Mesh(ring, goldMat);
         crownMesh.position.y = 0.08;
         hatGroup.add(crownMesh);
@@ -522,7 +549,7 @@ export class WolfCharacter {
             roughness: 0.1,
           });
           const gem = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 12), gemMat);
-          gem.position.set(Math.sin(angle) * 0.34, 0.17, Math.cos(angle) * 0.34);
+          gem.position.set(Math.sin(angle) * 0.30, 0.16, Math.cos(angle) * 0.30);
           hatGroup.add(gem);
         });
 
@@ -532,9 +559,9 @@ export class WolfCharacter {
       case 'BANDANA': {
         // Băng đô ninja đỏ
         const mat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.65 });
-        const strip = new THREE.CylinderGeometry(0.355, 0.355, 0.08, 24);
+        const strip = new THREE.CylinderGeometry(0.362, 0.362, 0.075, 24);
         const stripMesh = new THREE.Mesh(strip, mat);
-        stripMesh.position.y = -0.02;
+        stripMesh.position.y = -0.06;
         this.hatSlot.add(stripMesh);
         break;
       }
@@ -622,6 +649,34 @@ export class WolfCharacter {
     }
   }
 
+  // === TÍNH TOÁN ĐỘ CAO AN TOÀN CHO BẢNG TÊN NỔI (TOP NAMEPLATE CLEARANCE) ===
+  public getTopClearanceY(animOffset = 0): number {
+    const baseHeadY = (this.isStanding ? 1.20 : 0.98) + animOffset;
+    const hatId = this.outfit?.hatId || 'NONE';
+    const skinId = this.outfit?.skinId || 'WOLF_GRAY';
+
+    let hatClearance = 0.36;
+    if (hatId === 'WITCH') {
+      hatClearance = 0.72; // 0.24 + 0.48
+    } else if (hatId === 'CONICAL_HAT') {
+      hatClearance = 0.51; // 0.24 + 0.27
+    } else if (hatId === 'COWBOY') {
+      hatClearance = 0.49; // 0.24 + 0.25
+    } else if (hatId === 'CROWN') {
+      hatClearance = 0.44; // 0.24 + 0.20
+    } else {
+      hatClearance = 0.36;
+    }
+
+    const hasTallEars = skinId === 'WOLF_BLOOD' || skinId === 'KITSUNE_FOX';
+    const earClearance =
+      hasTallEars && (hatId === 'NONE' || hatId === 'BANDANA' || hatId === 'CROWN')
+        ? 0.56
+        : 0.36;
+
+    return baseHeadY + Math.max(hatClearance, earClearance) + 0.25;
+  }
+
   // === BẢNG TÊN NỔI 3D (3D FLOATING NAMEPLATE) ===
   public setNameplate(name: string, seatNumber?: number, isAlive = true): void {
     if (this.nameplateSprite) {
@@ -629,41 +684,52 @@ export class WolfCharacter {
       this.nameplateSprite = undefined;
     }
 
-    const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 64;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    let texture: THREE.Texture;
+    if (typeof document !== 'undefined' && document.createElement) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        // Vẽ nền bo góc
+        ctx.clearRect(0, 0, 256, 64);
+        const r = 16;
+        ctx.fillStyle = isAlive ? 'rgba(10, 15, 29, 0.72)' : 'rgba(239, 68, 68, 0.35)';
+        ctx.strokeStyle = isAlive ? '#38bdf8' : '#ef4444';
+        ctx.lineWidth = 2.5;
 
-    // Vẽ nền bo góc
-    ctx.clearRect(0, 0, 256, 64);
-    const r = 16;
-    ctx.fillStyle = isAlive ? 'rgba(10, 15, 29, 0.72)' : 'rgba(239, 68, 68, 0.35)';
-    ctx.strokeStyle = isAlive ? '#38bdf8' : '#ef4444';
-    ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.roundRect(8, 8, 240, 48, r);
+        ctx.fill();
+        ctx.stroke();
 
-    ctx.beginPath();
-    ctx.roundRect(8, 8, 240, 48, r);
-    ctx.fill();
-    ctx.stroke();
+        // Text tên nhân vật
+        ctx.fillStyle = isAlive ? '#f8fafc' : '#fca5a5';
+        ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
 
-    // Text tên nhân vật
-    ctx.fillStyle = isAlive ? '#f8fafc' : '#fca5a5';
-    ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+        const displayName = seatNumber ? `#${seatNumber} ${name}` : name;
+        // Rút gọn nếu tên quá dài
+        const truncated = displayName.length > 15 ? displayName.slice(0, 14) + '…' : displayName;
+        ctx.fillText(truncated, 128, 32);
+      }
+      texture = new THREE.CanvasTexture(canvas);
+      texture.minFilter = THREE.LinearFilter;
+    } else {
+      texture = new THREE.Texture();
+    }
 
-    const displayName = seatNumber ? `#${seatNumber} ${name}` : name;
-    // Rút gọn nếu tên quá dài
-    const truncated = displayName.length > 15 ? displayName.slice(0, 14) + '…' : displayName;
-    ctx.fillText(truncated, 128, 32);
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.minFilter = THREE.LinearFilter;
-    const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+    const spriteMat = new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+    });
     const sprite = new THREE.Sprite(spriteMat);
+    sprite.renderOrder = 999;
     sprite.scale.set(1.05, 0.26, 1.0);
-    sprite.position.set(0, this.isStanding ? 1.68 : 1.48, 0);
+    sprite.position.set(0, this.getTopClearanceY(), 0);
 
     this.nameplateSprite = sprite;
     this.root.add(sprite);
@@ -683,7 +749,7 @@ export class WolfCharacter {
       this.headGroup.position.y = 0.98;
     }
     if (this.nameplateSprite) {
-      this.nameplateSprite.position.y = standing ? 1.68 : 1.48;
+      this.nameplateSprite.position.y = this.getTopClearanceY();
     }
   }
 
@@ -698,12 +764,14 @@ export class WolfCharacter {
     this.animTime += delta;
     const baseHeadY = this.isStanding ? 1.20 : 0.98;
     const baseBodyY = this.isStanding ? 0.22 : 0;
+    let currentHeadOffset = 0;
 
     switch (this.currentAnim) {
       case 'idle': {
         const breathe = Math.sin(this.animTime * 2.5) * 0.025;
+        currentHeadOffset = breathe * 0.5;
         this.bodyGroup.position.y = baseBodyY;
-        this.headGroup.position.y = baseHeadY + breathe * 0.5;
+        this.headGroup.position.y = baseHeadY + currentHeadOffset;
         this.headGroup.rotation.x = breathe * 0.3;
         this.headGroup.rotation.z = Math.sin(this.animTime * 1.2) * 0.02;
         this.leftArm.rotation.x = 0;
@@ -719,9 +787,10 @@ export class WolfCharacter {
         break;
       }
       case 'howl': {
+        currentHeadOffset = 0.07;
         this.bodyGroup.position.y = baseBodyY;
         this.headGroup.rotation.x = -Math.PI / 4 + Math.sin(this.animTime * 6) * 0.05;
-        this.headGroup.position.y = baseHeadY + 0.07;
+        this.headGroup.position.y = baseHeadY + currentHeadOffset;
         this.leftArm.rotation.x = -Math.PI / 6;
         this.rightArm.rotation.x = -Math.PI / 6;
         if (this.isStanding) {
@@ -735,6 +804,7 @@ export class WolfCharacter {
         break;
       }
       case 'point': {
+        currentHeadOffset = 0;
         this.bodyGroup.position.y = baseBodyY;
         this.rightArm.rotation.x = -Math.PI / 2;
         this.leftArm.rotation.x = 0;
@@ -751,9 +821,10 @@ export class WolfCharacter {
         break;
       }
       case 'slumber': {
+        currentHeadOffset = -0.08;
         this.bodyGroup.position.y = baseBodyY;
         this.headGroup.rotation.x = Math.PI / 5;
-        this.headGroup.position.y = baseHeadY - 0.08;
+        this.headGroup.position.y = baseHeadY + currentHeadOffset;
         this.leftArm.rotation.x = 0.08;
         this.rightArm.rotation.x = 0.08;
         if (this.isStanding) {
@@ -776,6 +847,7 @@ export class WolfCharacter {
         this.leftArm.rotation.x = -Math.sin(walkCycle) * 0.5;
         this.rightArm.rotation.x = Math.sin(walkCycle) * 0.5;
         const bob = Math.abs(Math.sin(walkCycle)) * 0.045;
+        currentHeadOffset = bob;
         this.bodyGroup.position.y = 0.22 + bob;
         this.headGroup.position.y = 1.20 + bob;
         this.headGroup.rotation.x = 0;
@@ -783,6 +855,10 @@ export class WolfCharacter {
         this.eyeMaterial.emissiveIntensity = 1.2 + Math.sin(this.animTime * 4) * 0.3;
         break;
       }
+    }
+
+    if (this.nameplateSprite) {
+      this.nameplateSprite.position.y = this.getTopClearanceY(currentHeadOffset);
     }
   }
 

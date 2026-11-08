@@ -73,6 +73,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const sceneRef = useRef<CampfireScene | null>(null);
+  const handleSeatInteractionRef = useRef<(seatNumber: number) => void>(() => {});
 
   // Ngôn ngữ VI / EN
   const [lang, setLang] = useState<'vi' | 'en'>(() => {
@@ -344,7 +345,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
 
     scene.setOnSeatClick((seatNumber) => {
       NativeBridge.hapticImpact('medium');
-      handleSeatInteraction(seatNumber);
+      handleSeatInteractionRef.current(seatNumber);
     });
 
     scene.setOnSeatHover((seatNumber) => {
@@ -674,6 +675,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
       }
     }
   };
+  handleSeatInteractionRef.current = handleSeatInteraction;
 
   const handleSelectSkill = (skill: NightCombatSkill) => {
     setSelectedSkill(skill);
@@ -1226,12 +1228,12 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
         </button>
       </div>
 
-      {/* Thông Báo Sao Chép Link Túp Lều Thành Công */}
-      {copyToast && (
+      {/* === BANNER TRẠNG THÁI NỔI (CHỈ HIỂN THỊ TỐI ĐA 1 BANNER TRÊN ĐÁY DOCK: copyToast > lynchNotice > hoveredPlayer > isRoaming) === */}
+      {copyToast ? (
         <div
           style={{
             position: 'absolute',
-            top: isFullscreen ? '64px' : '72px',
+            bottom: '70px',
             left: '50%',
             transform: 'translateX(-50%)',
             background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.96) 0%, rgba(5, 150, 105, 0.96) 100%)',
@@ -1256,46 +1258,11 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
           <Check size={18} color="#ffffff" strokeWidth={3} />
           <span>{copyToast}</span>
         </div>
-      )}
-
-      {/* Thông Báo Đi Dạo */}
-      {isRoaming && (
+      ) : lynchNotice ? (
         <div
           style={{
             position: 'absolute',
-            top: isFullscreen ? '64px' : '72px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'rgba(10, 15, 29, 0.92)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid #38bdf8',
-            borderRadius: '20px',
-            padding: '6px 18px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            color: '#f8fafc',
-            fontSize: '0.78rem',
-            fontWeight: 700,
-            pointerEvents: 'none',
-            zIndex: 15,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
-          }}
-        >
-          <span>
-            {lang === 'en'
-              ? '🎮 Free Roam Mode: Use W / A / S / D or Arrow Keys to walk around camp.'
-              : '🎮 Đang đi dạo tự do: Dùng phím W / A / S / D hoặc Phím Mũi Tên để di chuyển.'}
-          </span>
-        </div>
-      )}
-
-      {/* Thông Báo Treo Cổ Ban Ngày */}
-      {lynchNotice && (
-        <div
-          style={{
-            position: 'absolute',
-            top: isFullscreen ? '64px' : '72px',
+            bottom: '70px',
             left: '50%',
             transform: 'translateX(-50%)',
             background: 'rgba(239, 68, 68, 0.95)',
@@ -1307,18 +1274,18 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
             fontWeight: 800,
             zIndex: 25,
             boxShadow: '0 8px 28px rgba(0,0,0,0.7)',
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap',
+            maxWidth: '90vw',
           }}
         >
           {lynchNotice}
         </div>
-      )}
-
-      {/* Desktop Hover Tooltip Người Chơi Trên Ghế */}
-      {hoveredPlayer && !selectedPlayer && (
+      ) : hoveredPlayer && !selectedPlayer ? (
         <div
           style={{
             position: 'absolute',
-            top: isFullscreen ? '64px' : '72px',
+            bottom: '70px',
             left: '50%',
             transform: 'translateX(-50%)',
             background: 'rgba(10, 15, 29, 0.92)',
@@ -1332,6 +1299,8 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
             boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
             pointerEvents: 'none',
             zIndex: 10,
+            whiteSpace: 'nowrap',
+            maxWidth: '90vw',
           }}
         >
           <span style={{ fontSize: '1.1rem' }}>{hoveredPlayer.characterIcon || '🏕️'}</span>
@@ -1353,7 +1322,38 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
               : lang === 'en' ? 'Fallen' : 'Đã Hy Sinh'}
           </span>
         </div>
-      )}
+      ) : isRoaming ? (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '70px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(10, 15, 29, 0.92)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid #38bdf8',
+            borderRadius: '20px',
+            padding: '6px 18px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            color: '#f8fafc',
+            fontSize: '0.78rem',
+            fontWeight: 700,
+            pointerEvents: 'none',
+            zIndex: 15,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+            whiteSpace: 'nowrap',
+            maxWidth: '90vw',
+          }}
+        >
+          <span>
+            {lang === 'en'
+              ? '🚶 Roaming: Tap ground or press WASD to walk'
+              : '🚶 Đang đi dạo: Chạm mặt đất hoặc nhấn WASD để di chuyển'}
+          </span>
+        </div>
+      ) : null}
 
       {/* === THANH HÀNH ĐỘNG CHÍNH (CLEAN BOTTOM ACTION DOCK - TRẠNG THÁI BÌNH THƯỜNG) === */}
       {!isSimultaneousNight && !isDayDiscussion && (

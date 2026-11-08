@@ -1,18 +1,21 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-11-08 21:35 (Asia/Ho_Chi_Minh) — Sprint 31: Khớp Xương Đứng/Ngồi (`leftLeg`/`rightLeg`), Hoạt Cảnh Đi Bộ (`walk`), Chạm Đất Để Đi (`Tap-to-Walk`) & Unit Test Kiểm Định Tư Thế Tự Động.
-- **Mục tiêu**: **Sửa triệt để lỗi nhân vật 3D vẫn giữ tư thế ngồi khoanh chân khi bật chế độ Đi Dạo (`isRoaming`), bổ sung khớp xương hông (`leftLeg`/`rightLeg`), trạng thái đứng thẳng (`setStanding(true)`), hoạt cảnh đánh chân/tay khi bước đi (`'walk'`), chạm mặt đất để đi bộ trên điện thoại (`Tap-to-Walk`), và viết Unit Test kiểm định tư thế tự động [COMPLETED]**.
+- **Thời gian cập nhật**: 2026-11-08 22:02 (Asia/Ho_Chi_Minh) — Sprint 32: Chống Mũ/Tai Che Bảng Tên 3D (`getTopClearanceY` + `depthTest: false`), Raycast Chạm Trực Tiếp Nhân Vật 3D, Tránh Vật Cản Đống Lửa & Sửa Stale Closure Bỏ Phiếu/Khóa Chiêu.
+- **Mục tiêu**: **Sửa triệt để lỗi các nhân vật đội mũ (Phù Thủy, Nón Lá, Cao Bồi, Vương Miện) hoặc có tai Sói/Hồ Ly che mất bảng tên 3D trên đầu, đồng thời sửa 4 lỗi tương tác 3D & HUD liên quan [COMPLETED]**.
 - **Kết quả thực hiện (Thực thi qua Sub-Agent `flash` với Disjoint File Lease)**:
-  1. **Khớp Xương Chân & Tư Thế Đứng/Ngồi (`src/components/arena3d/WolfMeshBuilder.ts`)**:
-     - Tách `leftLeg` và `rightLeg` thành `THREE.Group` có khớp xoay tại hông (`y = 0.08`), cho phép chuyển đổi mượt giữa tư thế ngồi trên khúc gỗ (`setStanding(false)`, gập chân `-Math.PI / 2.2`) và tư thế đứng thẳng (`setStanding(true)`, duỗi chân `rotation.x = 0`, nâng thân `bodyGroup.position.y = 0.22` để đế giày chạm đúng mặt đất `y = 0`).
-     - Bổ sung hoạt cảnh `'walk'` đánh chân trái/phải ngược chiều nhau (`±Math.sin(walkCycle) * 0.65`), đánh tay trái/phải đối xứng (`∓Math.sin(walkCycle) * 0.5`) kèm nhịp nhún thân người.
-     - Áp đặt chốt chặn bất biến (Invariant Guard): khi chạy `'walk'`, nếu `!this.isStanding` thì tự động ép `this.setStanding(true)` — đảm bảo nhân vật **không bao giờ** trượt đi trong tư thế ngồi.
-  2. **Đồng Bộ Chế Độ Đi Dạo & Chạm Đất Để Đi Trên Mobile (`src/components/arena3d/CampfireScene.ts`, `src/components/arena3d/Wardrobe3DModal.tsx`)**:
-     - Khi bật `setRoaming(true)`, nhân vật lập tức đứng dậy (`setStanding(true)`), bước xuống mặt đất (`y = 0.05`) và khóa không cho `updateSeatsState()` ghi đè lại tư thế ngồi ngủ (`'slumber'`) khi đang đi dạo.
-     - Hỗ trợ cả phím `WASD` / Mũi tên lẫn **Chạm/Click vào mặt đất (`Tap-to-Walk`)** để nhân vật tự xoay hướng và bước đi (`'walk'`) tới điểm chạm trên điện thoại, sau đó dừng lại ở tư thế đứng thở (`'idle'`).
-     - Thêm nút thử nghiệm hoạt cảnh **"🚶 Đi Bộ"** ngay trong Tủ Đồ 3D (`Wardrobe3DModal.tsx`).
-  3. **Cơ Chế Kiểm Định Tư Thế Tự Động (`tests/sprint25Wolf3DArena.test.mjs`)**:
-     - Bổ sung bài test tự động `'Sprint 31 - 3D Locomotion QA: Character must stand up before walking and swing legs/arms in opposition'` kiểm tra trực tiếp góc khớp chân khi ngồi vs đứng, góc sải chân trái/phải ngược pha trong chu kỳ `'walk'`, và đảm bảo nhân vật không thể giữ tư thế ngồi khi di chuyển.
+  1. **Tỷ Lệ Mũ Ôm Đầu & Độ Cao Bảng Tên Động (`src/components/arena3d/WolfMeshBuilder.ts`)**:
+     - Hạ khớp `hatSlot.position.set(0, 0.24, 0)` (thay vì `0.34`) để mũ ôm khít đầu Chibi, tinh chỉnh lại kích thước `WITCH`, `CONICAL_HAT`, `COWBOY`, `CROWN`, `BANDANA` cân đối và không bị Z-fighting với mái tóc.
+     - Khi nhân vật `WOLF_BLOOD` hoặc `KITSUNE_FOX` đội mũ rộng vành (`CONICAL_HAT`, `WITCH`, `COWBOY`), hai tai tự động nghiêng nhẹ ra ngoài vành mũ (`rotation.z = ±0.58`) thay vì đâm xuyên qua chóp mũ.
+     - Bổ sung hàm `public getTopClearanceY(animOffset = 0)` tự động tính chiều cao đỉnh mũ/tai thực tế theo từng trang phục + tư thế đứng/ngồi + nhịp nhún hoạt cảnh (`idle`, `howl`, `walk`, `slumber`), đảm bảo cạnh dưới bảng tên luôn cao hơn đỉnh mũ ít nhất `0.12` đơn vị.
+     - Cấu hình `SpriteMaterial` của bảng tên với `depthTest: false`, `depthWrite: false`, `renderOrder = 999` để không bao giờ bị chóp mũ hay vật thể 3D cắt ngang.
+  2. **Raycast Bấm Trực Tiếp Lên Người Nhân Vật 3D & Tránh Đống Lửa (`src/components/arena3d/CampfireScene.ts`)**:
+     - Gắn `userData = { seatNumber }` lên `char.root` và bổ sung `getSeatFromIntersects()` duyệt ngược cây cha (`.parent`) để người chơi bấm/chạm vào bất kỳ bộ phận nào của nhân vật 3D (đầu, thân, mũ, tay chân hoặc khúc gỗ) đều chọn được ghế đó.
+     - Bổ sung `applyCampfireObstaclePushback()` quanh 4 đống lửa (`[0,0]`, `[-16,-14]`, `[16,-14]`, `[0,-24]`, bán kính `1.35`) để nhân vật đi dạo tự động lách qua đống lửa thay vì đi xuyên qua ngọn lửa.
+  3. **Sửa Stale Closure Click 3D & Gộp Banner HUD (`src/components/arena3d/CampfireArena3DView.tsx`)**:
+     - Dùng `handleSeatInteractionRef` để callback `scene.setOnSeatClick` luôn đọc đúng state mới nhất khi đang trong pha Đêm Đồng Thời 25s hoặc Bỏ Phiếu Ban Ngày.
+     - Chuyển các banner thông báo trạng thái (`copyToast`, `lynchNotice`, `hoveredPlayer`, `isRoaming`) xuống `bottom: 70px` và chỉ hiển thị 1 banner ưu tiên cao nhất tại một thời điểm, chấm dứt việc đè lên thanh chọn Lều góc trái trên Mobile.
+  4. **Unit Test Kiểm Định Chiều Cao Mũ vs Bảng Tên & Raycast Nhân Vật (`tests/sprint25Wolf3DArena.test.mjs`)**:
+     - Bổ sung 2 bài test tự động mới kiểm tra `THREE.Box3().setFromObject(char.headGroup)` cho toàn bộ 6 loại mũ × 3 chủng tộc ở cả tư thế ngồi lẫn đứng đi bộ, và kiểm tra raycast chạm thân/đầu nhân vật trả về đúng `seatNumber`.
 - **Nhánh làm việc**: `feature/ma-soi-online` & `main`.
 - **Mô hình vận hành**: Game Studio Hierarchy (PO → PM → Flash Sub-Agent → QA Verification → Continuous Deploy).
 
@@ -21,11 +24,11 @@
 ## 1. Kết Quả Kiểm Thử Toàn Diện (System Health & Pipeline Verification)
 - **Lint**: `oxlint` PASSED (0 errors).
 - **AI Skill Verification**: 78/78 skills PASSED 100%.
-- **Unit & Integration Test Suite**: **21 Test Suites PASSED 100%** (81/81 test cases, bao gồm test kiểm định khớp xương & tư thế đi bộ mới).
+- **Unit & Integration Test Suite**: **21 Test Suites PASSED 100%** (83/83 test cases).
 - **Production Build**: `tsc -b && vite build` PASSED 100% (0 warnings).
 - **Continuous Deploy**: Tự động commit & push lên `feature/ma-soi-online` và `main` theo quy tắc người dùng đã phê duyệt.
 
 ---
 
 ## 2. Hành Động Tiếp Theo Của PM (Single Next Action)
-- Mời người dùng kiểm tra cơ chế đứng dậy & bước đi (`WASD` hoặc chạm mặt đất trên điện thoại) tại khu trại 3D.
+- Mời người dùng kiểm tra bảng tên 3D trên đầu các nhân vật đội mũ và thao tác chạm trực tiếp vào nhân vật 3D trên điện thoại/máy tính.

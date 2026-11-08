@@ -390,6 +390,7 @@ export class CampfireScene {
       char.root.position.set(x, 0.38, z);
       // Quay mặt về phía đống lửa trung tâm (0, 0, 0)
       char.root.rotation.y = angle + Math.PI;
+      char.root.userData = { seatNumber: seat };
       char.setNameplate(`Người Chơi ${seat}`, seat, true);
       this.scene.add(char.root);
       this.characters.set(seat, char);
@@ -529,6 +530,44 @@ export class CampfireScene {
     }
   }
 
+  // === XỬ LÝ RAYCAST VA CHẠM GHẾ VÀ NHÂN VẬT ===
+  private getSeatFromIntersects(intersects: THREE.Intersection[]): number | null {
+    for (const hit of intersects) {
+      if (hit.object instanceof THREE.Sprite || hit.object.type === 'Sprite') {
+        continue;
+      }
+      let obj: THREE.Object3D | null = hit.object;
+      while (obj) {
+        if (typeof obj.userData?.seatNumber === 'number') {
+          return obj.userData.seatNumber;
+        }
+        obj = obj.parent;
+      }
+    }
+    return null;
+  }
+
+  // === ĐẨY LÙI TRÁNH ĐỐM LỬA TRẠI (CAMPFIRE OBSTACLE PUSHBACK) ===
+  private applyCampfireObstaclePushback(): void {
+    const campfireCenters: [number, number][] = [
+      [0, 0],
+      [-16, -14],
+      [16, -14],
+      [0, -24],
+    ];
+    const minCampfireDist = 1.35;
+    for (const [cfX, cfZ] of campfireCenters) {
+      const dX = this.roamPosition.x - cfX;
+      const dZ = this.roamPosition.z - cfZ;
+      const dist = Math.hypot(dX, dZ);
+      if (dist < minCampfireDist && dist > 0.0001) {
+        const push = minCampfireDist - dist;
+        this.roamPosition.x += (dX / dist) * push;
+        this.roamPosition.z += (dZ / dist) * push;
+      }
+    }
+  }
+
   // === ĐIỀU KHIỂN & TƯƠNG TÁC (INTERACTIONS) ===
   private initInteractions(canvas: HTMLCanvasElement): void {
     this.canvasElement = canvas;
@@ -594,13 +633,15 @@ export class CampfireScene {
           this.roamTargetPos = new THREE.Vector3(clampedX, 0.05, clampedZ);
         }
       } else {
-        // Chế độ Quản Trò / Đấu Trường: Click chọn ghế người chơi
-        const intersects = raycaster.intersectObjects(this.seatMeshes);
-        if (intersects.length > 0) {
-          const clickedSeat = intersects[0].object.userData.seatNumber;
-          if (clickedSeat && this.onSeatClickCallback) {
-            this.onSeatClickCallback(clickedSeat);
-          }
+        // Chế độ Quản Trò / Đấu Trường: Click chọn ghế hoặc thân nhân vật
+        const targets = [
+          ...this.seatMeshes,
+          ...Array.from(this.characters.values()).map((c) => c.root),
+        ];
+        const intersects = raycaster.intersectObjects(targets, true);
+        const clickedSeat = this.getSeatFromIntersects(intersects);
+        if (clickedSeat !== null && this.onSeatClickCallback) {
+          this.onSeatClickCallback(clickedSeat);
         }
       }
     };
@@ -613,7 +654,7 @@ export class CampfireScene {
       this.updateCameraPosition();
     };
 
-    // Rê chuột hover ghế
+    // Rê chuột hover ghế hoặc nhân vật
     const onMouseMoveHover = (e: MouseEvent) => {
       if (this.isDragging) return;
       const rect = canvas.getBoundingClientRect();
@@ -622,13 +663,17 @@ export class CampfireScene {
 
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), this.camera);
-      const intersects = raycaster.intersectObjects(this.seatMeshes);
+      const targets = [
+        ...this.seatMeshes,
+        ...Array.from(this.characters.values()).map((c) => c.root),
+      ];
+      const intersects = raycaster.intersectObjects(targets, true);
+      const hoveredSeat = this.getSeatFromIntersects(intersects);
 
-      if (intersects.length > 0) {
-        const seat = intersects[0].object.userData.seatNumber as number;
+      if (hoveredSeat !== null) {
         canvas.style.cursor = 'pointer';
-        this.setHoveredSeat(seat);
-        if (this.onSeatHoverCallback) this.onSeatHoverCallback(seat);
+        this.setHoveredSeat(hoveredSeat);
+        if (this.onSeatHoverCallback) this.onSeatHoverCallback(hoveredSeat);
       } else {
         canvas.style.cursor = 'grab';
         this.setHoveredSeat(null);
@@ -786,6 +831,8 @@ export class CampfireScene {
     seats.forEach((info) => {
       const char = this.characters.get(info.seatNumber);
       if (!char) return;
+
+      char.root.userData = { seatNumber: info.seatNumber };
 
       // Cập nhật trang phục nếu có
       if (info.outfit) {
@@ -1039,6 +1086,9 @@ export class CampfireScene {
           player1.setAnimation('idle');
         }
       }
+
+      // Áp dụng lực đẩy lùi tránh đốm lửa trại (Obstacle Avoidance around Campfire Pits)
+      this.applyCampfireObstaclePushback();
 
       // Cập nhật vị trí nhân vật người chơi #1
       if (player1) {
