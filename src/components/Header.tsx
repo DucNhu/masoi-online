@@ -14,6 +14,8 @@ import {
 import { GamePhase } from '../types/game';
 import { ConfirmModal } from './ConfirmModal';
 import { BRAND_ASSETS } from '../constants/assets';
+import { getCurrentLanguageEntry, detectBrowserLanguage, LanguageEntry } from '../utils/i18nCatalog';
+import { LanguageSelectorModal } from './LanguageSelectorModal';
 
 export interface HeaderProps {
   round: number;
@@ -52,10 +54,14 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-  // i18n Language State ('vi' | 'en')
-  const [lang, setLang] = useState<'vi' | 'en'>(() => {
-    return (localStorage.getItem('ma_soi_lang') as 'vi' | 'en') || 'vi';
+  // i18n Language & Locale State (Tự động phát hiện theo trình duyệt & hỗ trợ 128+ quốc gia)
+  const [currentLocale, setCurrentLocale] = useState<LanguageEntry>(() => {
+    return getCurrentLanguageEntry();
   });
+  const [isLangModalOpen, setIsLangModalOpen] = useState(false);
+
+  // Helper tương thích ngược cho các chuỗi hiển thị 'vi' | 'en'
+  const lang = currentLocale.code.startsWith('vi') ? 'vi' : 'en';
 
   // Player Profile State (Name & Coins)
   const [playerName, setPlayerName] = useState<string>(() => {
@@ -67,10 +73,11 @@ export const Header: React.FC<HeaderProps> = ({
 
   // Event Listeners for language change & profile updates
   useEffect(() => {
-    const handleLangChange = (e: Event) => {
-      const customEvt = e as CustomEvent<string>;
-      const newLang = (customEvt.detail || localStorage.getItem('ma_soi_lang') || 'vi') as 'vi' | 'en';
-      setLang(newLang === 'en' ? 'en' : 'vi');
+    // Đảm bảo sync locale mới nhất
+    setCurrentLocale(getCurrentLanguageEntry());
+
+    const handleLocaleChange = () => {
+      setCurrentLocale(getCurrentLanguageEntry());
     };
 
     const handleProfileUpdate = () => {
@@ -78,8 +85,9 @@ export const Header: React.FC<HeaderProps> = ({
       setPlayerCoins(localStorage.getItem('ma_soi_player_coins') || '1500');
     };
 
-    window.addEventListener('ma-soi-lang-change', handleLangChange);
-    window.addEventListener('storage', handleLangChange);
+    window.addEventListener('ma-soi-locale-change', handleLocaleChange);
+    window.addEventListener('ma-soi-lang-change', handleLocaleChange);
+    window.addEventListener('storage', handleLocaleChange);
     window.addEventListener('storage', handleProfileUpdate);
     window.addEventListener('ma-soi-profile-update', handleProfileUpdate);
 
@@ -87,20 +95,15 @@ export const Header: React.FC<HeaderProps> = ({
     const interval = setInterval(handleProfileUpdate, 2500);
 
     return () => {
-      window.removeEventListener('ma-soi-lang-change', handleLangChange);
-      window.removeEventListener('storage', handleLangChange);
+      window.removeEventListener('ma-soi-locale-change', handleLocaleChange);
+      window.removeEventListener('ma-soi-lang-change', handleLocaleChange);
+      window.removeEventListener('storage', handleLocaleChange);
       window.removeEventListener('storage', handleProfileUpdate);
       window.removeEventListener('ma-soi-profile-update', handleProfileUpdate);
       clearInterval(interval);
     };
   }, []);
 
-  const handleToggleLang = () => {
-    const nextLang = lang === 'vi' ? 'en' : 'vi';
-    setLang(nextLang);
-    localStorage.setItem('ma_soi_lang', nextLang);
-    window.dispatchEvent(new CustomEvent('ma-soi-lang-change', { detail: nextLang }));
-  };
 
   const isNight = phase.startsWith('NIGHT');
 
@@ -155,7 +158,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-      <header className="floating-top-gamebar portal-floating-bar top-header">
+      <header className="floating-top-gamebar portal-floating-bar">
         {/* Cụm Trái: Brand Icon & Title */}
         <div
           className="gamebar-brand-cluster has-tooltip tooltip-bottom"
@@ -192,9 +195,9 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Cụm Giữa: Segmented Switcher gọn nhẹ — chỉ 4 mục cốt lõi */}
+        {/* Cụm Giữa: Segmented Switcher gọn nhẹ — chỉ 4 mục cốt lõi (Không lặp emoji) */}
         <nav className="gamebar-nav-pills" aria-label="Game Navigation">
-          {/* Mục 1: ⛺ Trại 3D */}
+          {/* Mục 1: Trại 3D */}
           <button
             type="button"
             onClick={onNavigateTo3DCamp}
@@ -206,11 +209,11 @@ export const Header: React.FC<HeaderProps> = ({
             }
           >
             <Tent size={15} color={is3DCampActive ? '#facc15' : '#818cf8'} />
-            <span className="nav-text-desktop">{lang === 'vi' ? '⛺ Trại 3D' : '⛺ 3D Camp'}</span>
+            <span className="nav-text-desktop">{lang === 'vi' ? 'Trại 3D' : '3D Camp'}</span>
             <span className="nav-text-mobile">{lang === 'vi' ? 'Trại' : 'Camp'}</span>
           </button>
 
-          {/* Mục 2: 🌐 Online */}
+          {/* Mục 2: Online */}
           <button
             type="button"
             onClick={onNavigateToOnline}
@@ -222,11 +225,11 @@ export const Header: React.FC<HeaderProps> = ({
             }
           >
             <Globe size={15} color={isOnlineActive ? '#38bdf8' : '#94a3b8'} />
-            <span className="nav-text-desktop">🌐 Online</span>
+            <span className="nav-text-desktop">Online</span>
             <span className="nav-text-mobile">Online</span>
           </button>
 
-          {/* Mục 3: 🃏 Quản Trò */}
+          {/* Mục 3: Quản Trò */}
           <button
             type="button"
             onClick={onNavigateToGameMaster}
@@ -238,11 +241,11 @@ export const Header: React.FC<HeaderProps> = ({
             }
           >
             <Gamepad2 size={15} color={isGameMasterActive ? '#c084fc' : '#94a3b8'} />
-            <span className="nav-text-desktop">{lang === 'vi' ? '🃏 Quản Trò' : '🃏 Master'}</span>
+            <span className="nav-text-desktop">{lang === 'vi' ? 'Quản Trò' : 'Master'}</span>
             <span className="nav-text-mobile">{lang === 'vi' ? 'Quản Trò' : 'Master'}</span>
           </button>
 
-          {/* Mục 4: 📖 Bí Kíp */}
+          {/* Mục 4: Bí Kíp / Nhật Ký */}
           <button
             type="button"
             onClick={onNavigateToLoreOrLogs}
@@ -260,8 +263,8 @@ export const Header: React.FC<HeaderProps> = ({
             )}
             <span className="nav-text-desktop">
               {activeTab === 'LOGS'
-                ? (lang === 'vi' ? '📜 Nhật Ký' : '📜 Logs')
-                : (lang === 'vi' ? '📖 Bí Kíp' : '📖 Lore')}
+                ? (lang === 'vi' ? 'Nhật Ký' : 'Logs')
+                : (lang === 'vi' ? 'Bí Kíp' : 'Lore')}
             </span>
             <span className="nav-text-mobile">
               {activeTab === 'LOGS'
@@ -295,18 +298,19 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </button>
 
-          {/* Nút 2: Ngôn Ngữ (VI / EN) tròn/pill nhỏ 32px */}
+          {/* Nút 2: Ngôn Ngữ (Cờ + Mã Quốc Gia) -> Mở Modal 128 Quốc Gia */}
           <button
             type="button"
-            onClick={handleToggleLang}
+            onClick={() => setIsLangModalOpen(true)}
             className="gamebar-lang-btn has-tooltip tooltip-bottom"
             data-tooltip={
               lang === 'vi'
-                ? 'Chuyển sang Tiếng Anh (Switch to English)'
-                : 'Chuyển sang Tiếng Việt (Switch to Vietnamese)'
+                ? `Ngôn ngữ: ${currentLocale.nativeName} (${currentLocale.country}) • Bấm để chọn 128+ quốc gia`
+                : `Language: ${currentLocale.name} (${currentLocale.country}) • Click to select 128+ countries`
             }
           >
-            <span>{lang === 'vi' ? 'VI' : 'EN'}</span>
+            <span style={{ fontSize: '0.92rem' }}>{currentLocale.flag}</span>
+            <span style={{ fontWeight: 800 }}>{currentLocale.code.split('-')[0].toUpperCase()}</span>
           </button>
 
           {/* Nút 3: Chỉ hiện khi đang ở chế độ 🃏 Quản Trò (ẩn ở ⛺ Trại 3D) */}
@@ -347,6 +351,12 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
       </header>
+
+      {/* Modal Chọn 128+ Quốc Gia & Ngôn Ngữ */}
+      <LanguageSelectorModal
+        isOpen={isLangModalOpen}
+        onClose={() => setIsLangModalOpen(false)}
+      />
 
       {/* Reset Confirmation Modal */}
       <ConfirmModal

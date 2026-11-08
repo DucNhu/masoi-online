@@ -871,13 +871,14 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
 
       {/* === GÓC TRÁI TRÊN: 1 PILL TÚP LỀU DROPDOWN + MỜI BẠN + ĐI DẠO === */}
       <div
+        className="hud-pill-bar"
         style={{
           position: 'absolute',
-          top: isFullscreen ? '14px' : '68px',
-          left: '12px',
+          top: isFullscreen ? '14px' : '72px',
+          left: '16px',
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
+          gap: '4px',
           zIndex: 25,
           pointerEvents: 'auto',
         }}
@@ -886,21 +887,20 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
         <div style={{ position: 'relative' }}>
           <button
             onClick={() => setIsTentMenuOpen((prev) => !prev)}
-            className="btn btn-ghost has-tooltip tooltip-bottom"
+            className="hud-btn has-tooltip tooltip-bottom"
             data-tooltip={lang === 'en' ? 'Click to change Camp Tent' : 'Nhấp để chọn đổi Túp Lều'}
             style={{
-              background: 'rgba(10, 15, 29, 0.90)',
-              backdropFilter: 'blur(16px)',
-              border: `1.5px solid ${currentTent.themeColor || 'rgba(255,255,255,0.15)'}`,
-              borderRadius: '16px',
-              padding: '6px 12px',
+              background: 'rgba(255, 255, 255, 0.08)',
+              border: `1.5px solid ${currentTent.themeColor || 'rgba(255,255,255,0.2)'}`,
+              height: '34px',
+              minHeight: '34px',
+              padding: '0 10px',
               display: 'flex',
               alignItems: 'center',
-              gap: '7px',
+              gap: '6px',
               cursor: 'pointer',
               color: '#f8fafc',
-              boxShadow: '0 4px 18px rgba(0,0,0,0.6)',
-              transition: 'all 0.18s ease',
+              boxShadow: `0 0 10px ${currentTent.themeColor}33`,
             }}
           >
             <span style={{ fontSize: '0.95rem' }}>{currentTent.banner}</span>
@@ -1031,57 +1031,44 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
           )}
         </div>
 
+        {/* Vạch mảnh 1px phân tách */}
+        <div style={{ width: '1px', height: '18px', background: 'rgba(255, 255, 255, 0.14)', margin: '0 2px' }} />
+
         {/* Nút 🔗 Mời Bạn Vào Lều (Sao Chép Link) */}
         <button
           onClick={handleShareTentLink}
-          className="btn btn-ghost btn-icon-only has-tooltip tooltip-bottom"
+          className="hud-icon-btn has-tooltip tooltip-bottom"
           data-tooltip={
             lang === 'en'
               ? `Copy invite link for ${currentTent.nameEn} (?tent=${activeTentId})`
               : `Sao chép link mời bạn bè vào ${currentTent.name} (?tent=${activeTentId})`
           }
           style={{
-            width: '34px',
-            height: '34px',
-            borderRadius: '12px',
-            background: 'rgba(10, 15, 29, 0.90)',
-            border: '1.5px solid rgba(56, 189, 248, 0.4)',
+            border: '1px solid rgba(56, 189, 248, 0.4)',
             color: '#38bdf8',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            boxShadow: '0 4px 14px rgba(0,0,0,0.5)',
-            transition: 'all 0.15s ease',
           }}
         >
           <Share2 size={15} color="#38bdf8" />
         </button>
 
+        {/* Vạch mảnh 1px phân tách */}
+        <div style={{ width: '1px', height: '18px', background: 'rgba(255, 255, 255, 0.14)', margin: '0 2px' }} />
+
         {/* Nút 🚶 Đứng Lên Đi Dạo WASD / Ngồi Xuống */}
         <button
           onClick={toggleRoamMode}
-          className="btn btn-ghost has-tooltip tooltip-bottom"
+          className="hud-btn has-tooltip tooltip-bottom"
           data-tooltip={
             isRoaming
               ? lang === 'en' ? 'Sit back by the campfire' : 'Ngồi xuống quanh đống lửa'
               : lang === 'en' ? 'Stand up & walk around camp freely (WASD)' : 'Đứng dậy đi bộ khám phá khu cắm trại (WASD)'
           }
           style={{
-            height: '34px',
-            padding: '0 10px',
-            borderRadius: '12px',
             background: isRoaming
               ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-              : 'rgba(10, 15, 29, 0.90)',
-            border: `1.5px solid ${isRoaming ? '#34d399' : 'rgba(255, 255, 255, 0.16)'}`,
-            color: '#f8fafc',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            cursor: 'pointer',
-            boxShadow: isRoaming ? '0 0 16px rgba(16, 185, 129, 0.5)' : '0 4px 14px rgba(0,0,0,0.5)',
-            transition: 'all 0.15s ease',
+              : 'rgba(255, 255, 255, 0.08)',
+            border: `1px solid ${isRoaming ? '#34d399' : 'rgba(255, 255, 255, 0.16)'}`,
+            boxShadow: isRoaming ? '0 0 12px rgba(16, 185, 129, 0.5)' : 'none',
           }}
         >
           <Footprints size={15} color={isRoaming ? '#ffffff' : '#38bdf8'} />
@@ -1093,25 +1080,26 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
         </button>
       </div>
 
-      {/* === CẠNH PHẢI: THANH CÔNG CỤ DỌC MẢNH (VERTICAL COMPACT TOOLBAR - 38px) === */}
+      {/* === CẠNH PHẢI: THANH CÔNG CỤ DỌC MẢNH (VERTICAL COMPACT TOOLBAR - 44px) === */}
       <div
         style={{
           position: 'absolute',
-          top: isFullscreen ? '14px' : '68px',
-          right: '12px',
+          top: isFullscreen ? '14px' : '72px',
+          right: '16px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           gap: '6px',
           background: 'rgba(10, 15, 29, 0.88)',
           backdropFilter: 'blur(16px)',
-          border: '1.5px solid rgba(255, 255, 255, 0.12)',
+          WebkitBackdropFilter: 'blur(16px)',
+          border: '1.5px solid rgba(255, 255, 255, 0.14)',
           borderRadius: '16px',
           padding: '4px',
           boxShadow: '0 8px 30px rgba(0,0,0,0.6)',
           zIndex: 25,
           pointerEvents: 'auto',
-          width: '38px',
+          width: '44px',
           boxSizing: 'border-box',
         }}
       >
@@ -1121,31 +1109,28 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
             setIsWardrobeOpen(true);
             NativeBridge.hapticImpact('medium');
           }}
-          className="btn btn-ghost btn-icon-only has-tooltip tooltip-left"
+          className="hud-icon-btn has-tooltip tooltip-left"
           data-tooltip={lang === 'en' ? '✨ 3D Wardrobe & Character Studio' : '✨ Tủ Đồ & Thử Mẫu Nhân Vật 3D'}
           style={{
             width: '36px',
             height: '36px',
+            minWidth: '36px',
+            minHeight: '36px',
             borderRadius: '12px',
-            padding: 0,
             background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(99, 102, 241, 0.25) 100%)',
             border: '1.5px solid #c084fc',
             boxShadow: '0 0 12px rgba(192, 132, 252, 0.4)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
           }}
         >
           <Sparkles size={16} color="#e9d5ff" />
         </button>
 
-        <div style={{ width: '22px', height: '1px', background: 'rgba(255,255,255,0.12)', margin: '1px 0' }} />
+        <div style={{ width: '24px', height: '1px', background: 'rgba(255,255,255,0.12)', margin: '1px 0' }} />
 
         {/* Nút 🌙 / ☀️ Đổi Ngày / Đêm */}
         <button
           onClick={toggleNightDay}
-          className="btn btn-ghost btn-icon-only has-tooltip tooltip-left"
+          className="hud-icon-btn has-tooltip tooltip-left"
           data-tooltip={
             isNightMode
               ? (lang === 'en' ? '☀️ Switch to Day [Key N]' : '☀️ Chuyển sang Ban Ngày [Phím N]')
@@ -1154,12 +1139,9 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
           style={{
             width: '36px',
             height: '36px',
+            minWidth: '36px',
+            minHeight: '36px',
             borderRadius: '10px',
-            padding: 0,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
           }}
         >
           {isNightMode ? <Sun size={16} color="#facc15" /> : <Moon size={16} color="#a5b4fc" />}
@@ -1171,17 +1153,14 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
             sceneRef.current?.zoom(-1.2);
             NativeBridge.hapticImpact('light');
           }}
-          className="btn btn-ghost btn-icon-only has-tooltip tooltip-left"
+          className="hud-icon-btn has-tooltip tooltip-left"
           data-tooltip={lang === 'en' ? 'Zoom in (Scroll up / Key W)' : 'Phóng to (Cuộn chuột lên / Phím W)'}
           style={{
             width: '36px',
             height: '36px',
+            minWidth: '36px',
+            minHeight: '36px',
             borderRadius: '10px',
-            padding: 0,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
           }}
         >
           <ZoomIn size={16} color="#cbd5e1" />
@@ -1193,17 +1172,14 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
             sceneRef.current?.zoom(1.2);
             NativeBridge.hapticImpact('light');
           }}
-          className="btn btn-ghost btn-icon-only has-tooltip tooltip-left"
+          className="hud-icon-btn has-tooltip tooltip-left"
           data-tooltip={lang === 'en' ? 'Zoom out (Scroll down / Key S)' : 'Thu nhỏ (Cuộn chuột xuống / Phím S)'}
           style={{
             width: '36px',
             height: '36px',
+            minWidth: '36px',
+            minHeight: '36px',
             borderRadius: '10px',
-            padding: 0,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
           }}
         >
           <ZoomOut size={16} color="#cbd5e1" />
@@ -1215,17 +1191,14 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
             sceneRef.current?.resetCamera();
             NativeBridge.hapticImpact('light');
           }}
-          className="btn btn-ghost btn-icon-only has-tooltip tooltip-left"
+          className="hud-icon-btn has-tooltip tooltip-left"
           data-tooltip={lang === 'en' ? 'Reset Camera [Key R]' : 'Đặt lại góc nhìn [Phím R]'}
           style={{
             width: '36px',
             height: '36px',
+            minWidth: '36px',
+            minHeight: '36px',
             borderRadius: '10px',
-            padding: 0,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
           }}
         >
           <RotateCcw size={16} color="#cbd5e1" />
@@ -1234,7 +1207,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
         {/* Nút ⛶ Toàn Màn Hình */}
         <button
           onClick={toggleFullscreen}
-          className="btn btn-ghost btn-icon-only has-tooltip tooltip-left"
+          className="hud-icon-btn has-tooltip tooltip-left"
           data-tooltip={
             isFullscreen
               ? (lang === 'en' ? 'Exit Fullscreen [Key F]' : 'Thu nhỏ cửa sổ [Phím F]')
@@ -1243,13 +1216,10 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
           style={{
             width: '36px',
             height: '36px',
+            minWidth: '36px',
+            minHeight: '36px',
             borderRadius: '10px',
-            padding: 0,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: isFullscreen ? 'rgba(99, 102, 241, 0.3)' : 'transparent',
+            background: isFullscreen ? 'rgba(99, 102, 241, 0.3)' : 'rgba(255, 255, 255, 0.05)',
           }}
         >
           {isFullscreen ? <Minimize2 size={16} color="#818cf8" /> : <Maximize2 size={16} color="#cbd5e1" />}
@@ -1388,19 +1358,17 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
       {/* === THANH HÀNH ĐỘNG CHÍNH (CLEAN BOTTOM ACTION DOCK - TRẠNG THÁI BÌNH THƯỜNG) === */}
       {!isSimultaneousNight && !isDayDiscussion && (
         <div
+          className="hud-pill-bar"
           style={{
             position: 'absolute',
-            bottom: '16px',
+            bottom: '20px',
             left: '50%',
             transform: 'translateX(-50%)',
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
-            background: 'rgba(10, 15, 29, 0.92)',
-            backdropFilter: 'blur(16px)',
-            border: '1.5px solid rgba(129, 140, 248, 0.35)',
-            borderRadius: '20px',
-            padding: '6px 14px',
+            gap: '8px',
+            borderRadius: '18px',
+            padding: '6px',
             boxShadow: '0 12px 36px rgba(0,0,0,0.7)',
             zIndex: 25,
             pointerEvents: 'auto',
@@ -1410,26 +1378,30 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
           {/* Nút chính: Bắt Đầu Đêm Đồng Thời (25s) */}
           <button
             onClick={startSimultaneousNight}
-            className="btn btn-ghost has-tooltip"
+            className="has-tooltip"
             data-tooltip={
               lang === 'en'
                 ? 'Start Simultaneous Night: All roles act together in 25s'
                 : 'Bắt đầu Đêm Đồng Thời: Tất cả vai trò hành động cùng lúc trong 25 giây'
             }
             style={{
+              height: '38px',
+              minHeight: '38px',
               background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.95) 0%, rgba(79, 70, 229, 0.95) 100%)',
               border: '1.5px solid rgba(192, 132, 252, 0.6)',
-              borderRadius: '14px',
-              padding: '8px 18px',
+              borderRadius: '12px',
+              padding: '0 16px',
               fontSize: '0.82rem',
               fontWeight: 800,
               color: '#ffffff',
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '8px',
               boxShadow: '0 4px 18px rgba(147, 51, 234, 0.5)',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
+              transition: 'all 0.16s ease',
             }}
           >
             <Moon size={16} color="#fef08a" />
@@ -1442,25 +1414,29 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
               setIsWardrobeOpen(true);
               NativeBridge.hapticImpact('light');
             }}
-            className="btn btn-ghost has-tooltip"
+            className="has-tooltip"
             data-tooltip={lang === 'en' ? 'Open 3D Wardrobe & Character Studio' : 'Mở Tủ Đồ & Đổi Mẫu Nhân Vật 3D'}
             style={{
-              background: 'rgba(30, 41, 59, 0.8)',
-              border: '1px solid rgba(255, 255, 255, 0.16)',
-              borderRadius: '14px',
-              padding: '8px 14px',
+              height: '38px',
+              minHeight: '38px',
+              background: 'rgba(30, 41, 59, 0.85)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '12px',
+              padding: '0 14px',
               fontSize: '0.78rem',
               fontWeight: 800,
               color: '#cbd5e1',
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '6px',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
+              transition: 'all 0.16s ease',
             }}
           >
             <Palette size={15} color="#c084fc" />
-            <span>{lang === 'en' ? '🎭 Wardrobe / Outfit' : '🎭 Đổi Nhân Vật / Tủ Đồ'}</span>
+            <span>{lang === 'en' ? '✨ Wardrobe' : '✨ Đổi Nhân Vật'}</span>
           </button>
         </div>
       )}
@@ -1546,13 +1522,15 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
             {/* Nút Tổng Hợp Ngay */}
             <button
               onClick={resolveSimultaneousNight}
-              className="btn btn-ghost has-tooltip tooltip-bottom"
+              className="hud-btn has-tooltip tooltip-bottom"
               data-tooltip={lang === 'en' ? 'Resolve all actions immediately' : 'Tổng hợp ngay lập tức các hành động'}
               style={{
+                height: '32px',
+                minHeight: '32px',
                 background: 'rgba(239, 68, 68, 0.3)',
                 border: '1px solid #ef4444',
                 borderRadius: '10px',
-                padding: '4px 10px',
+                padding: '0 10px',
                 fontSize: '0.7rem',
                 fontWeight: 800,
                 color: '#fca5a5',
@@ -1596,6 +1574,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
                     width: '26px',
                     height: '26px',
                     minWidth: '26px',
+                    minHeight: '26px',
                     borderRadius: '7px',
                     border: isLocked
                       ? `2px solid ${selectedSkill?.color || '#38bdf8'}`
@@ -1633,13 +1612,14 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
               pointerEvents: 'auto',
               background: 'rgba(10, 15, 30, 0.94)',
               backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
               border: '1.5px solid rgba(129, 140, 248, 0.35)',
               boxShadow: '0 12px 36px rgba(0, 0, 0, 0.85)',
-              borderRadius: '20px',
-              padding: '6px 10px',
+              borderRadius: '18px',
+              padding: '6px 8px',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
+              gap: '8px',
               justifyContent: 'center',
               width: '100%',
               boxSizing: 'border-box',
@@ -1652,21 +1632,23 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
                 <button
                   key={skill.id}
                   onClick={() => handleSelectSkill(skill)}
-                  className="btn btn-ghost has-tooltip"
+                  className="has-tooltip"
                   data-tooltip={`[${skill.hotkey}] ${lang === 'en' ? skill.nameEn : skill.name} • ${lang === 'en' ? skill.actionTextEn : skill.actionText}`}
                   style={{
+                    height: '42px',
+                    minHeight: '42px',
                     background: isSelected
                       ? `linear-gradient(135deg, ${skill.color}40 0%, ${skill.color}75 100%)`
                       : 'rgba(22, 30, 49, 0.7)',
                     border: `1.5px solid ${isSelected ? skill.color : 'rgba(255,255,255,0.1)'}`,
-                    borderRadius: '14px',
-                    padding: '6px 10px',
+                    borderRadius: '12px',
+                    padding: '0 12px',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
                     color: '#f8fafc',
                     cursor: 'pointer',
-                    transform: isSelected ? 'scale(1.03)' : 'scale(1)',
+                    transform: isSelected ? 'scale(1.02)' : 'scale(1)',
                     transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
                     boxShadow: isSelected
                       ? `0 0 16px ${skill.color}66`
@@ -1676,6 +1658,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
                     flex: '1 1 auto',
                     justifyContent: 'center',
                     minWidth: '68px',
+                    boxSizing: 'border-box',
                   }}
                 >
                   {/* Badge Hotkey */}
@@ -1816,12 +1799,14 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
               <button
                 onClick={() => setDawnData(null)}
-                className="btn btn-primary"
+                className="hud-btn"
                 style={{
+                  height: '38px',
+                  minHeight: '38px',
                   background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                   border: 'none',
-                  borderRadius: '14px',
-                  padding: '10px 20px',
+                  borderRadius: '12px',
+                  padding: '0 18px',
                   fontSize: '0.85rem',
                   fontWeight: 900,
                   color: '#ffffff',
@@ -1848,10 +1833,10 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
             backdropFilter: 'blur(14px)',
             border: '1.5px solid rgba(245, 158, 11, 0.4)',
             borderRadius: '20px',
-            padding: '10px 16px',
+            padding: '8px 16px',
             display: 'flex',
             alignItems: 'center',
-            gap: '14px',
+            gap: '12px',
             boxShadow: '0 8px 30px rgba(0,0,0,0.8)',
             zIndex: 25,
             maxWidth: '92%',
@@ -1873,13 +1858,15 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
 
           <button
             onClick={executeLynching}
-            className="btn btn-ghost has-tooltip"
+            className="hud-btn has-tooltip"
             data-tooltip={lang === 'en' ? 'Exile the player with the most votes' : 'Kết án treo cổ người chơi nhận nhiều phiếu bầu nhất'}
             style={{
+              height: '34px',
+              minHeight: '34px',
               background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
               border: 'none',
-              borderRadius: '12px',
-              padding: '6px 14px',
+              borderRadius: '10px',
+              padding: '0 14px',
               fontSize: '0.78rem',
               fontWeight: 800,
               color: '#ffffff',
@@ -1892,13 +1879,15 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
 
           <button
             onClick={startSimultaneousNight}
-            className="btn btn-ghost has-tooltip"
+            className="hud-btn has-tooltip"
             data-tooltip={lang === 'en' ? 'Proceed to next night' : 'Bắt đầu đêm tiếp theo'}
             style={{
+              height: '34px',
+              minHeight: '34px',
               background: 'rgba(99, 102, 241, 0.25)',
               border: '1px solid #818cf8',
-              borderRadius: '12px',
-              padding: '6px 14px',
+              borderRadius: '10px',
+              padding: '0 14px',
               fontSize: '0.78rem',
               fontWeight: 800,
               color: '#c7d2fe',
@@ -1962,8 +1951,8 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
           </div>
           <button
             onClick={() => setSelectedSeat(null)}
-            className="btn btn-ghost"
-            style={{ fontSize: '0.72rem', color: '#94a3b8', padding: '4px 8px' }}
+            className="hud-icon-btn"
+            style={{ width: '24px', height: '24px', minWidth: '24px', minHeight: '24px', fontSize: '0.72rem', color: '#94a3b8', borderRadius: '6px' }}
           >
             ✕
           </button>

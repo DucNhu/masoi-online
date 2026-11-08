@@ -233,7 +233,10 @@ body::before {
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  padding: 0 4px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 3px 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   flex-wrap: nowrap;
 }
 
@@ -340,27 +343,29 @@ body::before {
 }
 
 .gamebar-lang-btn {
-  width: 32px;
   height: 32px;
+  min-height: 32px;
   min-width: 32px;
+  padding: 0 8px;
   border-radius: 8px;
-  font-size: 0.72rem;
+  font-size: 0.76rem;
   font-weight: 800;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 4px;
   cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
   color: #e2e8f0;
   transition: all 0.18s ease;
-  padding: 0;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .gamebar-lang-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.28);
   color: #ffffff;
 }
 
@@ -420,8 +425,8 @@ body::before {
   max-width: 960px;
 }
 
-/* Top App Bar (Legacy Fallback) */
-.top-header {
+/* Top App Bar (Legacy Fallback - only when not floating gamebar) */
+.top-header:not(.floating-top-gamebar) {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -545,6 +550,89 @@ body::before {
 }
 
 /* ========================================================
+   GAME HUD BUTTONS & PILL BARS (CHUẨN HÓA BỐ CỤC KHÔNG BỊ DÍNH CHÙM)
+   ======================================================== */
+.hud-pill-bar {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(10, 14, 26, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  padding: 4px;
+  gap: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+  box-sizing: border-box;
+}
+
+.hud-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 34px;
+  min-height: 34px !important;
+  max-height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.16s ease;
+  box-sizing: border-box;
+  touch-action: manipulation;
+}
+
+.hud-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.hud-btn:active {
+  transform: scale(0.96);
+}
+
+.hud-icon-btn {
+  width: 34px;
+  height: 34px;
+  min-width: 34px !important;
+  min-height: 34px !important;
+  max-width: 34px;
+  max-height: 34px;
+  padding: 0 !important;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  touch-action: manipulation;
+}
+
+.hud-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.hud-icon-btn:active {
+  transform: scale(0.94);
+}
+
+/* ========================================================
    INSTANT HOVER TOOLTIP SYSTEM (.has-tooltip & data-tooltip)
    ======================================================== */
 .has-tooltip {
@@ -659,6 +747,33 @@ body::before {
 .has-tooltip.tooltip-bottom.tooltip-end:hover::before,
 .has-tooltip.tooltip-bottom.tooltip-end:focus-visible::before {
   transform: translateX(0) translateY(0);
+}
+
+/* Tooltip Left-Aligned (cho các nút cạnh phải màn hình) */
+.has-tooltip.tooltip-left::after {
+  left: auto;
+  right: calc(100% + 8px);
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%) translateX(4px);
+}
+
+.has-tooltip.tooltip-left::before {
+  left: auto;
+  right: calc(100% + 3px);
+  top: 50%;
+  bottom: auto;
+  border-width: 5px 0 5px 5px;
+  border-style: solid;
+  border-color: transparent transparent transparent #6366f1;
+  transform: translateY(-50%) translateX(4px);
+}
+
+.has-tooltip.tooltip-left:hover::after,
+.has-tooltip.tooltip-left:focus-visible::after,
+.has-tooltip.tooltip-left:hover::before,
+.has-tooltip.tooltip-left:focus-visible::before {
+  transform: translateY(-50%) translateX(0);
 }
 
 /* Hide tooltips if data-tooltip is absent or empty */
