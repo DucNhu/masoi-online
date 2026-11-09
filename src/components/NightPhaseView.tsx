@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Moon, ArrowRight, Check, Heart, Crosshair } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Moon, ArrowRight, Check, Heart, Crosshair, Volume2, VolumeX, RotateCcw } from 'lucide-react';
 import { GameState, NightStepAction, GamePhase, RoleId } from '../types/game';
 import { ROLE_DEFINITIONS, MODERATOR_SCRIPTS } from '../data/roles';
 import { soundEffects } from '../utils/soundEffects';
+import { narratorVoice, NarratorSoundIntro } from '../utils/narratorVoice';
 import { ConfirmModal } from './ConfirmModal';
 import { ROLE_CARD_IMAGES, PHASE_BACKGROUNDS } from '../constants/assets';
 
@@ -69,6 +70,72 @@ export const NightPhaseView: React.FC<Props> = ({
     return matchedIdx >= 0 ? matchedIdx : 0;
   });
   const currentStep = steps[currentStepIndex];
+
+  // Quản Trò AI: trạng thái và hàm lấy kịch bản thoại
+  const [isVoiceOn, setIsVoiceOn] = useState<boolean>(() => narratorVoice.isVoiceEnabled());
+  const [isSpeaking, setIsSpeaking] = useState<boolean>(() => narratorVoice.isSpeaking());
+
+  const getScriptForStep = React.useCallback((step: NightSubStep): { text: string; soundIntro?: NarratorSoundIntro } => {
+    switch (step) {
+      case 'INTRO':
+        return { text: MODERATOR_SCRIPTS.nightSleep, soundIntro: 'night' };
+      case 'CUPID':
+        return { text: MODERATOR_SCRIPTS.cupidWake };
+      case 'MINION':
+        return { text: MODERATOR_SCRIPTS.minionWake };
+      case 'BODYGUARD':
+        return { text: MODERATOR_SCRIPTS.bodyguardWake };
+      case 'HUNTER':
+        return { text: MODERATOR_SCRIPTS.hunterWake };
+      case 'WEREWOLF':
+        return { text: MODERATOR_SCRIPTS.werewolfWake, soundIntro: 'wolf' };
+      case 'WITCH':
+        return { text: MODERATOR_SCRIPTS.witchWake };
+      case 'SEER':
+        return { text: MODERATOR_SCRIPTS.seerWake };
+      case 'OUTRO':
+        return { text: MODERATOR_SCRIPTS.dayDawn, soundIntro: 'dawn' };
+      default:
+        return { text: '' };
+    }
+  }, []);
+
+  // Lắng nghe thay đổi trạng thái giọng đọc và phụ đề
+  useEffect(() => {
+    const unsubVoice = narratorVoice.subscribeEnabled(setIsVoiceOn);
+    const unsubSub = narratorVoice.subscribeSubtitle((sub) => {
+      setIsSpeaking(Boolean(sub));
+    });
+    return () => {
+      unsubVoice();
+      unsubSub();
+    };
+  }, []);
+
+  // Tự động xướng câu thoại khi chuyển bước đêm nếu bật giọng
+  useEffect(() => {
+    const scriptInfo = getScriptForStep(currentStep);
+    if (scriptInfo.text && narratorVoice.isVoiceEnabled()) {
+      narratorVoice.speak(scriptInfo.text, {
+        soundIntro: scriptInfo.soundIntro,
+        lang: 'vi-VN',
+      });
+    }
+    return () => {
+      narratorVoice.stop();
+    };
+  }, [currentStep, getScriptForStep]);
+
+  const handleRepeatSpeech = () => {
+    const scriptInfo = getScriptForStep(currentStep);
+    if (scriptInfo.text) {
+      soundEffects.triggerHaptic('light');
+      narratorVoice.speak(scriptInfo.text, {
+        soundIntro: scriptInfo.soundIntro,
+        lang: 'vi-VN',
+      });
+    }
+  };
 
   // Đồng bộ phase lên Header khi khởi tạo hoặc thay đổi bước
   React.useEffect(() => {
@@ -160,6 +227,87 @@ export const NightPhaseView: React.FC<Props> = ({
 
   return (
     <div className="has-dock-padding-offline" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {/* Narrator Voice Control Bar */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '8px 14px',
+          background: 'rgba(15, 15, 28, 0.75)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: '14px',
+          border: '1px solid rgba(168, 85, 247, 0.3)',
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div
+            style={{
+              width: '30px',
+              height: '30px',
+              borderRadius: '8px',
+              background: isVoiceOn ? 'rgba(168, 85, 247, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: isVoiceOn ? '#c084fc' : '#94a3b8',
+            }}
+          >
+            {isVoiceOn ? <Volume2 size={16} /> : <VolumeX size={16} />}
+          </div>
+          <div>
+            <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f1f5f9' }}>
+              Quản Trò AI
+            </div>
+            <div style={{ fontSize: '0.68rem', color: isSpeaking ? '#34d399' : (isVoiceOn ? '#c084fc' : '#94a3b8') }}>
+              {isSpeaking ? '● Đang cất tiếng xướng...' : (isVoiceOn ? 'Tự động đọc kịch bản vai trò' : 'Đã tắt giọng đọc')}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {/* Nút Đọc Lời Thoại (Repeat Voice) */}
+          <button
+            onClick={handleRepeatSpeech}
+            className="btn btn-ghost"
+            style={{
+              padding: '6px 10px',
+              fontSize: '0.75rem',
+              borderRadius: '8px',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              background: 'rgba(255, 255, 255, 0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              minHeight: '32px',
+            }}
+            title="Đọc lại câu thoại vai trò này"
+          >
+            <RotateCcw size={13} />
+            <span>Đọc lại</span>
+          </button>
+
+          {/* Nút Bật/Tắt Giọng Quản Trò */}
+          <button
+            onClick={() => {
+              const next = !isVoiceOn;
+              narratorVoice.setVoiceEnabled(next);
+              soundEffects.triggerHaptic('light');
+            }}
+            className={`btn ${isVoiceOn ? 'btn-primary' : 'btn-ghost'}`}
+            style={{
+              padding: '6px 12px',
+              fontSize: '0.75rem',
+              borderRadius: '8px',
+              minHeight: '32px',
+            }}
+          >
+            {isVoiceOn ? 'Tắt Giọng' : 'Bật Giọng'}
+          </button>
+        </div>
+      </div>
+
       {/* Night Progress Pill Bar */}
       <div style={{
         display: 'flex',

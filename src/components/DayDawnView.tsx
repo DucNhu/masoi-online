@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Sun, Skull, Crosshair, ArrowRight, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Sun, Skull, Crosshair, ArrowRight, ShieldCheck, RotateCcw } from 'lucide-react';
 import { GameState } from '../types/game';
 import { ROLE_DEFINITIONS } from '../data/roles';
 import { soundEffects } from '../utils/soundEffects';
+import { narratorVoice } from '../utils/narratorVoice';
 import { ConfirmModal } from './ConfirmModal';
 import { PHASE_BACKGROUNDS, ROLE_CARD_IMAGES } from '../constants/assets';
 
@@ -32,6 +33,27 @@ export const DayDawnView: React.FC<Props> = ({
   const deadPlayers = players.filter(p => overnightDeadIds.includes(p.id));
   const hunterPlayer = players.find(p => p.id === hunterPendingId);
   const alivePlayers = players.filter(p => p.isAlive && !overnightDeadIds.includes(p.id));
+
+  const getDawnAnnouncementText = useCallback(() => {
+    if (deadPlayers.length > 0) {
+      const deadNames = deadPlayers.map(p => `Ghế số ${p.seatNumber}, ${p.name}`).join('; ');
+      return `☀️ Trời đã sáng! Bình minh ngày thứ ${round}. Đêm qua đã có ${deadPlayers.length} người tử nạn: ${deadNames}.`;
+    }
+    return `☀️ Trời đã sáng! Bình minh ngày thứ ${round}. Đêm qua là một đêm bình yên, không có bất kỳ ai phải ngã xuống!`;
+  }, [deadPlayers, round]);
+
+  // Tự động xướng cáo phó ban mai khi màn hình hiển thị
+  useEffect(() => {
+    if (narratorVoice.isVoiceEnabled()) {
+      narratorVoice.speak(getDawnAnnouncementText(), {
+        soundIntro: 'dawn',
+        lang: 'vi-VN',
+      });
+    }
+    return () => {
+      narratorVoice.stop();
+    };
+  }, [getDawnAnnouncementText]);
 
   const handleConfirmHunter = () => {
     if (selectedHunterTargetId) {
@@ -73,6 +95,34 @@ export const DayDawnView: React.FC<Props> = ({
         <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
           Cả làng cùng thức dậy và lắng nghe thông báo từ Quản trò.
         </p>
+
+        {/* Nút Nghe Lại Lời Quản Trò AI */}
+        <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center' }}>
+          <button
+            onClick={() => {
+              soundEffects.triggerHaptic('light');
+              narratorVoice.speak(getDawnAnnouncementText(), {
+                soundIntro: 'dawn',
+                lang: 'vi-VN',
+              });
+            }}
+            className="btn btn-ghost"
+            style={{
+              padding: '6px 14px',
+              fontSize: '0.8rem',
+              borderRadius: '20px',
+              border: '1px solid rgba(245, 158, 11, 0.4)',
+              background: 'rgba(245, 158, 11, 0.12)',
+              color: '#fde68a',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <RotateCcw size={14} />
+            <span>Nghe lại Quản Trò AI</span>
+          </button>
+        </div>
       </div>
 
       {/* Dead players announcement */}

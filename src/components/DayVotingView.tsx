@@ -3,6 +3,7 @@ import { Vote, Skull, Check, Plus, Minus, AlertTriangle, ShieldCheck } from 'luc
 import { GameState } from '../types/game';
 import { ROLE_DEFINITIONS } from '../data/roles';
 import { soundEffects } from '../utils/soundEffects';
+import { narratorVoice } from '../utils/narratorVoice';
 import { ConfirmModal } from './ConfirmModal';
 import { PHASE_BACKGROUNDS, ROLE_CARD_IMAGES, CARD_BACK_IMAGE } from '../constants/assets';
 
@@ -57,6 +58,10 @@ export const DayVotingView: React.FC<Props> = ({
     if (targetPlayer) {
       soundEffects.triggerHaptic('heavy');
       soundEffects.playCourtGavel();
+      narratorVoice.speak(
+        `⚖️ Dân làng đã biểu quyết xử tử ${targetPlayer.name} ở ghế số ${targetPlayer.seatNumber}. Hãy chuẩn bị lắng nghe lời trăn trối cuối cùng!`,
+        { soundIntro: 'gavel', lang: 'vi-VN' }
+      );
       onExecuteHanging(targetPlayer.id);
     }
   };
@@ -64,6 +69,10 @@ export const DayVotingView: React.FC<Props> = ({
   const handleSkipHanging = () => {
     soundEffects.triggerHaptic('medium');
     soundEffects.playVoteSound();
+    narratorVoice.speak(
+      '⚖️ Dân làng quyết định không xử tử ai hôm nay. Màn đêm chuẩn bị buông xuống!',
+      { soundIntro: 'gavel', lang: 'vi-VN' }
+    );
     onExecuteHanging(null);
   };
 

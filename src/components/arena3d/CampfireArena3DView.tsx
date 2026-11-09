@@ -14,6 +14,7 @@ import {
 } from './types';
 import { Wardrobe3DModal } from './Wardrobe3DModal';
 import { NativeBridge } from '../../utils/nativeBridge';
+import { narratorVoice } from '../../utils/narratorVoice';
 import {
   Sparkles,
   Sun,
@@ -27,11 +28,11 @@ import {
   Footprints,
   ChevronDown,
   Zap,
-  Globe,
-  Coins,
   Palette,
   Share2,
   Check,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 
 interface CampfireArena3DViewProps {
@@ -145,6 +146,21 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
   const [votes, setVotes] = useState<Record<number, number>>({});
   const [hasVoted, setHasVoted] = useState<boolean>(false);
   const [lynchNotice, setLynchNotice] = useState<string | null>(null);
+
+  // Quản Trò AI & Phụ đề xướng âm thanh (AI Narrator & Live Subtitle)
+  const [isVoiceOn, setIsVoiceOn] = useState<boolean>(() => narratorVoice.isVoiceEnabled());
+  const [narratorSubtitle, setNarratorSubtitle] = useState<string | null>(null);
+
+  // Đăng ký nhận phụ đề Quản Trò AI và trạng thái bật/tắt
+  useEffect(() => {
+    const unsubSub = narratorVoice.subscribeSubtitle(setNarratorSubtitle);
+    const unsubVoice = narratorVoice.subscribeEnabled(setIsVoiceOn);
+    return () => {
+      unsubSub();
+      unsubVoice();
+      narratorVoice.stop();
+    };
+  }, []);
 
   const [myOutfit, setMyOutfit] = useState<PlayerOutfitConfig>(() => {
     try {
@@ -512,6 +528,12 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
     if (sceneRef.current) {
       sceneRef.current.setPhase(true);
     }
+    narratorVoice.speak(
+      lang === 'en'
+        ? '🐺 Creatures of the night, awaken and choose your targets in 25 seconds!'
+        : '🐺 Các vai trò bóng đêm hãy thức tỉnh và thực hiện nhiệm vụ trong 25 giây!',
+      { soundIntro: 'wolf', lang: lang === 'en' ? 'en-US' : 'vi-VN' }
+    );
     NativeBridge.hapticNotification('success');
   };
 
@@ -640,6 +662,20 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
       eventLogs: logs,
     });
 
+    const dawnAnnouncement =
+      deadSeats.length > 0
+        ? lang === 'en'
+          ? `☀️ Dawn has arrived! Last night, ${deadSeats.length} camper(s) fell at seat(s) ${deadSeats.join(', ')}.`
+          : `☀️ Trời đã sáng! Đêm qua có ${deadSeats.length} người tử nạn ở ghế số ${deadSeats.join(', ')}.`
+        : lang === 'en'
+        ? '☀️ Dawn has arrived! It was a peaceful night, everyone survived.'
+        : '☀️ Trời đã sáng! Đêm qua là một đêm bình yên, không có ai ngã xuống.';
+
+    narratorVoice.speak(dawnAnnouncement, {
+      soundIntro: 'dawn',
+      lang: lang === 'en' ? 'en-US' : 'vi-VN',
+    });
+
     setIsDayDiscussion(true);
     setVotes({});
     setHasVoted(false);
@@ -705,11 +741,15 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
           deathReason: lang === 'en' ? 'Lynched by village vote' : 'Bị dân làng biểu quyết treo cổ',
         },
       }));
-      setLynchNotice(
+      const notice =
         lang === 'en'
           ? `⚖️ The Village voted to exile Seat #${topSeat} (${victim?.name})!`
-          : `⚖️ Dân làng đã biểu quyết treo cổ Ghế #${topSeat} (${victim?.name})!`
-      );
+          : `⚖️ Dân làng đã biểu quyết treo cổ Ghế #${topSeat} (${victim?.name})!`;
+      setLynchNotice(notice);
+      narratorVoice.speak(notice, {
+        soundIntro: 'gavel',
+        lang: lang === 'en' ? 'en-US' : 'vi-VN',
+      });
       NativeBridge.hapticNotification('warning');
     }
   };
@@ -731,6 +771,12 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
         toggleNightDay();
         return;
       }
+      if (key === 'V') {
+        const next = !narratorVoice.isVoiceEnabled();
+        narratorVoice.setVoiceEnabled(next);
+        NativeBridge.hapticImpact('light');
+        return;
+      }
       if (key === 'F') {
         toggleFullscreen();
         return;
@@ -750,13 +796,21 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isSimultaneousNight, selectedSkill, isNightMode, isFullscreen]);
+  }, [isSimultaneousNight, selectedSkill, isNightMode, isFullscreen, lang]);
 
   const toggleNightDay = () => {
     setIsNightMode((prev) => {
       const nextState = !prev;
       if (sceneRef.current) {
         sceneRef.current.setPhase(nextState);
+      }
+      if (nextState) {
+        narratorVoice.speak(
+          lang === 'en'
+            ? '🌙 Night has fallen over the campgrounds. The village falls asleep...'
+            : '🌙 Đêm đã buông xuống trên khu cắm trại. Cả làng hãy nhắm mắt và chìm vào giấc ngủ...',
+          { soundIntro: 'night', lang: lang === 'en' ? 'en-US' : 'vi-VN' }
+        );
       }
       return nextState;
     });
@@ -1149,6 +1203,32 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
           {isNightMode ? <Sun size={16} color="#facc15" /> : <Moon size={16} color="#a5b4fc" />}
         </button>
 
+        {/* Nút 🔊 / 🔇 Bật/Tắt Giọng Quản Trò AI */}
+        <button
+          onClick={() => {
+            const next = !isVoiceOn;
+            narratorVoice.setVoiceEnabled(next);
+            NativeBridge.hapticImpact('light');
+          }}
+          className="hud-icon-btn has-tooltip tooltip-left"
+          data-tooltip={
+            isVoiceOn
+              ? (lang === 'en' ? '🔊 AI Narrator: ON [Key V]' : '🔊 Quản Trò AI: BẬT [Phím V]')
+              : (lang === 'en' ? '🔇 AI Narrator: OFF [Key V]' : '🔇 Quản Trò AI: TẮT [Phím V]')
+          }
+          style={{
+            width: '36px',
+            height: '36px',
+            minWidth: '36px',
+            minHeight: '36px',
+            borderRadius: '10px',
+            background: isVoiceOn ? 'rgba(168, 85, 247, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+            border: isVoiceOn ? '1.5px solid #c084fc' : '1px solid rgba(255, 255, 255, 0.1)',
+          }}
+        >
+          {isVoiceOn ? <Volume2 size={16} color="#c084fc" /> : <VolumeX size={16} color="#94a3b8" />}
+        </button>
+
         {/* Nút ➕ Zoom In */}
         <button
           onClick={() => {
@@ -1227,6 +1307,75 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
           {isFullscreen ? <Minimize2 size={16} color="#818cf8" /> : <Maximize2 size={16} color="#cbd5e1" />}
         </button>
       </div>
+
+      {/* === FLOATING SUBTITLE BANNER: LỜI XƯỚNG QUẢN TRÒ AI === */}
+      {narratorSubtitle && (
+        <div
+          style={{
+            position: 'absolute',
+            top: isFullscreen ? '16px' : '72px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            maxWidth: '90vw',
+            zIndex: 35,
+            pointerEvents: 'auto',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '8px 16px',
+              borderRadius: '20px',
+              background: 'rgba(15, 23, 42, 0.92)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              border: '1.5px solid rgba(168, 85, 247, 0.5)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6), 0 0 16px rgba(168, 85, 247, 0.25)',
+              color: '#f8fafc',
+            }}
+          >
+            {/* Sóng âm thanh nhấp nháy */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#c084fc', flexShrink: 0 }}>
+              <Volume2 size={18} />
+              <span style={{ display: 'inline-flex', gap: '2px', alignItems: 'flex-end', height: '14px' }}>
+                <span style={{ width: '3px', height: '6px', background: '#c084fc', borderRadius: '1px' }} />
+                <span style={{ width: '3px', height: '13px', background: '#e9d5ff', borderRadius: '1px' }} />
+                <span style={{ width: '3px', height: '9px', background: '#c084fc', borderRadius: '1px' }} />
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+              <div style={{ fontSize: '0.68rem', color: '#c084fc', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                {lang === 'en' ? '🎙️ AI Narrator' : '🎙️ Quản Trò AI'}
+              </div>
+              <div style={{ fontSize: '0.84rem', fontWeight: 600, color: '#f1f5f9', lineHeight: 1.3, whiteSpace: 'normal', maxWidth: '70vw' }}>
+                {narratorSubtitle}
+              </div>
+            </div>
+
+            <button
+              onClick={() => narratorVoice.stop()}
+              style={{
+                background: 'rgba(255, 255, 255, 0.1)',
+                border: 'none',
+                color: '#cbd5e1',
+                cursor: 'pointer',
+                padding: '2px 8px',
+                borderRadius: '8px',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                flexShrink: 0,
+                marginLeft: '6px',
+              }}
+              title={lang === 'en' ? 'Stop' : 'Dừng'}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* === BANNER TRẠNG THÁI NỔI (CHỈ HIỂN THỊ TỐI ĐA 1 BANNER TRÊN ĐÁY DOCK: copyToast > lynchNotice > hoveredPlayer > isRoaming) === */}
       {copyToast ? (

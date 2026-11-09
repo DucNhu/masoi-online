@@ -1,34 +1,40 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-11-08 22:02 (Asia/Ho_Chi_Minh) — Sprint 32: Chống Mũ/Tai Che Bảng Tên 3D (`getTopClearanceY` + `depthTest: false`), Raycast Chạm Trực Tiếp Nhân Vật 3D, Tránh Vật Cản Đống Lửa & Sửa Stale Closure Bỏ Phiếu/Khóa Chiêu.
-- **Mục tiêu**: **Sửa triệt để lỗi các nhân vật đội mũ (Phù Thủy, Nón Lá, Cao Bồi, Vương Miện) hoặc có tai Sói/Hồ Ly che mất bảng tên 3D trên đầu, đồng thời sửa 4 lỗi tương tác 3D & HUD liên quan [COMPLETED]**.
-- **Kết quả thực hiện (Thực thi qua Sub-Agent `flash` với Disjoint File Lease)**:
-  1. **Tỷ Lệ Mũ Ôm Đầu & Độ Cao Bảng Tên Động (`src/components/arena3d/WolfMeshBuilder.ts`)**:
-     - Hạ khớp `hatSlot.position.set(0, 0.24, 0)` (thay vì `0.34`) để mũ ôm khít đầu Chibi, tinh chỉnh lại kích thước `WITCH`, `CONICAL_HAT`, `COWBOY`, `CROWN`, `BANDANA` cân đối và không bị Z-fighting với mái tóc.
-     - Khi nhân vật `WOLF_BLOOD` hoặc `KITSUNE_FOX` đội mũ rộng vành (`CONICAL_HAT`, `WITCH`, `COWBOY`), hai tai tự động nghiêng nhẹ ra ngoài vành mũ (`rotation.z = ±0.58`) thay vì đâm xuyên qua chóp mũ.
-     - Bổ sung hàm `public getTopClearanceY(animOffset = 0)` tự động tính chiều cao đỉnh mũ/tai thực tế theo từng trang phục + tư thế đứng/ngồi + nhịp nhún hoạt cảnh (`idle`, `howl`, `walk`, `slumber`), đảm bảo cạnh dưới bảng tên luôn cao hơn đỉnh mũ ít nhất `0.12` đơn vị.
-     - Cấu hình `SpriteMaterial` của bảng tên với `depthTest: false`, `depthWrite: false`, `renderOrder = 999` để không bao giờ bị chóp mũ hay vật thể 3D cắt ngang.
-  2. **Raycast Bấm Trực Tiếp Lên Người Nhân Vật 3D & Tránh Đống Lửa (`src/components/arena3d/CampfireScene.ts`)**:
-     - Gắn `userData = { seatNumber }` lên `char.root` và bổ sung `getSeatFromIntersects()` duyệt ngược cây cha (`.parent`) để người chơi bấm/chạm vào bất kỳ bộ phận nào của nhân vật 3D (đầu, thân, mũ, tay chân hoặc khúc gỗ) đều chọn được ghế đó.
-     - Bổ sung `applyCampfireObstaclePushback()` quanh 4 đống lửa (`[0,0]`, `[-16,-14]`, `[16,-14]`, `[0,-24]`, bán kính `1.35`) để nhân vật đi dạo tự động lách qua đống lửa thay vì đi xuyên qua ngọn lửa.
-  3. **Sửa Stale Closure Click 3D & Gộp Banner HUD (`src/components/arena3d/CampfireArena3DView.tsx`)**:
-     - Dùng `handleSeatInteractionRef` để callback `scene.setOnSeatClick` luôn đọc đúng state mới nhất khi đang trong pha Đêm Đồng Thời 25s hoặc Bỏ Phiếu Ban Ngày.
-     - Chuyển các banner thông báo trạng thái (`copyToast`, `lynchNotice`, `hoveredPlayer`, `isRoaming`) xuống `bottom: 70px` và chỉ hiển thị 1 banner ưu tiên cao nhất tại một thời điểm, chấm dứt việc đè lên thanh chọn Lều góc trái trên Mobile.
-  4. **Unit Test Kiểm Định Chiều Cao Mũ vs Bảng Tên & Raycast Nhân Vật (`tests/sprint25Wolf3DArena.test.mjs`)**:
-     - Bổ sung 2 bài test tự động mới kiểm tra `THREE.Box3().setFromObject(char.headGroup)` cho toàn bộ 6 loại mũ × 3 chủng tộc ở cả tư thế ngồi lẫn đứng đi bộ, và kiểm tra raycast chạm thân/đầu nhân vật trả về đúng `seatNumber`.
+- **Thời gian cập nhật**: 2026-11-09 22:42 (Asia/Ho_Chi_Minh) — Sprint 33: Giọng Quản Trò Tự Động (AI Text-to-Speech Narrator) & Hiệu Ứng Âm Thanh Ma Mị [COMPLETED].
+- **Mục tiêu**: **Triển khai động cơ Giọng Quản Trò AI tự động (Web Speech TTS) kết hợp Web Audio soundscapes ma mị, tích hợp trực tiếp vào Đấu trường Lửa Trại 3D và Trợ lý Quản trò Offline/Online [COMPLETED]**.
+- **Kết quả thực hiện (Thực thi qua Sub-Agent `flash` với Disjoint File Leases)**:
+  1. **Động cơ Giọng Quản Trò AI (`src/utils/narratorVoice.ts`)**:
+     - Singleton `narratorVoice` (`NarratorVoiceService`) chuẩn Web Speech API (`speechSynthesis`, `SpeechSynthesisUtterance`).
+     - Tự động nạp danh sách giọng (`onvoiceschanged`), ưu tiên khớp giọng Tiếng Việt tự nhiên (`vi-VN`, `vi_VN`, `Google Tiếng Việt`, `Mai`) hoặc theo mã ngôn ngữ i18n khi chuyển thứ tiếng.
+     - Tinh chỉnh cao độ `pitch = 0.85` (trầm, huyền bí) và nhịp điệu `rate = 0.9` (từ tốn, suspenseful), bộ nhớ LocalStorage `masoi_narrator_voice_enabled` (mặc định: `true`).
+     - Hàm `cleanTextForSpeech()` loại bỏ emoji, ký tự trang trí, chỉ dẫn trong ngoặc vuông của Quản trò (`[chỉ tay]`, `[Quản trò vỗ vai...]`) giúp lời đọc mượt mà, chuyên nghiệp.
+     - Tích hợp 5 loại âm thanh dẫn nhập Web Audio: `'night'`, `'wolf'`, `'dawn'`, `'gavel'`, `'bell'`.
+     - Hệ thống đăng ký phụ đề thời gian thực (`subscribeSubtitle`) cho UI hiển thị text trực quan khi Quản trò đang cất tiếng.
+  2. **Tích Hợp Đấu Trường Lửa Trại 3D (`src/components/arena3d/CampfireArena3DView.tsx`)**:
+     - Thêm nút Bật/Tắt Quản Trò AI (`Volume2` tím neon / `VolumeX` xám) trên Right Toolbar (kèm phím tắt `Key V`).
+     - Floating Subtitle Banner (`top: 70px`) kính mờ neon tím với biểu tượng sóng âm thanh nhảy theo giọng đọc và nút tắt nhanh `✕`.
+     - Tự động xướng thoại khi vào đêm (`soundIntro: 'night'`), pha đêm đồng thời 25s (`soundIntro: 'wolf'`), giải quyết bình minh (`soundIntro: 'dawn'`) và phán quyết treo cổ (`soundIntro: 'gavel'`).
+  3. **Tích Hợp Trợ Lý Quản Trò Offline Ban Đêm (`src/components/NightPhaseView.tsx`)**:
+     - Bổ sung nút Bật/Tắt Quản Trò AI và nút "Đọc lại" (`RotateCcw`).
+     - Tự động xướng câu thoại theo từng bước (`MODERATOR_SCRIPTS`) khi chuyển vai trò (Bảo vệ, Sói, Phù Thủy, Tiên Tri, v.v.).
+  4. **Tích Hợp Bình Minh & Bỏ Phiếu (`src/components/DayDawnView.tsx` & `src/components/DayVotingView.tsx`)**:
+     - `DayDawnView.tsx`: Xướng cáo phó ban mai khi trời sáng, kèm nút "Nghe lại Quản Trò AI" viền vàng sang trọng.
+     - `DayVotingView.tsx`: Xướng phán quyết dân làng biểu quyết tử hình trên giàn treo cổ kèm tiếng gõ búa tòa án đanh thép.
+  5. **Bộ Test Tự Động Toàn Diện (`tests/sprint33NarratorVoice.test.mjs`)**:
+     - 8/8 unit test cases mới kiểm tra SpeechSynthesis mock, voice matching, soundIntro triggers, subtitle lifecycle, stop cancellation và headless safety.
 - **Nhánh làm việc**: `feature/ma-soi-online` & `main`.
-- **Mô hình vận hành**: Game Studio Hierarchy (PO → PM → Flash Sub-Agent → QA Verification → Continuous Deploy).
+- **Mô hình vận hành**: Game Studio Hierarchy (PO Xác nhận -> PM Dispatch Flash Sub-Agent -> Verification -> Continuous Deploy).
 
 ---
 
 ## 1. Kết Quả Kiểm Thử Toàn Diện (System Health & Pipeline Verification)
 - **Lint**: `oxlint` PASSED (0 errors).
 - **AI Skill Verification**: 78/78 skills PASSED 100%.
-- **Unit & Integration Test Suite**: **21 Test Suites PASSED 100%** (83/83 test cases).
-- **Production Build**: `tsc -b && vite build` PASSED 100% (0 warnings).
-- **Continuous Deploy**: Tự động commit & push lên `feature/ma-soi-online` và `main` theo quy tắc người dùng đã phê duyệt.
+- **Unit & Integration Test Suite**: **22 Test Suites PASSED 100%** (91/91 test cases).
+- **Production Build**: `tsc -b && vite build` PASSED 100% (0 errors, 0 warnings).
+- **Continuous Deploy**: Đã sẵn sàng commit & push lên `feature/ma-soi-online` và `main` theo quy tắc người dùng đã phê duyệt.
 
 ---
 
 ## 2. Hành Động Tiếp Theo Của PM (Single Next Action)
-- Mời người dùng kiểm tra bảng tên 3D trên đầu các nhân vật đội mũ và thao tác chạm trực tiếp vào nhân vật 3D trên điện thoại/máy tính.
+- Thực hiện commit và push lên nhánh `feature/ma-soi-online` và `main` để kích hoạt workflow deploy GitHub Pages, sau đó mời người dùng trải nghiệm trên điện thoại/máy tính.
