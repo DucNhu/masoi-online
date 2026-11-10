@@ -6,6 +6,12 @@ import {
   OutfitSkinItem,
 } from './types';
 
+// Helper rút gọn hiển thị tên bảng tên 3D (Hỗ trợ tiếng Việt trọn vẹn lên tới 22 ký tự)
+export function formatNameplateDisplayName(name: string, seatNumber?: number, maxLen = 22): string {
+  const displayName = seatNumber ? `#${seatNumber} ${name}` : name;
+  return displayName.length > maxLen ? displayName.slice(0, maxLen - 1) + '…' : displayName;
+}
+
 export class WolfCharacter {
   public root: THREE.Group;
   public headGroup: THREE.Group;
@@ -687,32 +693,30 @@ export class WolfCharacter {
     let texture: THREE.Texture;
     if (typeof document !== 'undefined' && document.createElement) {
       const canvas = document.createElement('canvas');
-      canvas.width = 256;
+      canvas.width = 320;
       canvas.height = 64;
       const ctx = canvas.getContext('2d');
       if (ctx) {
         // Vẽ nền bo góc
-        ctx.clearRect(0, 0, 256, 64);
+        ctx.clearRect(0, 0, 320, 64);
         const r = 16;
         ctx.fillStyle = isAlive ? 'rgba(10, 15, 29, 0.72)' : 'rgba(239, 68, 68, 0.35)';
         ctx.strokeStyle = isAlive ? '#38bdf8' : '#ef4444';
         ctx.lineWidth = 2.5;
 
         ctx.beginPath();
-        ctx.roundRect(8, 8, 240, 48, r);
+        ctx.roundRect(8, 8, 304, 48, r);
         ctx.fill();
         ctx.stroke();
 
         // Text tên nhân vật
         ctx.fillStyle = isAlive ? '#f8fafc' : '#fca5a5';
-        ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
+        ctx.font = 'bold 20px system-ui, -apple-system, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
-        const displayName = seatNumber ? `#${seatNumber} ${name}` : name;
-        // Rút gọn nếu tên quá dài
-        const truncated = displayName.length > 15 ? displayName.slice(0, 14) + '…' : displayName;
-        ctx.fillText(truncated, 128, 32);
+        const truncated = formatNameplateDisplayName(name, seatNumber, 22);
+        ctx.fillText(truncated, 160, 32);
       }
       texture = new THREE.CanvasTexture(canvas);
       texture.minFilter = THREE.LinearFilter;
@@ -728,7 +732,7 @@ export class WolfCharacter {
     });
     const sprite = new THREE.Sprite(spriteMat);
     sprite.renderOrder = 999;
-    sprite.scale.set(1.05, 0.26, 1.0);
+    sprite.scale.set(1.25, 0.25, 1.0);
     sprite.position.set(0, this.getTopClearanceY(), 0);
 
     this.nameplateSprite = sprite;

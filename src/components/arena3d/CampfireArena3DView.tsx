@@ -927,7 +927,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
 
       {/* === GÓC TRÁI TRÊN: 1 PILL TÚP LỀU DROPDOWN + MỜI BẠN + ĐI DẠO === */}
       <div
-        className="hud-pill-bar"
+        className="hud-pill-bar top-left-tent-bar"
         style={{
           position: 'absolute',
           top: isFullscreen ? '14px' : '72px',
@@ -937,6 +937,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
           gap: '4px',
           zIndex: 25,
           pointerEvents: 'auto',
+          maxWidth: 'calc(100vw - 68px)',
         }}
       >
         {/* Dropdown 4 Túp Lều Cắm Trại */}
@@ -959,7 +960,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
               boxShadow: `0 0 10px ${currentTent.themeColor}33`,
             }}
           >
-            <span style={{ fontSize: '0.95rem' }}>{currentTent.banner}</span>
+            <span style={{ fontSize: '0.95rem' }}>{currentTent.banner.split(' ')[0] || '⛺'}</span>
             <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f8fafc', whiteSpace: 'nowrap' }}>
               {lang === 'en' ? currentTent.nameEn : currentTent.name}
             </span>
@@ -1113,7 +1114,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
         {/* Nút 🚶 Đứng Lên Đi Dạo WASD / Ngồi Xuống */}
         <button
           onClick={toggleRoamMode}
-          className="hud-btn has-tooltip tooltip-bottom"
+          className="hud-btn has-tooltip tooltip-bottom roam-btn"
           data-tooltip={
             isRoaming
               ? lang === 'en' ? 'Sit back by the campfire' : 'Ngồi xuống quanh đống lửa'
@@ -1138,6 +1139,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
 
       {/* === CẠNH PHẢI: THANH CÔNG CỤ DỌC MẢNH (VERTICAL COMPACT TOOLBAR - 44px) === */}
       <div
+        className="hud-right-toolbar"
         style={{
           position: 'absolute',
           top: isFullscreen ? '14px' : '72px',
@@ -1235,7 +1237,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
             sceneRef.current?.zoom(-1.2);
             NativeBridge.hapticImpact('light');
           }}
-          className="hud-icon-btn has-tooltip tooltip-left"
+          className="hud-icon-btn has-tooltip tooltip-left hide-on-mobile"
           data-tooltip={lang === 'en' ? 'Zoom in (Scroll up / Key W)' : 'Phóng to (Cuộn chuột lên / Phím W)'}
           style={{
             width: '36px',
@@ -1254,7 +1256,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
             sceneRef.current?.zoom(1.2);
             NativeBridge.hapticImpact('light');
           }}
-          className="hud-icon-btn has-tooltip tooltip-left"
+          className="hud-icon-btn has-tooltip tooltip-left hide-on-mobile"
           data-tooltip={lang === 'en' ? 'Zoom out (Scroll down / Key S)' : 'Thu nhỏ (Cuộn chuột xuống / Phím S)'}
           style={{
             width: '36px',
@@ -1507,7 +1509,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
       {/* === THANH HÀNH ĐỘNG CHÍNH (CLEAN BOTTOM ACTION DOCK - TRẠNG THÁI BÌNH THƯỜNG) === */}
       {!isSimultaneousNight && !isDayDiscussion && (
         <div
-          className="hud-pill-bar"
+          className="hud-pill-bar bottom-action-dock"
           style={{
             position: 'absolute',
             bottom: '20px',
@@ -1521,13 +1523,13 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
             boxShadow: '0 12px 36px rgba(0,0,0,0.7)',
             zIndex: 25,
             pointerEvents: 'auto',
-            maxWidth: '92%',
+            maxWidth: 'calc(100vw - 32px)',
           }}
         >
           {/* Nút chính: Bắt Đầu Đêm Đồng Thời (25s) */}
           <button
             onClick={startSimultaneousNight}
-            className="has-tooltip"
+            className="has-tooltip dock-start-night-btn"
             data-tooltip={
               lang === 'en'
                 ? 'Start Simultaneous Night: All roles act together in 25s'
@@ -1554,16 +1556,21 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
             }}
           >
             <Moon size={16} color="#fef08a" />
-            <span>{lang === 'en' ? '🌙 Start Simultaneous Night (25s)' : '🌙 Bắt Đầu Đêm Đồng Thời (25s)'}</span>
+            <span className="dock-start-night-text-desktop">
+              {lang === 'en' ? 'Start Simultaneous Night (25s)' : 'Bắt Đầu Đêm Đồng Thời (25s)'}
+            </span>
+            <span className="dock-start-night-text-mobile">
+              {lang === 'en' ? 'Bắt Đầu Đêm (25s)' : 'Bắt Đầu Đêm (25s)'}
+            </span>
           </button>
 
-          {/* Nút phụ: Đổi Nhân Vật / Tủ Đồ */}
+          {/* Nút phụ: Đổi Ngoại Trang / Tủ Đồ */}
           <button
             onClick={() => {
               setIsWardrobeOpen(true);
               NativeBridge.hapticImpact('light');
             }}
-            className="has-tooltip"
+            className="has-tooltip dock-wardrobe-btn"
             data-tooltip={lang === 'en' ? 'Open 3D Wardrobe & Character Studio' : 'Mở Tủ Đồ & Đổi Mẫu Nhân Vật 3D'}
             style={{
               height: '38px',
@@ -1585,7 +1592,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
             }}
           >
             <Palette size={15} color="#c084fc" />
-            <span>{lang === 'en' ? '✨ Wardrobe' : '✨ Đổi Nhân Vật'}</span>
+            <span className="dock-wardrobe-text">{lang === 'en' ? '✨ Wardrobe' : '✨ Đổi Ngoại Trang'}</span>
           </button>
         </div>
       )}

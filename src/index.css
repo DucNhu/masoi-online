@@ -1279,8 +1279,17 @@ body::before {
   }
 }
 
-/* Extra small mobile < 480px (e.g. iPhone SE, 360-390px screens) */
-@media (max-width: 480px) {
+/* Default Bottom Dock text visibility */
+.dock-start-night-text-mobile {
+  display: none !important;
+}
+
+.dock-start-night-text-desktop {
+  display: inline !important;
+}
+
+/* Mobile responsive adjustments <= 640px (iPhone 16 Pro 402px, Pro Max 430px, Android 360-412px) */
+@media (max-width: 640px) {
   .floating-top-gamebar,
   .portal-floating-bar,
   .top-header.portal-floating-bar {
@@ -1288,11 +1297,20 @@ body::before {
     padding: 0 6px;
   }
 
+  .gamebar-brand-cluster {
+    gap: 6px !important;
+  }
+
+  .gamebar-brand-title {
+    font-size: 0.85rem !important;
+  }
+
   .gamebar-nav-pills {
     gap: 3px;
     padding: 0 2px;
   }
 
+  /* Ẩn nhãn chữ trên các tab KHÔNG active trên mobile, chỉ hiện icon để thở thoải mái */
   .gamebar-nav-pill:not(.active) .nav-text-mobile {
     display: none !important;
   }
@@ -1303,6 +1321,53 @@ body::before {
 
   .gamebar-profile-badge {
     padding: 2px 5px;
+  }
+
+  /* Top-left Tent HUD bar: giới hạn không đè sang toolbar */
+  .top-left-tent-bar {
+    max-width: calc(100vw - 68px) !important;
+  }
+
+  .top-left-tent-bar .roam-label {
+    display: none !important;
+  }
+
+  /* Right Toolbar thu gọn trên mobile */
+  .hud-right-toolbar {
+    top: 62px !important;
+    right: 8px !important;
+    width: 38px !important;
+    gap: 4px !important;
+    padding: 3px !important;
+    border-radius: 12px !important;
+  }
+
+  .hud-right-toolbar .hud-icon-btn {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    border-radius: 8px !important;
+  }
+
+  /* Bottom Dock mobile refinements */
+  .dock-start-night-text-desktop {
+    display: none !important;
+  }
+
+  .dock-start-night-text-mobile {
+    display: inline !important;
+  }
+
+  .dock-wardrobe-btn {
+    width: 38px !important;
+    min-width: 38px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+  }
+
+  .dock-wardrobe-btn .dock-wardrobe-text {
+    display: none !important;
   }
 }
 
