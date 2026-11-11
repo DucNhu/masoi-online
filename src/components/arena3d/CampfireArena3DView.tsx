@@ -11,6 +11,9 @@ import {
   NIGHT_COMBAT_SKILLS,
   PokemonCombatSkillId,
   OUTFIT_SKINS,
+  OUTFIT_HATS,
+  WolfSkinId,
+  WolfHatId,
 } from './types';
 import { Wardrobe3DModal } from './Wardrobe3DModal';
 import { NativeBridge } from '../../utils/nativeBridge';
@@ -33,6 +36,7 @@ import {
   Check,
   Volume2,
   VolumeX,
+  User,
 } from 'lucide-react';
 
 interface CampfireArena3DViewProps {
@@ -124,7 +128,20 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
     return 'tent-1';
   });
   const [isTentMenuOpen, setIsTentMenuOpen] = useState<boolean>(false);
-  const [isRoaming, setIsRoaming] = useState<boolean>(false);
+
+  // Trạng thái Ngồi vào bàn hoặc Đi dạo tự do Metaverse (Khởi đầu: isRoaming = true, mySeatedNumber = null)
+  const [mySeatedNumber, setMySeatedNumber] = useState<number | null>(null);
+  const [isRoaming, setIsRoaming] = useState<boolean>(true);
+  const [seatedNotice, setSeatedNotice] = useState<string | null>(null);
+
+  // Màn hình Tạo Nhân Vật (Character Creation Modal)
+  const [isCharacterCreationOpen, setIsCharacterCreationOpen] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('masoi_player_created') !== 'true';
+    } catch {
+      return false;
+    }
+  });
 
   // Thông báo Toast khi sao chép link mời vào Túp Lều
   const [copyToast, setCopyToast] = useState<string | null>(null);
@@ -172,6 +189,10 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
     return DEFAULT_OUTFIT;
   });
 
+  const [creationName, setCreationName] = useState<string>(playerName);
+  const [creationSkinId, setCreationSkinId] = useState<WolfSkinId>(myOutfit.skinId);
+  const [creationHatId, setCreationHatId] = useState<WolfHatId>(myOutfit.hatId);
+
   // Lưu trạng thái sống chết của 10 ghế (có thể cập nhật từ kết quả đêm)
   const [seatOverride, setSeatOverride] = useState<Record<number, { isAlive: boolean; deathReason?: string }>>({});
 
@@ -205,145 +226,72 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
     }
   }, [propIsNight]);
 
-  // Bộ sưu tập 10 nhân vật cắm trại đa dạng quanh đống lửa
-  const CAMPER_PRESETS = useMemo(
-    () => [
-      {
-        roleName: 'Phượt Thủ Cắm Trại',
-        roleNameEn: 'Outdoor Camper',
-        icon: '🏕️',
-        skinId: 'WOLF_GRAY' as const,
-        hatId: 'CONICAL_HAT' as const,
-        eyeGlowId: 'RED' as const,
-        backItemId: 'NONE' as const,
-      },
-      {
-        roleName: 'Pháp Sư Tiên Tri',
-        roleNameEn: 'Arcane Seer',
-        icon: '🔮',
-        skinId: 'WOLF_SNOW' as const,
-        hatId: 'WITCH' as const,
-        eyeGlowId: 'CYAN' as const,
-        backItemId: 'CAPE' as const,
-      },
-      {
-        roleName: 'Thợ Săn Rừng Thông',
-        roleNameEn: 'Forest Hunter',
-        icon: '🏹',
-        skinId: 'WOLF_GOLD' as const,
-        hatId: 'COWBOY' as const,
-        eyeGlowId: 'YELLOW' as const,
-        backItemId: 'SWORD' as const,
-      },
-      {
-        roleName: 'Phù Thủy Giả Kim',
-        roleNameEn: 'Alchemist Witch',
-        icon: '🧪',
-        skinId: 'WOLF_SHADOW' as const,
-        hatId: 'WITCH' as const,
-        eyeGlowId: 'PURPLE' as const,
-        backItemId: 'POTION' as const,
-      },
-      {
-        roleName: 'Nữ Sinh Cắm Trại',
-        roleNameEn: 'Camper Girl',
-        icon: '🌸',
-        skinId: 'CAMPER_GIRL' as const,
-        hatId: 'BANDANA' as const,
-        eyeGlowId: 'CYAN' as const,
-        backItemId: 'NONE' as const,
-      },
-      {
-        roleName: 'Hồ Ly Tinh Linh',
-        roleNameEn: 'Spirit Kitsune',
-        icon: '🦊',
-        skinId: 'KITSUNE_FOX' as const,
-        hatId: 'CROWN' as const,
-        eyeGlowId: 'YELLOW' as const,
-        backItemId: 'SHIELD' as const,
-      },
-      {
-        roleName: 'Hướng Dẫn Dã Ngoại',
-        roleNameEn: 'Trail Guide',
-        icon: '🏕️',
-        skinId: 'WOLF_GRAY' as const,
-        hatId: 'CONICAL_HAT' as const,
-        eyeGlowId: 'RED' as const,
-        backItemId: 'CAPE' as const,
-      },
-      {
-        roleName: 'Sói Hồng Nguyệt',
-        roleNameEn: 'Blood Werewolf',
-        icon: '🐺',
-        skinId: 'WOLF_BLOOD' as const,
-        hatId: 'NONE' as const,
-        eyeGlowId: 'RED' as const,
-        backItemId: 'NONE' as const,
-      },
-      {
-        roleName: 'Xạ Thủ Rừng Tây',
-        roleNameEn: 'Wild Marksman',
-        icon: '🏹',
-        skinId: 'WOLF_GOLD' as const,
-        hatId: 'BANDANA' as const,
-        eyeGlowId: 'YELLOW' as const,
-        backItemId: 'SWORD' as const,
-      },
-      {
-        roleName: 'Tinh Linh Ánh Trăng',
-        roleNameEn: 'Moonlight Spirit',
-        icon: '🔮',
-        skinId: 'WOLF_SNOW' as const,
-        hatId: 'CROWN' as const,
-        eyeGlowId: 'CYAN' as const,
-        backItemId: 'POTION' as const,
-      },
-    ],
-    []
-  );
-
-  // Tạo dữ liệu cho 10 ghế
+  // Dữ liệu 10 ghế quanh đống lửa (Xóa bỏ 100% bot ảo giả lập!)
+  // Chỉ hiển thị ghế người chơi đang ngồi (mySeatedNumber) hoặc người chơi từ phòng online, các ghế còn lại là Khúc Gỗ Trống (isEmpty: true)
   const seatsData: SeatPlayerInfo[] = useMemo(() => {
     const list: SeatPlayerInfo[] = [];
+    const mySkinInfo = OUTFIT_SKINS.find((s) => s.id === myOutfit.skinId);
+
     for (let i = 1; i <= 10; i++) {
       const p = players?.find((item) => item.seatNumber === i);
-      const isMe = i === 1;
+      const isMe = mySeatedNumber === i;
       const override = seatOverride[i];
 
-      const isAlive = override ? override.isAlive : p ? p.isAlive : true;
-      const deathReason = override?.deathReason || p?.deathReason;
-      const preset = CAMPER_PRESETS[i - 1];
+      // 1. Ghế người chơi đang ngồi
+      if (isMe) {
+        const isAlive = override ? override.isAlive : true;
+        const deathReason = override?.deathReason;
+        const currentIcon = mySkinInfo?.icon || '🏕️';
+        const currentTitle =
+          lang === 'en'
+            ? mySkinInfo?.nameEn || 'Outdoor Camper'
+            : mySkinInfo?.name || 'Phượt Thủ Cắm Trại';
 
-      const mySkinInfo = OUTFIT_SKINS.find((s) => s.id === myOutfit.skinId);
-      const currentIcon = isMe ? mySkinInfo?.icon || '🏕️' : preset.icon;
-      const currentTitle = isMe
-        ? lang === 'en' ? mySkinInfo?.nameEn || 'Outdoor Camper' : mySkinInfo?.name || 'Phượt Thủ Cắm Trại'
-        : lang === 'en' ? preset.roleNameEn : preset.roleName;
+        list.push({
+          seatNumber: i,
+          name: playerName,
+          isAlive,
+          isEmpty: false,
+          isWerewolf: false,
+          deathReason,
+          characterIcon: currentIcon,
+          characterTitle: currentTitle,
+          outfit: myOutfit,
+        });
+        continue;
+      }
 
-      const currentName = isMe
-        ? playerName
-        : p?.name || `${currentTitle} #${i}`;
+      // 2. Ghế người chơi từ phòng online
+      if (p) {
+        const isAlive = override ? override.isAlive : p.isAlive;
+        const deathReason = override?.deathReason || p.deathReason;
+        list.push({
+          seatNumber: i,
+          name: p.name,
+          isAlive,
+          isEmpty: false,
+          isWerewolf: Boolean(p.roleId === 'WEREWOLF' || p.roleId?.includes('WOLF')),
+          deathReason,
+          characterIcon: '🏕️',
+          characterTitle: p.roleId || 'Player',
+          outfit: DEFAULT_OUTFIT,
+        });
+        continue;
+      }
 
+      // 3. Khúc gỗ trống (Empty Stump) - Bấm vào để ngồi vào bàn
       list.push({
         seatNumber: i,
-        name: currentName,
-        isAlive,
-        isWerewolf: Boolean(p?.roleId === 'WEREWOLF' || p?.roleId?.includes('WOLF') || i === 2 || i === 8),
-        deathReason,
-        characterIcon: currentIcon,
-        characterTitle: currentTitle,
-        outfit: isMe
-          ? myOutfit
-          : {
-              skinId: preset.skinId,
-              hatId: preset.hatId,
-              eyeGlowId: preset.eyeGlowId,
-              backItemId: preset.backItemId,
-            },
+        name: lang === 'en' ? 'Empty Seat' : 'Ghế Trống',
+        isAlive: true,
+        isEmpty: true,
+        characterIcon: '🪑',
+        characterTitle: lang === 'en' ? 'Empty Stump' : 'Khúc Gỗ Trống',
+        outfit: DEFAULT_OUTFIT,
       });
     }
     return list;
-  }, [players, myOutfit, seatOverride, playerName, lang, CAMPER_PRESETS]);
+  }, [players, myOutfit, seatOverride, playerName, lang, mySeatedNumber]);
 
   // Khởi tạo Three.js CampfireScene
   useEffect(() => {
@@ -352,7 +300,12 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
     sceneRef.current = scene;
 
     scene.setPhase(isNightMode);
+    scene.setLanguage(lang);
+    scene.updatePlayerProfile(playerName, myOutfit);
     scene.updateSeatsState(seatsData);
+
+    // Mặc định khởi đầu ở chế độ Đi Dạo Tự Do
+    scene.setRoaming(true);
 
     // Tự động chọn và bay camera tới đúng Túp Lều nếu URL có ?tent=...
     if (activeTentId && activeTentId !== 'tent-1') {
@@ -400,6 +353,14 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
       sceneRef.current = null;
     };
   }, []);
+
+  // Đồng bộ ngôn ngữ & profile người chơi vào 3D Scene
+  useEffect(() => {
+    if (sceneRef.current) {
+      sceneRef.current.setLanguage(lang);
+      sceneRef.current.updatePlayerProfile(playerName, myOutfit);
+    }
+  }, [lang, playerName, myOutfit]);
 
   // Lắng nghe thay đổi URL qua back/forward trình duyệt
   useEffect(() => {
@@ -506,13 +467,71 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
     }
   };
 
-  const toggleRoamMode = () => {
-    const nextRoam = !isRoaming;
-    setIsRoaming(nextRoam);
+  const sitAtSeat = useCallback(
+    (seatNumber: number) => {
+      setMySeatedNumber(seatNumber);
+      setIsRoaming(false);
+      if (sceneRef.current) {
+        sceneRef.current.sitAtSeat(seatNumber);
+      }
+      const targetTent = CAMP_TENTS.find((t) => t.id === activeTentId) || CAMP_TENTS[0];
+      const tentName = lang === 'en' ? targetTent.nameEn : targetTent.name;
+      const msg =
+        lang === 'en'
+          ? `You took Seat #${seatNumber} [${tentName}]. Waiting for other players...`
+          : `Bạn đã ngồi vào Ghế #${seatNumber} [${tentName}]. Đang đợi người chơi khác...`;
+      setSeatedNotice(msg);
+      narratorVoice.speak(msg, { soundIntro: 'bell', lang: lang === 'en' ? 'en-US' : 'vi-VN' });
+      NativeBridge.hapticImpact('heavy');
+    },
+    [activeTentId, lang]
+  );
+
+  const standUpAndRoam = useCallback(() => {
+    setMySeatedNumber(null);
+    setIsRoaming(true);
+    setSeatedNotice(null);
     if (sceneRef.current) {
-      sceneRef.current.setRoaming(nextRoam);
+      sceneRef.current.standUp();
     }
     NativeBridge.hapticImpact('medium');
+  }, []);
+
+  const toggleRoamMode = () => {
+    if (mySeatedNumber !== null) {
+      standUpAndRoam();
+    } else {
+      sitAtSeat(1);
+    }
+  };
+
+  const handleSaveCharacterCreation = () => {
+    const finalName = creationName.trim() || (lang === 'en' ? 'Night Camper' : 'Thợ Săn Đêm');
+    const finalOutfit: PlayerOutfitConfig = {
+      ...myOutfit,
+      skinId: creationSkinId,
+      hatId: creationHatId,
+    };
+    try {
+      localStorage.setItem('masoi_player_created', 'true');
+      localStorage.setItem('ma_soi_player_name', finalName);
+      localStorage.setItem('ma_soi_player_outfit', JSON.stringify(finalOutfit));
+    } catch {
+      // ignore
+    }
+    setPlayerName(finalName);
+    setMyOutfit(finalOutfit);
+    if (sceneRef.current) {
+      sceneRef.current.updatePlayerProfile(finalName, finalOutfit);
+    }
+    setIsCharacterCreationOpen(false);
+    NativeBridge.hapticNotification('success');
+    narratorVoice.speak(
+      lang === 'en'
+        ? `Welcome ${finalName} to the Campgrounds! Explore the camp freely.`
+        : `Chào mừng ${finalName} đến với Khu Cắm Trại! Bạn có thể tự do đi dạo và khám phá các lều.`,
+      { soundIntro: 'bell', lang: lang === 'en' ? 'en-US' : 'vi-VN' }
+    );
   };
 
   // Pha Đêm Đồng Thời
@@ -687,6 +706,21 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
     setSelectedSeat(seatNumber);
     if (onSeatSelect) onSeatSelect(seatNumber);
 
+    // 1. Nếu đang ở chế độ Đi Dạo (hoặc chưa ngồi vào ghế nào) và bấm vào ghế: Ngồi vào ghế!
+    if (isRoaming || mySeatedNumber === null) {
+      sitAtSeat(seatNumber);
+      return;
+    }
+
+    // 2. Nếu đã ngồi mà bấm vào khúc gỗ trống khác -> đổi ghế ngồi
+    if (mySeatedNumber !== null && mySeatedNumber !== seatNumber) {
+      const target = seatsData.find((s) => s.seatNumber === seatNumber);
+      if (target?.isEmpty) {
+        sitAtSeat(seatNumber);
+        return;
+      }
+    }
+
     if (isSimultaneousNight && selectedSkill) {
       setLockedAction({
         skillId: selectedSkill.id,
@@ -701,7 +735,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
 
     if (isDayDiscussion && !hasVoted) {
       const p = seatsData.find((s) => s.seatNumber === seatNumber);
-      if (p && p.isAlive) {
+      if (p && p.isAlive && !p.isEmpty) {
         setVotes((prev) => ({
           ...prev,
           [seatNumber]: (prev[seatNumber] || 0) + 1,
@@ -1161,6 +1195,31 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
           boxSizing: 'border-box',
         }}
       >
+        {/* Nút 🏕️ Hồ Sơ & Tạo Nhân Vật 3D */}
+        <button
+          onClick={() => {
+            setCreationName(playerName);
+            setCreationSkinId(myOutfit.skinId);
+            setCreationHatId(myOutfit.hatId);
+            setIsCharacterCreationOpen(true);
+            NativeBridge.hapticImpact('medium');
+          }}
+          className="hud-icon-btn has-tooltip tooltip-left"
+          data-tooltip={lang === 'en' ? '🏕️ Character Profile & Creator' : '🏕️ Hồ Sơ & Tạo Nhân Vật 3D'}
+          style={{
+            width: '36px',
+            height: '36px',
+            minWidth: '36px',
+            minHeight: '36px',
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(56, 189, 248, 0.25) 100%)',
+            border: '1.5px solid #34d399',
+            boxShadow: '0 0 12px rgba(52, 211, 153, 0.4)',
+          }}
+        >
+          <User size={16} color="#6ee7b7" />
+        </button>
+
         {/* Nút ✨ Mở Tủ Đồ & Thử Mẫu 3D (Viền tím neon nổi bật) */}
         <button
           onClick={() => {
@@ -1379,7 +1438,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
         </div>
       )}
 
-      {/* === BANNER TRẠNG THÁI NỔI (CHỈ HIỂN THỊ TỐI ĐA 1 BANNER TRÊN ĐÁY DOCK: copyToast > lynchNotice > hoveredPlayer > isRoaming) === */}
+      {/* === BANNER TRẠNG THÁI NỔI (CHỈ HIỂN THỊ TỐI ĐA 1 BANNER TRÊN ĐÁY DOCK: copyToast > seatedNotice > lynchNotice > hoveredPlayer > isRoaming) === */}
       {copyToast ? (
         <div
           style={{
@@ -1408,6 +1467,35 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
         >
           <Check size={18} color="#ffffff" strokeWidth={3} />
           <span>{copyToast}</span>
+        </div>
+      ) : seatedNotice ? (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '70px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.96) 0%, rgba(5, 150, 105, 0.96) 100%)',
+            backdropFilter: 'blur(12px)',
+            border: '1.5px solid #6ee7b7',
+            borderRadius: '20px',
+            padding: '10px 22px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            color: '#ffffff',
+            fontSize: '0.85rem',
+            fontWeight: 800,
+            zIndex: 100,
+            boxShadow: '0 12px 32px rgba(5, 150, 105, 0.5), 0 4px 16px rgba(0,0,0,0.6)',
+            animation: 'pulseBorder 2s infinite',
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap',
+            maxWidth: '90vw',
+          }}
+        >
+          <Check size={18} color="#ffffff" strokeWidth={3} />
+          <span>{seatedNotice}</span>
         </div>
       ) : lynchNotice ? (
         <div
@@ -1526,6 +1614,79 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
             maxWidth: 'calc(100vw - 32px)',
           }}
         >
+          {/* Nút Đứng Dậy Đi Tiếp (Khi đã ngồi vào ghế) hoặc Nút Tạo/Sửa Nhân Vật (Khi đang đi dạo) */}
+          {mySeatedNumber !== null ? (
+            <button
+              onClick={standUpAndRoam}
+              className="has-tooltip dock-standup-btn"
+              data-tooltip={
+                lang === 'en'
+                  ? 'Stand up and walk around the campgrounds'
+                  : 'Đứng dậy quay lại chế độ đi dạo tự do khám phá lều'
+              }
+              style={{
+                height: '38px',
+                minHeight: '38px',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                border: '1.5px solid #6ee7b7',
+                borderRadius: '12px',
+                padding: '0 16px',
+                fontSize: '0.82rem',
+                fontWeight: 800,
+                color: '#ffffff',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 18px rgba(16, 185, 129, 0.5)',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.16s ease',
+              }}
+            >
+              <Footprints size={16} color="#ffffff" />
+              <span>{lang === 'en' ? '🚶 Stand Up & Roam' : '🚶 Đứng Dậy Đi Tiếp'}</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                setCreationName(playerName);
+                setCreationSkinId(myOutfit.skinId);
+                setCreationHatId(myOutfit.hatId);
+                setIsCharacterCreationOpen(true);
+                NativeBridge.hapticImpact('light');
+              }}
+              className="has-tooltip dock-creator-btn"
+              data-tooltip={
+                lang === 'en'
+                  ? 'Open Character Creator'
+                  : 'Mở bảng tạo / sửa hồ sơ nhân vật'
+              }
+              style={{
+                height: '38px',
+                minHeight: '38px',
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.95) 0%, rgba(5, 150, 105, 0.95) 100%)',
+                border: '1.5px solid rgba(110, 231, 183, 0.6)',
+                borderRadius: '12px',
+                padding: '0 16px',
+                fontSize: '0.82rem',
+                fontWeight: 800,
+                color: '#ffffff',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 18px rgba(16, 185, 129, 0.5)',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.16s ease',
+              }}
+            >
+              <User size={16} color="#ffffff" />
+              <span>{lang === 'en' ? '🏕️ Character' : '🏕️ Tạo / Sửa Nhân Vật'}</span>
+            </button>
+          )}
+
           {/* Nút chính: Bắt Đầu Đêm Đồng Thời (25s) */}
           <button
             onClick={startSimultaneousNight}
@@ -2130,6 +2291,245 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
           NativeBridge.hapticNotification('success');
         }}
       />
+
+      {/* === MODAL TẠO NHÂN VẬT METAVERSE (CHARACTER CREATION MODAL) === */}
+      {isCharacterCreationOpen && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'rgba(7, 7, 16, 0.88)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 120,
+            padding: '16px',
+            animation: 'fadeIn 0.2s ease',
+          }}
+        >
+          <div
+            style={{
+              background: 'rgba(15, 23, 42, 0.98)',
+              border: '1.5px solid rgba(56, 189, 248, 0.5)',
+              borderRadius: '24px',
+              padding: '24px',
+              maxWidth: '520px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 24px 64px rgba(0, 0, 0, 0.9), 0 0 24px rgba(56, 189, 248, 0.25)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              color: '#f8fafc',
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div
+                style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '14px',
+                  background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%)',
+                  border: '1.5px solid #38bdf8',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.5rem',
+                  flexShrink: 0,
+                }}
+              >
+                🏕️
+              </div>
+              <div style={{ flex: 1 }}>
+                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, color: '#f8fafc', letterSpacing: '0.3px' }}>
+                  {lang === 'en' ? '🏕️ CREATE METAVERSE CAMPER' : '🏕️ TẠO NHÂN VẬT METAVERSE'}
+                </h3>
+                <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '2px' }}>
+                  {lang === 'en'
+                    ? 'Craft your avatar identity & explore the open campgrounds'
+                    : 'Thiết kế nhận diện nhân vật & tự do khám phá khu cắm trại ma sói'}
+                </div>
+              </div>
+              {localStorage.getItem('masoi_player_created') === 'true' && (
+                <button
+                  onClick={() => setIsCharacterCreationOpen(false)}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: 'none',
+                    color: '#94a3b8',
+                    cursor: 'pointer',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.9rem',
+                    fontWeight: 700,
+                  }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Ô nhập Biệt danh Thợ Săn */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#cbd5e1', marginBottom: '6px' }}>
+                {lang === 'en' ? 'CAMPER NICKNAME' : 'BIỆT DANH THỢ SĂN'}
+              </label>
+              <input
+                type="text"
+                value={creationName}
+                onChange={(e) => setCreationName(e.target.value)}
+                placeholder={lang === 'en' ? 'Camper Nickname...' : 'Biệt danh Thợ Săn...'}
+                maxLength={20}
+                style={{
+                  width: '100%',
+                  background: 'rgba(30, 41, 59, 0.85)',
+                  border: '1.5px solid rgba(148, 163, 184, 0.3)',
+                  borderRadius: '12px',
+                  padding: '10px 14px',
+                  color: '#f8fafc',
+                  fontSize: '0.95rem',
+                  fontWeight: 700,
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+
+            {/* Chọn nhanh Skin Chibi */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#cbd5e1', marginBottom: '8px' }}>
+                {lang === 'en' ? 'SELECT CHIBI SKIN' : 'CHỌN NGOẠI HÌNH CHIBI'}
+              </label>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                  gap: '8px',
+                }}
+              >
+                {OUTFIT_SKINS.map((skin) => {
+                  const isSelected = creationSkinId === skin.id;
+                  return (
+                    <button
+                      key={skin.id}
+                      type="button"
+                      onClick={() => {
+                        setCreationSkinId(skin.id);
+                        NativeBridge.hapticImpact('light');
+                      }}
+                      style={{
+                        background: isSelected
+                          ? 'linear-gradient(135deg, rgba(56, 189, 248, 0.25) 0%, rgba(99, 102, 241, 0.25) 100%)'
+                          : 'rgba(30, 41, 59, 0.65)',
+                        border: `1.5px solid ${isSelected ? '#38bdf8' : 'rgba(255, 255, 255, 0.1)'}`,
+                        borderRadius: '14px',
+                        padding: '10px 8px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '6px',
+                        cursor: 'pointer',
+                        color: '#f8fafc',
+                        boxShadow: isSelected ? '0 0 14px rgba(56, 189, 248, 0.4)' : 'none',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <span style={{ fontSize: '1.6rem' }}>{skin.icon}</span>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2 }}>
+                        {lang === 'en' ? skin.nameEn : skin.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Chọn nhanh Mũ Phong Cách */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, color: '#cbd5e1', marginBottom: '8px' }}>
+                {lang === 'en' ? 'SELECT HAT ACCESSORY' : 'CHỌN MŨ PHONG CÁCH'}
+              </label>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))',
+                  gap: '8px',
+                }}
+              >
+                {OUTFIT_HATS.map((hat) => {
+                  const isSelected = creationHatId === hat.id;
+                  return (
+                    <button
+                      key={hat.id}
+                      type="button"
+                      onClick={() => {
+                        setCreationHatId(hat.id);
+                        NativeBridge.hapticImpact('light');
+                      }}
+                      style={{
+                        background: isSelected
+                          ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(236, 72, 153, 0.25) 100%)'
+                          : 'rgba(30, 41, 59, 0.65)',
+                        border: `1.5px solid ${isSelected ? '#c084fc' : 'rgba(255, 255, 255, 0.1)'}`,
+                        borderRadius: '12px',
+                        padding: '8px 6px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '4px',
+                        cursor: 'pointer',
+                        color: '#f8fafc',
+                        boxShadow: isSelected ? '0 0 12px rgba(192, 132, 252, 0.4)' : 'none',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <span style={{ fontSize: '1.4rem' }}>{hat.icon}</span>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 700, textAlign: 'center', lineHeight: 1.2 }}>
+                        {lang === 'en' ? hat.nameEn : hat.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Nút bấm lớn: Bước Vào Khu Cắm Trại */}
+            <button
+              onClick={handleSaveCharacterCreation}
+              style={{
+                width: '100%',
+                height: '48px',
+                minHeight: '48px',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                border: '1.5px solid #6ee7b7',
+                borderRadius: '14px',
+                color: '#ffffff',
+                fontSize: '0.96rem',
+                fontWeight: 900,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                boxShadow: '0 8px 24px rgba(16, 185, 129, 0.5)',
+                marginTop: '6px',
+                letterSpacing: '0.4px',
+              }}
+            >
+              <span>🏕️</span>
+              <span>{lang === 'en' ? 'Enter Campgrounds' : 'Bước Vào Khu Cắm Trại'}</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

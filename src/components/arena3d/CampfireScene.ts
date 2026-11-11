@@ -5,6 +5,8 @@ import {
   DEFAULT_OUTFIT,
   CampTentId,
   CAMP_TENTS,
+  CampTentInfo,
+  PlayerOutfitConfig,
 } from './types';
 
 export class CampfireScene {
@@ -22,11 +24,24 @@ export class CampfireScene {
   private highlightRing!: THREE.Mesh;
   private highlightRingMaterial!: THREE.MeshBasicMaterial;
 
-  // Lều & Lửa tại các Túp Lều Phụ (Lều Sương Mù, Lều Rừng Thông, Lều Đom Đóm)
+  // Lều & Lửa tại các Túp Lều Phụ (Lều Sương Mù, Lều Rừng Thông, Lều Núi Tuyết)
   private secondaryLights: THREE.PointLight[] = [];
   private secondaryFlames: THREE.Mesh[] = [];
   private secondaryNpcCharacters: WolfCharacter[] = [];
   private fireflyMeshes: THREE.Mesh[] = [];
+
+  // Nhãn trên khúc gỗ trống (Empty Seat Labels)
+  private stumpLabels: Map<number, THREE.Sprite> = new Map();
+
+  // Biển hiệu 3D nổi trên nóc 4 túp lều
+  private tentSignboardSprites: Map<CampTentId, THREE.Sprite> = new Map();
+
+  // Nhân vật đại diện người chơi khi đi dạo tự do (Roam Avatar)
+  private roamAvatar!: WolfCharacter;
+  private mySeatedNumber: number | null = null;
+  private playerName = 'Thợ Săn Đêm';
+  private playerOutfit: PlayerOutfitConfig = DEFAULT_OUTFIT;
+  private lang: 'vi' | 'en' = 'vi';
 
   private isNight = true;
   private animFrameId: number | null = null;
@@ -38,15 +53,15 @@ export class CampfireScene {
   private targetCameraCenter: THREE.Vector3 = new THREE.Vector3(0, 1.2, 0);
 
   // Điều khiển Camera Orbit
-  private cameraRadius = 11.5;
+  private cameraRadius = 8.5;
   private cameraAngle = Math.PI / 2;
-  private cameraHeight = 7.0;
+  private cameraHeight = 5.0;
   private isDragging = false;
   private previousMousePosition = { x: 0, y: 0 };
   private hoveredSeat: number | null = null;
 
-  // Chế độ Tự Do Đi Dạo (Free Roam / Walk Mode)
-  public isRoaming = false;
+  // Chế độ Tự Do Đi Dạo (Free Roam / Walk Mode) - Mặc định khởi đầu ở chế độ Đi Dạo
+  public isRoaming = true;
   private roamPosition = new THREE.Vector3(0, 0.05, 5.8);
   private roamFacingAngle = Math.PI;
   private roamTargetPos: THREE.Vector3 | null = null;
@@ -95,6 +110,7 @@ export class CampfireScene {
     this.initCampfire();
     this.initSeats();
     this.initCampgroundTents();
+    this.initRoamAvatar();
     this.initInteractions(canvas);
 
     this.animate = this.animate.bind(this);
@@ -413,44 +429,41 @@ export class CampfireScene {
 
   // === KHỞI TẠO 4 CỤM TÚP LỀU TRONG KHU CẮM TRẠI ĐÊM (MULTI-TENT CAMPGROUNDS) ===
   private initCampgroundTents(): void {
-    // 1. Túp Lều #1: "Lều Trăng Máu" (Đặt ngay sát đống lửa trung tâm ở z = 8.2)
+    // 1. Túp Lều #1: "Lều Trăng Máu" (Bàn 1)
     const tent1 = this.createCampTentMesh(0x991b1b, 0xf97316); // Đỏ trăng máu & đèn cam
     tent1.position.set(0, 0, 8.2);
     tent1.rotation.y = Math.PI; // Quay cửa lều hướng về đống lửa
     this.scene.add(tent1);
 
-    // 2. Túp Lều #2: "Lều Sương Mù" ở (-16, 0, -14)
+    // 2. Túp Lều #2: "Lều Sương Mù" (Bàn 2) ở (-16, 0, -14)
     this.createSecondaryCampCluster({
       tentPos: [-16, 0, -9.0],
       tentRotY: Math.PI,
       firePos: [-16, 0, -14],
       clothColor: 0x334155, // Xanh xám sương mờ
       fireColor: 0x06b6d4,  // Lửa xanh băng tuyết
-      npcCount: 3,
-      skinIds: ['WOLF_SNOW', 'CAMPER_GIRL', 'WOLF_SHADOW'],
     });
 
-    // 3. Túp Lều #3: "Lều Rừng Thông" ở (16, 0, -14)
+    // 3. Túp Lều #3: "Lều Rừng Thông" (Bàn 3) ở (16, 0, -14)
     this.createSecondaryCampCluster({
       tentPos: [16, 0, -9.0],
       tentRotY: Math.PI,
       firePos: [16, 0, -14],
       clothColor: 0x14532d, // Xanh rêu lá thông già
       fireColor: 0x10b981,  // Lửa xanh ngọc huyền bí
-      npcCount: 3,
-      skinIds: ['WOLF_GOLD', 'WOLF_GRAY', 'KITSUNE_FOX'],
     });
 
-    // 4. Túp Lều #4: "Lều Đom Đóm" ở (0, 0, -24)
+    // 4. Túp Lều #4: "Lều Núi Tuyết" (Bàn 4) ở (0, 0, -24)
     this.createSecondaryCampCluster({
       tentPos: [0, 0, -19.0],
       tentRotY: Math.PI,
       firePos: [0, 0, -24],
-      clothColor: 0x713f12, // Vàng nâu mật ong ấm áp
-      fireColor: 0xfacc15,  // Lửa vàng hổ phách
-      npcCount: 2,
-      skinIds: ['KITSUNE_FOX', 'WOLF_BLOOD'],
+      clothColor: 0x0369a1, // Xanh băng núi tuyết
+      fireColor: 0x38bdf8,  // Lửa xanh tuyết trắng
     });
+
+    // Tạo Biển Báo 3D Nổi Trên 4 Túp Lều
+    this.createAllTentSignboards();
   }
 
   private createSecondaryCampCluster(config: {
@@ -459,8 +472,6 @@ export class CampfireScene {
     firePos: [number, number, number];
     clothColor: number;
     fireColor: number;
-    npcCount: number;
-    skinIds: ('WOLF_GRAY' | 'WOLF_SNOW' | 'WOLF_BLOOD' | 'WOLF_SHADOW' | 'WOLF_GOLD' | 'CAMPER_GIRL' | 'KITSUNE_FOX')[];
   }): void {
     // Túp lều 3D
     const tent = this.createCampTentMesh(config.clothColor, config.fireColor);
@@ -503,39 +514,192 @@ export class CampfireScene {
     this.scene.add(pLight);
     this.secondaryLights.push(pLight);
 
-    // Các gốc cây ghế ngồi & NPC đang ngồi quanh lửa
+    // Các gốc cây ghế ngồi tự nhiên (Xóa bỏ 100% bot ảo giả lập!)
     const stumpMat = new THREE.MeshStandardMaterial({ color: 0x5c3818, roughness: 0.9 });
-    for (let n = 0; n < config.npcCount; n++) {
-      const angle = (n / config.npcCount) * Math.PI * 1.6 + 0.4;
+    for (let n = 0; n < 3; n++) {
+      const angle = (n / 3) * Math.PI * 1.6 + 0.4;
       const sx = fx + Math.sin(angle) * 2.8;
       const sz = fz + Math.cos(angle) * 2.8;
 
       const stump = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.48, 0.35, 6), stumpMat);
       stump.position.set(sx, 0.18, sz);
       this.scene.add(stump);
-
-      const skinId = config.skinIds[n % config.skinIds.length] || 'WOLF_GRAY';
-      const npc = new WolfCharacter({
-        skinId,
-        hatId: n === 0 ? 'CONICAL_HAT' : 'NONE',
-        eyeGlowId: 'RED',
-        backItemId: 'NONE',
-      });
-      npc.root.position.set(sx, 0.35, sz);
-      npc.root.rotation.y = angle + Math.PI;
-      const titles = ['Phượt Thủ Rừng', 'Tiên Tri Ẩn Sĩ', 'Thợ Săn Gió', 'Nữ Sinh Cắm Trại', 'Hồ Ly Tuyết'];
-      npc.setNameplate(titles[n % titles.length]);
-      this.scene.add(npc.root);
-      this.secondaryNpcCharacters.push(npc);
     }
+  }
+
+  // === BIỂN BÁO 3D NỔI TRÊN 4 TÚP LỀU (3D FLOATING TENT SIGNBOARDS) ===
+  private createTentSignboardSprite(tent: CampTentInfo): THREE.Sprite {
+    const canvas =
+      typeof document !== 'undefined' && document.createElement
+        ? document.createElement('canvas')
+        : null;
+    let texture: THREE.Texture;
+    if (canvas) {
+      canvas.width = 480;
+      canvas.height = 104;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const r = 26;
+        ctx.fillStyle = 'rgba(10, 15, 29, 0.92)';
+        ctx.strokeStyle = tent.themeColor || '#ef4444';
+        ctx.lineWidth = 3.5;
+        ctx.shadowColor = tent.themeColor || '#ef4444';
+        ctx.shadowBlur = 12;
+
+        ctx.beginPath();
+        ctx.roundRect(8, 8, canvas.width - 16, canvas.height - 16, r);
+        ctx.fill();
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        const title =
+          this.lang === 'en'
+            ? tent.signboardTitleEn || `${tent.banner} ${tent.nameEn}`
+            : tent.signboardTitle || `${tent.banner} ${tent.name}`;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(title, canvas.width / 2, canvas.height / 2);
+      }
+      texture = new THREE.CanvasTexture(canvas);
+      texture.minFilter = THREE.LinearFilter;
+    } else {
+      texture = new THREE.Texture();
+    }
+
+    const mat = new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      depthTest: true,
+      depthWrite: false,
+    });
+    const sprite = new THREE.Sprite(mat);
+    sprite.renderOrder = 990;
+    sprite.scale.set(3.6, 0.78, 1.0);
+    return sprite;
+  }
+
+  private createAllTentSignboards(): void {
+    const tentSignPositions: Record<CampTentId, [number, number, number]> = {
+      'tent-1': [0, 4.4, 8.2],
+      'tent-2': [-16, 4.4, -9.0],
+      'tent-3': [16, 4.4, -9.0],
+      'tent-4': [0, 4.4, -19.0],
+    };
+
+    CAMP_TENTS.forEach((tent) => {
+      const pos = tentSignPositions[tent.id];
+      if (!pos) return;
+      const sprite = this.createTentSignboardSprite(tent);
+      sprite.position.set(pos[0], pos[1], pos[2]);
+      this.scene.add(sprite);
+      this.tentSignboardSprites.set(tent.id, sprite);
+    });
+  }
+
+  // === NHÃN BẢNG TÊN TRÊN KHÚC GỖ TRỐNG (EMPTY STUMP 3D LABELS) ===
+  private createStumpLabelSprite(seatNumber: number): THREE.Sprite {
+    const canvas =
+      typeof document !== 'undefined' && document.createElement
+        ? document.createElement('canvas')
+        : null;
+    let texture: THREE.Texture;
+    if (canvas) {
+      canvas.width = 400;
+      canvas.height = 80;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const r = 20;
+        ctx.fillStyle = 'rgba(10, 15, 29, 0.88)';
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2.5;
+
+        ctx.beginPath();
+        ctx.roundRect(6, 6, canvas.width - 12, canvas.height - 12, r);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const labelText =
+          this.lang === 'en'
+            ? `[🪑 Seat #${seatNumber} - Tap to sit]`
+            : `[🪑 Ghế #${seatNumber} - Bấm để ngồi]`;
+        ctx.fillText(labelText, canvas.width / 2, canvas.height / 2);
+      }
+      texture = new THREE.CanvasTexture(canvas);
+      texture.minFilter = THREE.LinearFilter;
+    } else {
+      texture = new THREE.Texture();
+    }
+
+    const mat = new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+    });
+    const sprite = new THREE.Sprite(mat);
+    sprite.renderOrder = 999;
+    sprite.scale.set(1.6, 0.32, 1.0);
+    sprite.userData = { seatNumber };
+    return sprite;
+  }
+
+  // === KHỞI TẠO AVATAR NGƯỜI CHƠI ĐI DẠO METAVERSE ===
+  private initRoamAvatar(): void {
+    this.roamAvatar = new WolfCharacter(this.playerOutfit);
+    this.roamAvatar.setStanding(true);
+    this.roamAvatar.root.position.copy(this.roamPosition);
+    this.roamAvatar.root.rotation.y = this.roamFacingAngle;
+    this.roamAvatar.setNameplate(this.playerName);
+    this.roamAvatar.root.visible = this.isRoaming;
+    this.scene.add(this.roamAvatar.root);
+  }
+
+  public updatePlayerProfile(name: string, outfit: PlayerOutfitConfig): void {
+    this.playerName = name;
+    this.playerOutfit = outfit;
+    if (this.roamAvatar) {
+      this.roamAvatar.updateOutfit(outfit);
+      this.roamAvatar.setNameplate(name);
+    }
+  }
+
+  public setLanguage(lang: 'vi' | 'en'): void {
+    this.lang = lang;
+    // Cập nhật lại các biển hiệu lều
+    CAMP_TENTS.forEach((tent) => {
+      const existing = this.tentSignboardSprites.get(tent.id);
+      if (existing) {
+        this.scene.remove(existing);
+      }
+    });
+    this.tentSignboardSprites.clear();
+    this.createAllTentSignboards();
+
+    // Cập nhật lại nhãn ghế trống
+    this.stumpLabels.forEach((label, seatNumber) => {
+      const stump = this.seatMeshes[seatNumber - 1];
+      if (stump && label.visible) {
+        this.scene.remove(label);
+        const newLabel = this.createStumpLabelSprite(seatNumber);
+        newLabel.position.set(stump.position.x, 0.72, stump.position.z);
+        this.scene.add(newLabel);
+        this.stumpLabels.set(seatNumber, newLabel);
+      }
+    });
   }
 
   // === XỬ LÝ RAYCAST VA CHẠM GHẾ VÀ NHÂN VẬT ===
   private getSeatFromIntersects(intersects: THREE.Intersection[]): number | null {
     for (const hit of intersects) {
-      if (hit.object instanceof THREE.Sprite || hit.object.type === 'Sprite') {
-        continue;
-      }
       let obj: THREE.Object3D | null = hit.object;
       while (obj) {
         if (typeof obj.userData?.seatNumber === 'number') {
@@ -623,7 +787,18 @@ export class CampfireScene {
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), this.camera);
 
-      if (this.isRoaming) {
+      // Kiểm tra bấm vào khúc gỗ / nhân vật / nhãn ghế
+      const targets = [
+        ...this.seatMeshes,
+        ...Array.from(this.characters.values()).map((c) => c.root),
+        ...Array.from(this.stumpLabels.values()),
+      ];
+      const intersects = raycaster.intersectObjects(targets, true);
+      const clickedSeat = this.getSeatFromIntersects(intersects);
+
+      if (clickedSeat !== null && this.onSeatClickCallback) {
+        this.onSeatClickCallback(clickedSeat);
+      } else if (this.isRoaming) {
         // Chế độ Đi Dạo: Click/Tap xuống mặt đất y = 0 để đi bộ tới điểm chạm
         const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
         const intersectPoint = new THREE.Vector3();
@@ -631,17 +806,6 @@ export class CampfireScene {
           const clampedX = Math.max(-28, Math.min(28, intersectPoint.x));
           const clampedZ = Math.max(-36, Math.min(14, intersectPoint.z));
           this.roamTargetPos = new THREE.Vector3(clampedX, 0.05, clampedZ);
-        }
-      } else {
-        // Chế độ Quản Trò / Đấu Trường: Click chọn ghế hoặc thân nhân vật
-        const targets = [
-          ...this.seatMeshes,
-          ...Array.from(this.characters.values()).map((c) => c.root),
-        ];
-        const intersects = raycaster.intersectObjects(targets, true);
-        const clickedSeat = this.getSeatFromIntersects(intersects);
-        if (clickedSeat !== null && this.onSeatClickCallback) {
-          this.onSeatClickCallback(clickedSeat);
         }
       }
     };
@@ -666,6 +830,7 @@ export class CampfireScene {
       const targets = [
         ...this.seatMeshes,
         ...Array.from(this.characters.values()).map((c) => c.root),
+        ...Array.from(this.stumpLabels.values()),
       ];
       const intersects = raycaster.intersectObjects(targets, true);
       const hoveredSeat = this.getSeatFromIntersects(intersects);
@@ -675,7 +840,7 @@ export class CampfireScene {
         this.setHoveredSeat(hoveredSeat);
         if (this.onSeatHoverCallback) this.onSeatHoverCallback(hoveredSeat);
       } else {
-        canvas.style.cursor = 'grab';
+        canvas.style.cursor = this.isRoaming ? 'crosshair' : 'grab';
         this.setHoveredSeat(null);
         if (this.onSeatHoverCallback) this.onSeatHoverCallback(null);
       }
@@ -737,39 +902,53 @@ export class CampfireScene {
 
   // === QUẢN LÝ CHẾ ĐỘ ĐI DẠO & ĐỔI LỀU (ROAM & TENT SWITCHING) ===
 
-  public setRoaming(enable: boolean): void {
-    this.isRoaming = enable;
+  public sitAtSeat(seatNumber: number): void {
+    this.mySeatedNumber = seatNumber;
+    this.isRoaming = false;
     this.roamTargetPos = null;
-    const player1 = this.characters.get(1);
 
-    if (enable) {
-      // Đứng dậy khỏi Ghế #1 và tiến ra bãi cỏ (chạm mặt đất y = 0.05)
-      this.roamPosition.set(0, 0.05, 5.8);
-      this.roamFacingAngle = Math.PI;
-      if (player1) {
-        player1.setStanding(true);
-        player1.root.position.copy(this.roamPosition);
-        player1.root.rotation.y = this.roamFacingAngle;
-        player1.setAnimation('idle');
-      }
-      this.cameraRadius = 8.5;
-      this.cameraHeight = 5.0;
-    } else {
-      // Ngồi lại vào ghế của Lều hiện tại
-      if (player1) {
-        const stump = this.seatMeshes[0];
-        if (stump) {
-          player1.setStanding(false);
-          player1.root.position.set(stump.position.x, 0.38, stump.position.z);
-          player1.root.rotation.y = Math.PI;
-          player1.setAnimation('idle');
-        }
-      }
-      this.resetCamera();
+    if (this.roamAvatar) {
+      this.roamAvatar.root.visible = false;
     }
 
+    // Đưa camera về bao quát bàn cắm trại
+    this.cameraRadius = 11.5;
+    this.cameraHeight = 7.0;
+    this.targetCameraCenter.set(0, 1.2, 0);
+    this.updateCameraPosition();
+
     if (this.onRoamStateChangeCallback) {
-      this.onRoamStateChangeCallback(enable);
+      this.onRoamStateChangeCallback(false);
+    }
+  }
+
+  public standUp(): void {
+    this.mySeatedNumber = null;
+    this.isRoaming = true;
+    this.roamTargetPos = null;
+
+    if (this.roamAvatar) {
+      this.roamAvatar.root.visible = true;
+      this.roamAvatar.setStanding(true);
+      this.roamAvatar.setAnimation('idle');
+      this.roamAvatar.root.position.copy(this.roamPosition);
+      this.roamAvatar.root.rotation.y = this.roamFacingAngle;
+    }
+
+    this.cameraRadius = 8.5;
+    this.cameraHeight = 5.0;
+    this.updateCameraPosition();
+
+    if (this.onRoamStateChangeCallback) {
+      this.onRoamStateChangeCallback(true);
+    }
+  }
+
+  public setRoaming(enable: boolean): void {
+    if (enable) {
+      this.standUp();
+    } else {
+      this.sitAtSeat(this.mySeatedNumber || 1);
     }
   }
 
@@ -784,9 +963,8 @@ export class CampfireScene {
     if (this.isRoaming) {
       this.roamPosition.set(tent.position[0], 0.05, tent.position[2] + 4.5);
       this.roamTargetPos = null;
-      const player1 = this.characters.get(1);
-      if (player1) {
-        player1.root.position.copy(this.roamPosition);
+      if (this.roamAvatar) {
+        this.roamAvatar.root.position.copy(this.roamPosition);
       }
     }
   }
@@ -830,9 +1008,33 @@ export class CampfireScene {
   public updateSeatsState(seats: SeatPlayerInfo[]): void {
     seats.forEach((info) => {
       const char = this.characters.get(info.seatNumber);
-      if (!char) return;
+      const stump = this.seatMeshes[info.seatNumber - 1];
+      if (!char || !stump) return;
 
       char.root.userData = { seatNumber: info.seatNumber };
+
+      // Ghế Trống (isEmpty === true hoặc chưa có người ngồi):
+      // Ẩn mesh nhân vật tương ứng, hiện nhãn bảng tên trên khúc gỗ
+      if (info.isEmpty) {
+        char.root.visible = false;
+
+        let labelSprite = this.stumpLabels.get(info.seatNumber);
+        if (!labelSprite) {
+          labelSprite = this.createStumpLabelSprite(info.seatNumber);
+          labelSprite.position.set(stump.position.x, 0.72, stump.position.z);
+          this.scene.add(labelSprite);
+          this.stumpLabels.set(info.seatNumber, labelSprite);
+        }
+        labelSprite.visible = true;
+        return;
+      }
+
+      // Ghế có người chơi ngồi: Hiện mesh nhân vật, ẩn nhãn bảng tên trống
+      char.root.visible = true;
+      const labelSprite = this.stumpLabels.get(info.seatNumber);
+      if (labelSprite) {
+        labelSprite.visible = false;
+      }
 
       // Cập nhật trang phục nếu có
       if (info.outfit) {
@@ -844,12 +1046,6 @@ export class CampfireScene {
 
       // Cập nhật Bảng Tên Nổi 3D lơ lửng trên đầu nhân vật
       char.setNameplate(info.name, info.seatNumber, info.isAlive);
-
-      // Nếu là người chơi số 1 và đang ở chế độ Đi Dạo (isRoaming):
-      // Chỉ cập nhật outfit / nameplate / ghostMode, KHÔNG ép animation về slumber hay tư thế ngồi!
-      if (info.seatNumber === 1 && this.isRoaming) {
-        return;
-      }
 
       // Đặt hoạt cảnh theo thời điểm
       if (!info.isAlive) {
@@ -1017,9 +1213,9 @@ export class CampfireScene {
         this.roamFacingAngle = Math.atan2(dirX, dirZ);
         this.roamPosition.y = 0.05;
 
-        if (player1) {
-          player1.setStanding(true);
-          player1.setAnimation('walk');
+        if (this.roamAvatar) {
+          this.roamAvatar.setStanding(true);
+          this.roamAvatar.setAnimation('walk');
         }
 
         // Kiểm tra xem đã tới gần Túp Lều nào chưa
@@ -1053,9 +1249,9 @@ export class CampfireScene {
           this.roamFacingAngle = Math.atan2(dirX, dirZ);
           this.roamPosition.y = 0.05;
 
-          if (player1) {
-            player1.setStanding(true);
-            player1.setAnimation('walk');
+          if (this.roamAvatar) {
+            this.roamAvatar.setStanding(true);
+            this.roamAvatar.setAnimation('walk');
           }
 
           // Kiểm tra xem đã tới gần Túp Lều nào chưa
@@ -1073,27 +1269,28 @@ export class CampfireScene {
           // Đã tới đích chạm đất: dừng lại đứng thở trên mặt cỏ
           this.roamTargetPos = null;
           this.roamPosition.y = 0.05;
-          if (player1) {
-            player1.setStanding(true);
-            player1.setAnimation('idle');
+          if (this.roamAvatar) {
+            this.roamAvatar.setStanding(true);
+            this.roamAvatar.setAnimation('idle');
           }
         }
       } else {
         // Đứng yên thẳng người thở nhẹ
         this.roamPosition.y = 0.05;
-        if (player1) {
-          player1.setStanding(true);
-          player1.setAnimation('idle');
+        if (this.roamAvatar) {
+          this.roamAvatar.setStanding(true);
+          this.roamAvatar.setAnimation('idle');
         }
       }
 
       // Áp dụng lực đẩy lùi tránh đốm lửa trại (Obstacle Avoidance around Campfire Pits)
       this.applyCampfireObstaclePushback();
 
-      // Cập nhật vị trí nhân vật người chơi #1
-      if (player1) {
-        player1.root.position.copy(this.roamPosition);
-        player1.root.rotation.y = this.roamFacingAngle;
+      // Cập nhật vị trí avatar người chơi đi dạo
+      if (this.roamAvatar) {
+        this.roamAvatar.root.position.copy(this.roamPosition);
+        this.roamAvatar.root.rotation.y = this.roamFacingAngle;
+        this.roamAvatar.update(delta);
       }
 
       this.updateCameraPosition();
@@ -1109,14 +1306,14 @@ export class CampfireScene {
       flame.scale.set(s, 1.0 + flick * 0.2, s);
     });
 
-    // Lửa phụ ở 3 lều
+    // Lửa phụ ở các lều
     this.secondaryFlames.forEach((flame, idx) => {
       flame.rotation.y += delta * 1.8;
       const s = 0.9 + Math.sin(now * 0.007 + idx) * 0.12;
       flame.scale.set(s, 1.0 + flick * 0.15, s);
     });
 
-    // Đom đóm dập dềnh quanh Lều Đom Đóm
+    // Đom đóm dập dềnh quanh Lều Núi Tuyết
     this.fireflyMeshes.forEach((fly) => {
       const u = fly.userData;
       fly.position.y = u.baseY + Math.sin(now * 0.002 * u.speed + u.offset) * 0.35;
@@ -1127,12 +1324,14 @@ export class CampfireScene {
       this.highlightRing.rotation.z += delta * 1.5;
     }
 
-    // Cập nhật hoạt cảnh cho tất cả nhân vật chính & phụ
+    // Biển hiệu 3D nổi trên nóc lều bồng bềnh nhẹ nhàng
+    this.tentSignboardSprites.forEach((sprite) => {
+      sprite.position.y = 4.4 + Math.sin(now * 0.002) * 0.08;
+    });
+
+    // Cập nhật hoạt cảnh cho các nhân vật ngồi quanh bàn
     this.characters.forEach((char) => {
       char.update(delta);
-    });
-    this.secondaryNpcCharacters.forEach((npc) => {
-      npc.update(delta);
     });
 
     this.renderer.render(this.scene, this.camera);

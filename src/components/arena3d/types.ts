@@ -339,6 +339,7 @@ export interface SeatPlayerInfo {
   seatNumber: number;
   name: string;
   isAlive: boolean;
+  isEmpty?: boolean;
   isWerewolf?: boolean;
   isDead?: boolean;
   outfit: PlayerOutfitConfig;
@@ -367,6 +368,9 @@ export interface CampTentInfo {
   themeColor: string;
   banner: string;
   campfireColor: number;
+  tableNumber?: number;
+  signboardTitle?: string;
+  signboardTitleEn?: string;
 }
 
 export const CAMP_TENTS: CampTentInfo[] = [
@@ -380,11 +384,14 @@ export const CAMP_TENTS: CampTentInfo[] = [
     descriptionEn: 'The grand central pavilion where epic werewolf campfire trials take place.',
     position: [0, 0, 0],
     lookAt: [0, 1.2, 0],
-    playerCount: 10,
+    playerCount: 0,
     maxPlayers: 10,
     themeColor: '#ef4444',
     banner: '🩸 Trăng Máu',
     campfireColor: 0xf97316,
+    tableNumber: 1,
+    signboardTitle: '🩸 Lều Trăng Máu (Bàn 1)',
+    signboardTitleEn: '🩸 Blood Moon Tent (Table 1)',
   },
   {
     id: 'tent-2',
@@ -396,11 +403,14 @@ export const CAMP_TENTS: CampTentInfo[] = [
     descriptionEn: 'Hidden deep in the tranquil silver mists of the western forest.',
     position: [-16, 0, -14],
     lookAt: [-16, 1.2, -14],
-    playerCount: 6,
+    playerCount: 0,
     maxPlayers: 8,
     themeColor: '#38bdf8',
     banner: '🌫️ Sương Mù',
     campfireColor: 0x06b6d4,
+    tableNumber: 2,
+    signboardTitle: '🌫️ Lều Sương Mù (Bàn 2)',
+    signboardTitleEn: '🌫️ Mist Valley Tent (Table 2)',
   },
   {
     id: 'tent-3',
@@ -412,27 +422,33 @@ export const CAMP_TENTS: CampTentInfo[] = [
     descriptionEn: 'Beneath millennial evergreen pines whispering cold evening winds.',
     position: [16, 0, -14],
     lookAt: [16, 1.2, -14],
-    playerCount: 8,
+    playerCount: 0,
     maxPlayers: 10,
     themeColor: '#10b981',
     banner: '🌲 Rừng Thông',
     campfireColor: 0x10b981,
+    tableNumber: 3,
+    signboardTitle: '🌲 Lều Rừng Thông (Bàn 3)',
+    signboardTitleEn: '🌲 Pine Forest Tent (Table 3)',
   },
   {
     id: 'tent-4',
-    name: 'Lều Đom Đóm',
-    nameEn: 'Firefly Brook Tent',
-    tagline: 'Bờ Suối Bắc • Ánh Sáng Huyền Ảo',
-    taglineEn: 'Northern Creek • Magical Fireflies',
-    description: 'Cạnh bờ suối đom đóm lập lòe huyền bí phía Bắc khu cắm trại.',
-    descriptionEn: 'Next to the sparkling stream adorned with magical dancing fireflies.',
+    name: 'Lều Núi Tuyết',
+    nameEn: 'Snow Mountain Tent',
+    tagline: 'Đỉnh Bắc Băng Giá • Tuyết Trắng',
+    taglineEn: 'Northern Snow Peak • Frost & Stars',
+    description: 'Nằm trên đỉnh đồi tuyết trắng xóa phía Bắc khu cắm trại.',
+    descriptionEn: 'Perched on the frost-dusted northern snow hill under crisp starlight.',
     position: [0, 0, -24],
     lookAt: [0, 1.2, -24],
-    playerCount: 5,
-    maxPlayers: 6,
-    themeColor: '#facc15',
-    banner: '✨ Đom Đóm',
-    campfireColor: 0xfacc15,
+    playerCount: 0,
+    maxPlayers: 8,
+    themeColor: '#38bdf8',
+    banner: '❄️ Núi Tuyết',
+    campfireColor: 0x38bdf8,
+    tableNumber: 4,
+    signboardTitle: '❄️ Lều Núi Tuyết (Bàn 4)',
+    signboardTitleEn: '❄️ Snow Mountain Tent (Table 4)',
   },
 ];
 
