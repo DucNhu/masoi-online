@@ -16,6 +16,9 @@ import {
   WolfHatId,
 } from './types';
 import { Wardrobe3DModal } from './Wardrobe3DModal';
+import { FriendsAndSchedulerModal } from '../FriendsAndSchedulerModal';
+import { notificationService } from '../../logic/notificationService';
+import { schedulerService } from '../../logic/schedulerService';
 import { NativeBridge } from '../../utils/nativeBridge';
 import { narratorVoice } from '../../utils/narratorVoice';
 import {
@@ -37,6 +40,7 @@ import {
   Volume2,
   VolumeX,
   User,
+  Users,
 } from 'lucide-react';
 
 interface CampfireArena3DViewProps {
@@ -115,6 +119,17 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
   const [isNightMode, setIsNightMode] = useState<boolean>(propIsNight);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isWardrobeOpen, setIsWardrobeOpen] = useState<boolean>(false);
+  const [isFriendsOpen, setIsFriendsOpen] = useState<boolean>(false);
+
+  // Khởi động Daemon kiểm tra lịch hẹn và bắn thông báo trước 15 phút
+  useEffect(() => {
+    notificationService.startReminderDaemon((onTrigger) => {
+      schedulerService.checkAndTriggerReminders(Date.now(), onTrigger);
+    });
+    return () => {
+      notificationService.stopReminderDaemon();
+    };
+  }, []);
 
   // Quản lý Túp Lều & Chế độ Đi Dạo (Camp Tents & Roam Mode)
   // Đọc ?tent= từ URL khi khởi tạo trang chủ
@@ -1242,6 +1257,28 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
           <Sparkles size={16} color="#e9d5ff" />
         </button>
 
+        {/* Nút 👥 Mở Bạn Bè & Hẹn Giờ Chơi */}
+        <button
+          onClick={() => {
+            setIsFriendsOpen(true);
+            NativeBridge.hapticImpact('medium');
+          }}
+          className="hud-icon-btn has-tooltip tooltip-left"
+          data-tooltip={lang === 'en' ? '👥 Friends & Match Scheduler' : '👥 Bạn Bè & Hẹn Giờ Chơi (Báo trước 15p)'}
+          style={{
+            width: '36px',
+            height: '36px',
+            minWidth: '36px',
+            minHeight: '36px',
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.25) 100%)',
+            border: '1.5px solid #fbbf24',
+            boxShadow: '0 0 12px rgba(251, 191, 36, 0.4)',
+          }}
+        >
+          <Users size={16} color="#fde68a" />
+        </button>
+
         <div style={{ width: '24px', height: '1px', background: 'rgba(255,255,255,0.12)', margin: '1px 0' }} />
 
         {/* Nút 🌙 / ☀️ Đổi Ngày / Đêm */}
@@ -1754,6 +1791,37 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
           >
             <Palette size={15} color="#c084fc" />
             <span className="dock-wardrobe-text">{lang === 'en' ? '✨ Wardrobe' : '✨ Đổi Ngoại Trang'}</span>
+          </button>
+
+          {/* Nút phụ: Bạn Bè & Hẹn Giờ */}
+          <button
+            onClick={() => {
+              setIsFriendsOpen(true);
+              NativeBridge.hapticImpact('light');
+            }}
+            className="has-tooltip dock-wardrobe-btn"
+            data-tooltip={lang === 'en' ? 'Friends & Match Scheduler' : 'Bạn Bè & Hẹn Giờ Chơi (Báo trước 15p)'}
+            style={{
+              height: '38px',
+              minHeight: '38px',
+              background: 'rgba(30, 41, 59, 0.85)',
+              border: '1px solid rgba(245, 158, 11, 0.4)',
+              borderRadius: '12px',
+              padding: '0 14px',
+              fontSize: '0.78rem',
+              fontWeight: 800,
+              color: '#fbbf24',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              transition: 'all 0.16s ease',
+            }}
+          >
+            <Users size={15} color="#fbbf24" />
+            <span className="dock-wardrobe-text">{lang === 'en' ? '👥 Friends & Schedule' : '👥 Bạn Bè & Hẹn Giờ'}</span>
           </button>
         </div>
       )}
@@ -2289,6 +2357,21 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
           const savedCoins = localStorage.getItem('ma_soi_player_coins');
           if (savedCoins) setCoins(Number(savedCoins));
           NativeBridge.hapticNotification('success');
+        }}
+      />
+
+      {/* Friends & Scheduler Modal */}
+      <FriendsAndSchedulerModal
+        isOpen={isFriendsOpen}
+        onClose={() => setIsFriendsOpen(false)}
+        currentUsername={playerName || 'aduckuba41'}
+        onJoinTable={(tbl) => {
+          console.log('Chuyển đến bàn hẹn:', tbl);
+          // Nếu có lều tương ứng thì chuyển tab lều
+          if (tbl.includes('Bàn 1')) setActiveTentId('tent-1');
+          else if (tbl.includes('Bàn 2')) setActiveTentId('tent-2');
+          else if (tbl.includes('Bàn 3')) setActiveTentId('tent-3');
+          else if (tbl.includes('Bàn 4')) setActiveTentId('tent-4');
         }}
       />
 
