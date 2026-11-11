@@ -392,13 +392,18 @@ function readEnv(name: string): string | undefined {
   }
 }
 
+const DEFAULT_SUPABASE_URL = 'https://qjoeeryaocljubdrvpdq.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_IHVe3sFbGTA-vXyQrcxvew_yIeMGvmf';
+
 export function isSupabaseConfigured(): boolean {
-  return Boolean(readEnv('VITE_SUPABASE_URL') && readEnv('VITE_SUPABASE_ANON_KEY'));
+  const url = readEnv('VITE_SUPABASE_URL') || DEFAULT_SUPABASE_URL;
+  const key = readEnv('VITE_SUPABASE_ANON_KEY') || DEFAULT_SUPABASE_ANON_KEY;
+  return Boolean(url && key);
 }
 
 export function createDefaultBackend(): AccountBackend {
-  const url = readEnv('VITE_SUPABASE_URL');
-  const key = readEnv('VITE_SUPABASE_ANON_KEY');
+  const url = readEnv('VITE_SUPABASE_URL') || DEFAULT_SUPABASE_URL;
+  const key = readEnv('VITE_SUPABASE_ANON_KEY') || DEFAULT_SUPABASE_ANON_KEY;
   if (url && key) return new SupabaseAccountBackend(url, key);
   // Chưa cấu hình Supabase: chạy local (chỉ có hiệu lực trong trình duyệt này)
   return new LocalAccountBackend(localStorageStore());
