@@ -1182,6 +1182,17 @@ export const Wardrobe3DModal: React.FC<Wardrobe3DModalProps> = ({
               }}
             >
               <button
+                onClick={() => {
+                  onClose();
+                  window.dispatchEvent(new CustomEvent('masoi-account-logout'));
+                }}
+                className="btn btn-secondary"
+                title={lang === 'en' ? 'Sign out of this account' : 'Thoát tài khoản trên thiết bị này'}
+                style={{ padding: '10px 12px', borderRadius: '14px', fontSize: '0.78rem', color: '#fca5a5' }}
+              >
+                {lang === 'en' ? 'Sign out' : 'Thoát TK'}
+              </button>
+              <button
                 onClick={onClose}
                 className="btn btn-secondary"
                 style={{ flex: 1, padding: '10px', borderRadius: '14px', fontSize: '0.82rem' }}

@@ -1,35 +1,24 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-11-11 09:13 (Asia/Ho_Chi_Minh) — Sprint 36: Metaverse Open Campgrounds Hub (Tạo Nhân Vật ➜ Đi Dạo Khám Phá Lều ➜ Ngồi Vào Khúc Gỗ Trống Tham Gia Bàn) [COMPLETED].
-- **Mục tiêu**: **Tái cấu trúc luồng trải nghiệm người dùng theo concept "Vào hội cắm trại chọn bàn trống": (1) Tạo nhân vật Chibi 3D ngay khi vào game, (2) Khởi đầu ở trạng thái Đi Dạo Tự Do trong khu rừng 3D, (3) Dọn sạch 100% bot ảo, các khúc gỗ chưa có người là Ghế Trống, (4) Chạm vào khúc gỗ trống để ngồi vào bàn chơi, có nút Đứng dậy đi tiếp bất kỳ lúc nào [COMPLETED]**.
-- **Kết quả thực hiện (Thực thi qua Sub-Agent `flash` với Disjoint File Leases)**:
-  1. `src/components/arena3d/types.ts`:
-     - Bổ sung trường `isEmpty?: boolean` vào interface `SeatPlayerInfo`.
-     - Bổ sung `tableNumber?: number` (Bàn 1..4), `signboardTitle` và `signboardTitleEn` vào `CampTentInfo`.
-  2. `src/components/arena3d/CampfireScene.ts`:
-     - Dọn sạch 100% bot ảo giả lập (xóa bỏ NPC camper lảng vảng quanh các lều phụ).
-     - Khi ghế có `isEmpty === true`: Ẩn mesh nhân vật, gắn nhãn biển nổi `[🪑 Ghế #X - Bấm để ngồi]` trên khúc gỗ và hỗ trợ raycast chạm để ngồi.
-     - Khởi tạo riêng `roamAvatar` cho chế độ tự do đi bộ, hỗ trợ API `sitAtSeat(seatNumber)`, `standUp()`.
-     - Thêm Biển Báo 3D Nổi trên nóc 4 Túp Lều (`🩸 Lều Trăng Máu (Bàn 1)`, `🌫️ Lều Sương Mù (Bàn 2)`, `🌲 Lều Rừng Thông (Bàn 3)`, `❄️ Lều Núi Tuyết (Bàn 4)`).
-  3. `src/components/arena3d/CampfireArena3DView.tsx`:
-     - Tích hợp Modal Tạo Nhân Vật (`CharacterCreationModal`): Tự động bật cho người chơi mới vào lần đầu (đặt Biệt danh, chọn Skin Chibi, chọn Mũ) ➜ bấm "Bước Vào Khu Cắm Trại 🏕️".
-     - Khởi đầu ở trạng thái Đi Dạo Tự Do (`isRoaming = true`), người chơi điều khiển nhân vật đi lại khám phá khu rừng qua tap-to-walk hoặc phím WASD.
-     - Dọn sạch mảng bot preset `CAMPER_PRESETS`. Toàn bộ 10 ghế quanh đống lửa chưa có người đều là Ghế Trống (`isEmpty: true`).
-     - Cơ chế Chạm Khúc Gỗ Ngồi Vào Bàn: Chạm ghế trống `#X` ➜ nhân vật ngồi xuống, hiển thị banner HUD "Bạn đã ngồi vào Ghế #X [Lều ...] - Đang chờ người chơi..." và nút "🚶 Đứng Dậy Đi Tiếp" để rời bàn dạo sang lều khác bất kỳ lúc nào.
-  4. `tests/sprint36MetaverseCampgrounds.test.mjs`: Test suite gồm 4 bài test tự động kiểm tra 4 túp lều, làm sạch bot ảo, cơ chế ngồi/đứng dậy, và lưu trữ tạo nhân vật.
-- **Nhánh làm việc**: `feature/ma-soi-online` & `main`.
-- **Mô hình vận hành**: Game Studio Hierarchy (PO Xác nhận ý tưởng Metaverse -> PM Dispatch Flash Sub-Agent -> Verification -> Continuous Deploy).
+- **Thời gian cập nhật**: 2026-11-11 22:00 (Asia/Ho_Chi_Minh) — Sprint 37 (điều khiển phím 3D) + Sprint 38 (Account Gate) [COMPLETED, chờ Supabase keys].
+- **Lưu ý vận hành**: Quota sub-agent model Flash đã hết (reset sau ~57h tính từ 2026-11-11 21:26). Sprint 37/38 làm trực tiếp trên phiên chính.
 
----
+## Sprint 37 — Sửa điều khiển phím mũi tên 3D [DONE]
+- Nguyên nhân: công thức cũ đúng ở góc camera mặc định (90°) nhưng **đảo chiều Lên/Xuống & Trái/Phải khi xoay camera**; phím mũi tên làm trình duyệt cuộn trang; mất focus thì nhân vật chạy mãi.
+- Sửa trong `src/components/arena3d/CampfireScene.ts`: `computeCameraRelativeMovement()` (static, có test), `SCROLL_KEYS` + `preventDefault`, nhả phím khi `blur`.
+- Test: `tests/sprint37ControlsAndScheduler.test.mjs` (7 test, quét 36 góc camera).
 
-## 1. Kết Quả Kiểm Thử Toàn Diện (System Health & Pipeline Verification)
-- **Lint**: `oxlint` PASSED (0 errors).
-- **AI Skill Verification**: 78/78 skills PASSED 100%.
-- **Unit & Integration Test Suite**: **24 Test Suites PASSED 100%** (99/99 test cases).
-- **Production Build**: `tsc -b && vite build` PASSED 100% (0 errors, 0 warnings).
-- **Continuous Deploy**: Sẵn sàng commit & push lên `feature/ma-soi-online` và `main`.
+## Sprint 38 — Account Gate 1 ô nhập [DONE ở client, server chờ cấu hình]
+- Quyết định PO (2026-11-11): Supabase; **chặn máy thứ 2** khi tài khoản đang online; **chỉ tên tài khoản, không mật khẩu**.
+- `supabase/migrations/001_account_gate.sql`: bảng `players` (RLS khóa, anon không đọc/ghi trực tiếp), RPC `enter_account` / `account_heartbeat` / `leave_account`, khóa dòng để 2 máy bấm cùng lúc chỉ 1 máy thắng. TTL phiên 45s, heartbeat 15s.
+- `src/logic/accountService.ts`: validate (3–20 ký tự, chữ có dấu/số/_), `SupabaseAccountBackend` (REST RPC, không cần SDK), `LocalAccountBackend` (cùng luật, dùng khi chưa có keys), `AccountSession` (heartbeat, chống double-submit, mất mạng không văng, phát hiện bị chiếm phiên).
+- `src/components/AccountGate.tsx` bọc `<App/>` trong `src/main.tsx`; tự vào lại khi reload (theo từng tab qua sessionStorage); nhả phiên khi đóng tab (`pagehide` + `keepalive`); nút "Thoát TK" trong Tủ Đồ 3D.
+- Test: `tests/sprint38AccountGate.test.mjs` (32 test) + E2E Chrome 2 tab `scratch/e2e-account-gate.mjs` 14/14 PASS (phát hiện và sửa lỗi tab A reload bị nhảy sang tài khoản tab B).
+- **SQL CHƯA chạy trên Postgres thật (NOT RUN)** — cần Supabase project.
 
----
+## 1. Kiểm thử
+- `npm run verify`: lint 0 error, 78/78 skills, toàn bộ test suites PASS (gồm sprint37 + sprint38), build PASS.
 
-## 2. Hành Động Tiếp Theo Của PM (Single Next Action)
-- Commit & push mã nguồn lên GitHub kích hoạt GitHub Pages và Vercel deploy.
+## 2. Hành Động Tiếp Theo (Single Next Action)
+- Người dùng tạo Supabase project → chạy `supabase/migrations/001_account_gate.sql` trong SQL Editor → gửi `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` để PM cấu hình Vercel env + GitHub Pages secrets và chạy E2E trên server thật.
+- Backlog đã thiết kế, chờ duyệt: Kết bạn + Hẹn giờ chơi + thông báo Service Worker trước 15 phút.

@@ -81,6 +81,36 @@ export class CampfireScene {
   private mouseMoveHoverHandler?: (e: MouseEvent) => void;
   private keyDownHandler?: (e: KeyboardEvent) => void;
   private keyUpHandler?: (e: KeyboardEvent) => void;
+  private blurHandler?: () => void;
+
+  /** Các phím mà trình duyệt mặc định dùng để cuộn trang — phải chặn khi điều khiển 3D */
+  public static readonly SCROLL_KEYS: readonly string[] = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '];
+
+  /**
+   * Tính vector di chuyển (đã chuẩn hóa) tương đối với góc nhìn camera.
+   * Camera đặt tại (sin θ, cos θ) * r so với nhân vật và nhìn về nhân vật, nên:
+   *   - Tiến (Up/W)  = (-sin θ, -cos θ)  → đi "vào trong" màn hình
+   *   - Phải (Right/D) = (cos θ, -sin θ) → đi sang phải màn hình
+   * Trả về null khi không có input.
+   */
+  public static computeCameraRelativeMovement(
+    cameraAngle: number,
+    inputForward: number,
+    inputRight: number
+  ): { dirX: number; dirZ: number; facingAngle: number } | null {
+    if (inputForward === 0 && inputRight === 0) return null;
+    const forwardX = -Math.sin(cameraAngle);
+    const forwardZ = -Math.cos(cameraAngle);
+    const rightX = Math.cos(cameraAngle);
+    const rightZ = -Math.sin(cameraAngle);
+    const rawX = inputForward * forwardX + inputRight * rightX;
+    const rawZ = inputForward * forwardZ + inputRight * rightZ;
+    const len = Math.hypot(rawX, rawZ);
+    if (len === 0) return null;
+    const dirX = rawX / len;
+    const dirZ = rawZ / len;
+    return { dirX, dirZ, facingAngle: Math.atan2(dirX, dirZ) };
+  }
 
   constructor(canvas: HTMLCanvasElement) {
     this.scene = new THREE.Scene();
@@ -849,7 +879,12 @@ export class CampfireScene {
     // Phím tắt bàn phím (WASD, Mũi tên, R Reset)
     const onKeyDown = (e: KeyboardEvent) => {
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
+      // Chặn trình duyệt cuộn trang khi dùng phím mũi tên / Space để điều khiển 3D
+      if (CampfireScene.SCROLL_KEYS.includes(e.key)) {
+        e.preventDefault();
+      }
       this.keysPressed[e.code] = true;
+      this.keysPressed[e.key] = true;
       this.keysPressed[e.key.toLowerCase()] = true;
 
       if (!this.isRoaming) {
@@ -875,8 +910,16 @@ export class CampfireScene {
 
     const onKeyUp = (e: KeyboardEvent) => {
       this.keysPressed[e.code] = false;
+      this.keysPressed[e.key] = false;
       this.keysPressed[e.key.toLowerCase()] = false;
     };
+
+    // Mất focus (chuyển tab, alt-tab) thì nhả hết phím để nhân vật không tự chạy mãi
+    const onBlur = () => {
+      this.keysPressed = {};
+    };
+    window.addEventListener('blur', onBlur);
+    this.blurHandler = onBlur;
 
     this.pointerDownHandler = onPointerDown;
     this.pointerMoveHandler = onPointerMove;
@@ -1169,38 +1212,22 @@ export class CampfireScene {
     // Xử lý di chuyển khi ở chế độ Đi Dạo Tự Do (Free Roam)
     if (this.isRoaming) {
       const moveSpeed = 5.5 * delta;
-      let moveX = 0;
-      let moveZ = 0;
-
-      // Phím di chuyển
-      if (this.keysPressed['KeyW'] || this.keysPressed['w'] || this.keysPressed['ArrowUp']) {
-        moveZ -= 1;
-      }
-      if (this.keysPressed['KeyS'] || this.keysPressed['s'] || this.keysPressed['ArrowDown']) {
-        moveZ += 1;
-      }
-      if (this.keysPressed['KeyA'] || this.keysPressed['a'] || this.keysPressed['ArrowLeft']) {
-        moveX -= 1;
-      }
-      if (this.keysPressed['KeyD'] || this.keysPressed['d'] || this.keysPressed['ArrowRight']) {
-        moveX += 1;
-      }
+      const k = this.keysPressed;
+      const isUp = Boolean(k['KeyW'] || k['w'] || k['ArrowUp'] || k['arrowup']);
+      const isDown = Boolean(k['KeyS'] || k['s'] || k['ArrowDown'] || k['arrowdown']);
+      const isLeft = Boolean(k['KeyA'] || k['a'] || k['ArrowLeft'] || k['arrowleft']);
+      const isRight = Boolean(k['KeyD'] || k['d'] || k['ArrowRight'] || k['arrowright']);
+      const inputForward = (isUp ? 1 : 0) - (isDown ? 1 : 0);
+      const inputRight = (isRight ? 1 : 0) - (isLeft ? 1 : 0);
 
       const player1 = this.characters.get(1);
+      const movement = CampfireScene.computeCameraRelativeMovement(this.cameraAngle, inputForward, inputRight);
 
-      if (moveX !== 0 || moveZ !== 0) {
+      if (movement) {
         // Phím bàn phím: hủy bỏ đích chạm Click/Tap-to-Walk
         this.roamTargetPos = null;
 
-        // Chuẩn hóa vector di chuyển
-        const len = Math.hypot(moveX, moveZ);
-        const normX = moveX / len;
-        const normZ = moveZ / len;
-
-        // Xoay hướng di chuyển theo góc nhìn camera
-        const forwardAngle = this.cameraAngle + Math.PI;
-        const dirX = normX * Math.cos(forwardAngle) - normZ * Math.sin(forwardAngle);
-        const dirZ = normX * Math.sin(forwardAngle) + normZ * Math.cos(forwardAngle);
+        const { dirX, dirZ } = movement;
 
         this.roamPosition.x += dirX * moveSpeed;
         this.roamPosition.z += dirZ * moveSpeed;
@@ -1362,6 +1389,9 @@ export class CampfireScene {
     }
     if (this.keyUpHandler) {
       window.removeEventListener('keyup', this.keyUpHandler);
+    }
+    if (this.blurHandler) {
+      window.removeEventListener('blur', this.blurHandler);
     }
     this.renderer.dispose();
   }
