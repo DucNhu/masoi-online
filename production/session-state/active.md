@@ -1,7 +1,12 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-11-11 23:20 (Asia/Ho_Chi_Minh) — Sprint 37, Sprint 38 & Sprint 39 [100% COMPLETE & VERIFIED].
+- **Thời gian cập nhật**: 2026-11-13 08:48 (Asia/Ho_Chi_Minh) — Sprint 40 Planning [Chiến Lược Toàn Diện: Quảng Bá Game (UA) & Kiếm Tiền Quảng Cáo (Monetization)].
 - **Lưu ý vận hành**: Quota sub-agent model Flash đã hết. Toàn bộ code & test do Coordinator trực tiếp thực thi và kiểm chứng.
+
+## Chiến Lược Quảng Cáo Game — 2 Trụ Cột Tương Hỗ [APPROVED BY USER]
+- **Trụ cột 1 (User Acquisition & Organic Virality)**: Kịch bản video ngắn TikTok/Reels/Shorts dựa trên các tình huống Ma Sói bi hài/kịch tính; ready-to-use AI prompts cho Key Visual, thumbnail và BGM trailer; tối ưu link chia sẻ phòng và Mã Thợ Săn.
+- **Trụ cột 2 (In-Game Ads Monetization)**: Kiến trúc Decoupled AdService (Web PWA & Mobile Capacitor Native), tập trung vào Rewarded Ads xem nhận Vàng/Skin/Danh hiệu và Interstitial sau khi kết thúc ván (`GameOverModal`), bảo toàn trải nghiệm chơi game không bị gián đoạn.
+- **Kế hoạch chi tiết**: Xem tại artifact `game-advertising-and-monetization-masterplan.md`.
 
 ## Sprint 37 — Sửa điều khiển phím mũi tên 3D [DONE]
 - Sửa công thức vector di chuyển theo hướng mắt nhìn camera `computeCameraRelativeMovement()`.
@@ -29,5 +34,5 @@
 - `npm run verify`: lint 0 error, 78/78 skills, 27 bộ test suites PASS, build PASS.
 
 ## 2. Hành Động Tiếp Theo (Single Next Action)
-- Báo cáo người dùng vào trải nghiệm tính năng Kết Bạn & Hẹn Giờ Chơi (kèm nút Test Thông Báo 15p).
-- Nếu người dùng muốn đồng bộ dữ liệu Bạn bè lên Supabase Cloud: chạy thêm `supabase/migrations/002_friends_and_scheduler.sql` (hiện tại đã có LocalStorage fallback hoạt động ngay tức thì).
+- Chờ phản hồi của người dùng về bản kế hoạch chi tiết `game-advertising-and-monetization-masterplan.md`.
+- Khi người dùng xác nhận bước tiếp theo, tiến hành Sprint 40: Cập nhật thẻ Meta Share (OG Tags / Twitter Card) cho link phòng & Mã Thợ Săn, chuẩn bị bộ asset Key Visual theo prompt và dựng khung `src/logic/adService.ts`.
