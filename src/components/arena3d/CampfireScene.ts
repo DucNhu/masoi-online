@@ -7,6 +7,7 @@ import {
   CAMP_TENTS,
   CampTentInfo,
   PlayerOutfitConfig,
+  RemoteRoamPlayer,
 } from './types';
 
 export class CampfireScene {
@@ -42,6 +43,26 @@ export class CampfireScene {
   private playerName = 'Thợ Săn Đêm';
   private playerOutfit: PlayerOutfitConfig = DEFAULT_OUTFIT;
   private lang: 'vi' | 'en' = 'vi';
+
+  // Đồng bộ nhân vật từ xa (Multiplayer 3D Roam Mesh)
+  public localPlayerId: string = '';
+  private remoteAvatars: Map<
+    string,
+    {
+      character: WolfCharacter;
+      targetPos: THREE.Vector3;
+      targetAngle: number;
+      anim: 'idle' | 'walk';
+      isRoaming: boolean;
+      seatNumber: number | null;
+      tentId: CampTentId;
+      lastSeen: number;
+    }
+  > = new Map();
+  private onLocalRoamChangeCallback?: (state: RemoteRoamPlayer) => void;
+  private lastRoamBroadcast = 0;
+  private prevBroadcastPos = new THREE.Vector3();
+  private prevBroadcastAngle = 0;
 
   private isNight = true;
   private animFrameId: number | null = null;
@@ -963,6 +984,9 @@ export class CampfireScene {
     if (this.onRoamStateChangeCallback) {
       this.onRoamStateChangeCallback(false);
     }
+    if (this.onLocalRoamChangeCallback) {
+      this.onLocalRoamChangeCallback(this.getLocalRoamState());
+    }
   }
 
   public standUp(): void {
@@ -984,6 +1008,9 @@ export class CampfireScene {
 
     if (this.onRoamStateChangeCallback) {
       this.onRoamStateChangeCallback(true);
+    }
+    if (this.onLocalRoamChangeCallback) {
+      this.onLocalRoamChangeCallback(this.getLocalRoamState());
     }
   }
 
@@ -1009,6 +1036,9 @@ export class CampfireScene {
       if (this.roamAvatar) {
         this.roamAvatar.root.position.copy(this.roamPosition);
       }
+      if (this.onLocalRoamChangeCallback) {
+        this.onLocalRoamChangeCallback(this.getLocalRoamState());
+      }
     }
   }
 
@@ -1022,6 +1052,116 @@ export class CampfireScene {
 
   public setOnRoamStateChange(callback: (isRoaming: boolean) => void): void {
     this.onRoamStateChangeCallback = callback;
+  }
+
+  // === ĐỒNG BỘ NHÂN VẬT METAVERSE MULTIPLAYER TỪ XA ===
+
+  public setLocalPlayerId(id: string): void {
+    this.localPlayerId = id;
+  }
+
+  public setOnLocalRoamChange(callback: (state: RemoteRoamPlayer) => void): void {
+    this.onLocalRoamChangeCallback = callback;
+  }
+
+  public getLocalRoamState(): RemoteRoamPlayer {
+    const isMoving = Boolean(
+      (this.keysPressed['ArrowUp'] ||
+        this.keysPressed['ArrowDown'] ||
+        this.keysPressed['ArrowLeft'] ||
+        this.keysPressed['ArrowRight'] ||
+        this.keysPressed['w'] ||
+        this.keysPressed['s'] ||
+        this.keysPressed['a'] ||
+        this.keysPressed['d'] ||
+        this.keysPressed['W'] ||
+        this.keysPressed['S'] ||
+        this.keysPressed['A'] ||
+        this.keysPressed['D'] ||
+        this.roamTargetPos !== null) &&
+        this.isRoaming
+    );
+
+    return {
+      id: this.localPlayerId || 'local_hunter',
+      name: this.playerName,
+      outfit: this.playerOutfit,
+      position: {
+        x: Math.round(this.roamPosition.x * 100) / 100,
+        y: Math.round(this.roamPosition.y * 100) / 100,
+        z: Math.round(this.roamPosition.z * 100) / 100,
+      },
+      facingAngle: Math.round(this.roamFacingAngle * 100) / 100,
+      anim: isMoving ? 'walk' : 'idle',
+      isRoaming: this.isRoaming,
+      seatNumber: this.mySeatedNumber,
+      tentId: this.activeTentId,
+      updatedAt: Date.now(),
+    };
+  }
+
+  public updateRemotePlayer(player: RemoteRoamPlayer): void {
+    if (this.localPlayerId && player.id === this.localPlayerId) return;
+
+    let entry = this.remoteAvatars.get(player.id);
+    if (!entry) {
+      const character = new WolfCharacter(player.outfit);
+      character.setNameplate(player.name);
+      character.setStanding(player.isRoaming);
+      character.setAnimation(player.anim || 'idle');
+      character.root.position.set(player.position.x, player.position.y ?? 0.05, player.position.z);
+      character.root.rotation.y = player.facingAngle;
+      character.root.visible = true;
+      this.scene.add(character.root);
+
+      entry = {
+        character,
+        targetPos: new THREE.Vector3(player.position.x, player.position.y ?? 0.05, player.position.z),
+        targetAngle: player.facingAngle,
+        anim: player.anim || 'idle',
+        isRoaming: player.isRoaming,
+        seatNumber: player.seatNumber,
+        tentId: player.tentId,
+        lastSeen: Date.now(),
+      };
+      this.remoteAvatars.set(player.id, entry);
+    } else {
+      entry.targetPos.set(player.position.x, player.position.y ?? 0.05, player.position.z);
+      entry.targetAngle = player.facingAngle;
+      entry.anim = player.anim || 'idle';
+      entry.isRoaming = player.isRoaming;
+      entry.seatNumber = player.seatNumber;
+      entry.tentId = player.tentId;
+      entry.lastSeen = Date.now();
+
+      // Cập nhật tên nếu thay đổi
+      entry.character.setNameplate(player.name);
+
+      // Cập nhật outfit nếu đổi skin/nón
+      if (
+        entry.character.outfit.skinId !== player.outfit.skinId ||
+        entry.character.outfit.hatId !== player.outfit.hatId ||
+        entry.character.outfit.eyeGlowId !== player.outfit.eyeGlowId ||
+        entry.character.outfit.backItemId !== player.outfit.backItemId
+      ) {
+        entry.character.updateOutfit(player.outfit);
+      }
+    }
+  }
+
+  public removeRemotePlayer(playerId: string): void {
+    const entry = this.remoteAvatars.get(playerId);
+    if (entry) {
+      this.scene.remove(entry.character.root);
+      this.remoteAvatars.delete(playerId);
+    }
+  }
+
+  public clearAllRemotePlayers(): void {
+    for (const entry of this.remoteAvatars.values()) {
+      this.scene.remove(entry.character.root);
+    }
+    this.remoteAvatars.clear();
   }
 
   // === CẬP NHẬT CAMERA & VỊ TRÍ ===
@@ -1320,7 +1460,58 @@ export class CampfireScene {
         this.roamAvatar.update(delta);
       }
 
+      // Phát sóng cập nhật vị trí cho người chơi khác (nếu vị trí thay đổi hoặc định kỳ 1.5s)
+      if (this.onLocalRoamChangeCallback) {
+        const posChanged = this.roamPosition.distanceToSquared(this.prevBroadcastPos) > 0.002;
+        const angleChanged = Math.abs(this.roamFacingAngle - this.prevBroadcastAngle) > 0.04;
+        const timeElapsed = now - this.lastRoamBroadcast;
+
+        if ((posChanged || angleChanged) && timeElapsed >= 75) {
+          this.lastRoamBroadcast = now;
+          this.prevBroadcastPos.copy(this.roamPosition);
+          this.prevBroadcastAngle = this.roamFacingAngle;
+          this.onLocalRoamChangeCallback(this.getLocalRoamState());
+        } else if (timeElapsed >= 1500) {
+          this.lastRoamBroadcast = now;
+          this.onLocalRoamChangeCallback(this.getLocalRoamState());
+        }
+      }
+
       this.updateCameraPosition();
+    }
+
+    // Cập nhật hoạt cảnh và nội suy chuyển động cho các nhân vật người chơi từ xa (Remote Roam Mesh)
+    for (const [id, entry] of this.remoteAvatars.entries()) {
+      if (now - entry.lastSeen > 7000) {
+        this.scene.remove(entry.character.root);
+        this.remoteAvatars.delete(id);
+        continue;
+      }
+
+      if (entry.isRoaming) {
+        entry.character.root.visible = true;
+        entry.character.setStanding(true);
+        entry.character.setAnimation(entry.anim);
+
+        // Nội suy vị trí Lerp mượt mà
+        entry.character.root.position.lerp(entry.targetPos, 0.22);
+
+        // Nội suy góc quay mặt ngắn nhất
+        let diff = entry.targetAngle - entry.character.root.rotation.y;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        entry.character.root.rotation.y += diff * 0.22;
+
+        entry.character.update(delta);
+      } else {
+        // Người chơi ngồi ở ghế
+        entry.character.root.visible = true;
+        entry.character.setStanding(false);
+        entry.character.setAnimation('idle');
+        entry.character.root.position.copy(entry.targetPos);
+        entry.character.root.rotation.y = entry.targetAngle;
+        entry.character.update(delta);
+      }
     }
 
     // Ngọn lửa bập bùng
@@ -1368,6 +1559,7 @@ export class CampfireScene {
     if (this.animFrameId !== null) {
       cancelAnimationFrame(this.animFrameId);
     }
+    this.clearAllRemotePlayers();
     if (this.canvasElement) {
       if (this.pointerDownHandler) {
         this.canvasElement.removeEventListener('mousedown', this.pointerDownHandler);

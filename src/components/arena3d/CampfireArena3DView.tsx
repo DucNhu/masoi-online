@@ -14,6 +14,7 @@ import {
   OUTFIT_HATS,
   WolfSkinId,
   WolfHatId,
+  RemoteRoamPlayer,
 } from './types';
 import { Wardrobe3DModal } from './Wardrobe3DModal';
 import { FriendsAndSchedulerModal } from '../FriendsAndSchedulerModal';
@@ -21,6 +22,7 @@ import { notificationService } from '../../logic/notificationService';
 import { schedulerService } from '../../logic/schedulerService';
 import { NativeBridge } from '../../utils/nativeBridge';
 import { narratorVoice } from '../../utils/narratorVoice';
+import { campfireRoamMesh } from '../../logic/campfireRoamMesh';
 import {
   Sparkles,
   Sun,
@@ -158,6 +160,10 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
     }
   });
 
+  // Đồng bộ vị trí đa người chơi (Metaverse 3D Multiplayer Roam)
+  const [remotePlayers, setRemotePlayers] = useState<Map<string, RemoteRoamPlayer>>(new Map());
+  const [onlineHuntersCount, setOnlineHuntersCount] = useState<number>(1);
+
   // Thông báo Toast khi sao chép link mời vào Túp Lều
   const [copyToast, setCopyToast] = useState<string | null>(null);
   const copyToastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -276,20 +282,28 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
         continue;
       }
 
-      // 2. Ghế người chơi từ phòng online
-      if (p) {
-        const isAlive = override ? override.isAlive : p.isAlive;
-        const deathReason = override?.deathReason || p.deathReason;
+      // 2. Ghế người chơi từ phòng online hoặc thợ săn từ xa đang ngồi
+      const remoteSeated = Array.from(remotePlayers.values()).find(
+        (rp) => !rp.isRoaming && rp.seatNumber === i
+      );
+
+      if (p || remoteSeated) {
+        const isAlive = override ? override.isAlive : p ? p.isAlive : true;
+        const deathReason = override?.deathReason || p?.deathReason;
+        const displayName = p ? p.name : remoteSeated ? remoteSeated.name : 'Thợ Săn';
+        const displayOutfit = p ? DEFAULT_OUTFIT : remoteSeated?.outfit || DEFAULT_OUTFIT;
+        const skinItem = OUTFIT_SKINS.find((s) => s.id === displayOutfit.skinId);
+
         list.push({
           seatNumber: i,
-          name: p.name,
+          name: displayName,
           isAlive,
           isEmpty: false,
-          isWerewolf: Boolean(p.roleId === 'WEREWOLF' || p.roleId?.includes('WOLF')),
+          isWerewolf: Boolean(p?.roleId === 'WEREWOLF' || p?.roleId?.includes('WOLF')),
           deathReason,
-          characterIcon: '🏕️',
-          characterTitle: p.roleId || 'Player',
-          outfit: DEFAULT_OUTFIT,
+          characterIcon: skinItem?.icon || '🏕️',
+          characterTitle: p?.roleId || (lang === 'en' ? 'Online Hunter' : 'Thợ Săn Trực Tuyến'),
+          outfit: displayOutfit,
         });
         continue;
       }
@@ -306,9 +320,9 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
       });
     }
     return list;
-  }, [players, myOutfit, seatOverride, playerName, lang, mySeatedNumber]);
+  }, [players, myOutfit, seatOverride, playerName, lang, mySeatedNumber, remotePlayers]);
 
-  // Khởi tạo Three.js CampfireScene
+  // Khởi tạo Three.js CampfireScene & Đồng bộ Metaverse Roam Mesh
   useEffect(() => {
     if (!canvasRef.current) return;
     const scene = new CampfireScene(canvasRef.current);
@@ -326,6 +340,43 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
     if (activeTentId && activeTentId !== 'tent-1') {
       scene.switchTent(activeTentId);
     }
+
+    // Kết nối Metaverse 3D Multiplayer Roam
+    campfireRoamMesh.start({
+      name: playerName,
+      outfit: myOutfit,
+      tentId: activeTentId,
+      isRoaming: true,
+      position: { x: 0, y: 0.05, z: 5.8 },
+    });
+
+    scene.setLocalPlayerId(campfireRoamMesh.clientId);
+
+    scene.setOnLocalRoamChange((localRoamState) => {
+      campfireRoamMesh.broadcastMyPosition(localRoamState);
+    });
+
+    const unsubUpdate = campfireRoamMesh.onPlayerUpdate((remotePlayer) => {
+      sceneRef.current?.updateRemotePlayer(remotePlayer);
+      setRemotePlayers((prev) => {
+        const next = new Map(prev);
+        next.set(remotePlayer.id, remotePlayer);
+        return next;
+      });
+    });
+
+    const unsubLeave = campfireRoamMesh.onPlayerLeave((remotePlayerId) => {
+      sceneRef.current?.removeRemotePlayer(remotePlayerId);
+      setRemotePlayers((prev) => {
+        const next = new Map(prev);
+        next.delete(remotePlayerId);
+        return next;
+      });
+    });
+
+    const unsubCount = campfireRoamMesh.onOnlineCountChange((cnt) => {
+      setOnlineHuntersCount(cnt);
+    });
 
     scene.setOnSeatClick((seatNumber) => {
       NativeBridge.hapticImpact('medium');
@@ -364,18 +415,27 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
     return () => {
       clearTimeout(resizeTimer);
       window.removeEventListener('resize', handleResize);
+      unsubUpdate();
+      unsubLeave();
+      unsubCount();
+      campfireRoamMesh.stop();
       scene.destroy();
       sceneRef.current = null;
     };
   }, []);
 
-  // Đồng bộ ngôn ngữ & profile người chơi vào 3D Scene
+  // Đồng bộ ngôn ngữ & profile người chơi vào 3D Scene và phát sóng mạng
   useEffect(() => {
     if (sceneRef.current) {
       sceneRef.current.setLanguage(lang);
       sceneRef.current.updatePlayerProfile(playerName, myOutfit);
+      campfireRoamMesh.broadcastMyPosition({
+        name: playerName,
+        outfit: myOutfit,
+        tentId: activeTentId,
+      });
     }
-  }, [lang, playerName, myOutfit]);
+  }, [lang, playerName, myOutfit, activeTentId]);
 
   // Lắng nghe thay đổi URL qua back/forward trình duyệt
   useEffect(() => {
@@ -1135,6 +1195,48 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
               </div>
             </>
           )}
+        </div>
+
+        {/* Vạch mảnh 1px phân tách */}
+        <div style={{ width: '1px', height: '18px', background: 'rgba(255, 255, 255, 0.14)', margin: '0 2px' }} />
+
+        {/* Huy hiệu Thợ Săn Online trong Metaverse Campgrounds */}
+        <div
+          className="camp-online-mesh-badge"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '0 10px',
+            height: '34px',
+            borderRadius: '12px',
+            background: onlineHuntersCount > 1 ? 'rgba(16, 185, 129, 0.18)' : 'rgba(15, 23, 42, 0.7)',
+            border: onlineHuntersCount > 1 ? '1.5px solid rgba(16, 185, 129, 0.5)' : '1.5px solid rgba(148, 163, 184, 0.25)',
+            fontSize: '0.75rem',
+            fontWeight: 800,
+            color: onlineHuntersCount > 1 ? '#34d399' : '#94a3b8',
+            backdropFilter: 'blur(12px)',
+            boxShadow: onlineHuntersCount > 1 ? '0 0 12px rgba(16, 185, 129, 0.25)' : 'none',
+          }}
+          title={lang === 'en' ? 'Realtime 3D Metaverse Hunters' : 'Thợ Săn đang đi dạo cùng khu trại thời gian thực'}
+        >
+          <span
+            style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              background: onlineHuntersCount > 1 ? '#10b981' : '#64748b',
+              boxShadow: onlineHuntersCount > 1 ? '0 0 8px #10b981' : 'none',
+            }}
+          />
+          <Users size={13} />
+          <span>
+            {onlineHuntersCount > 1
+              ? `${onlineHuntersCount} ${lang === 'en' ? 'Hunters' : 'Thợ Săn'}`
+              : lang === 'en'
+              ? 'Solo'
+              : '1 Thợ Săn'}
+          </span>
         </div>
 
         {/* Vạch mảnh 1px phân tách */}

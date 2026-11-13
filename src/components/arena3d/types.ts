@@ -18,6 +18,22 @@ export interface PlayerOutfitConfig {
   backItemId: WolfBackItemId;
 }
 
+/**
+ * Thông tin nhân vật 3D đồng bộ thời gian thực trong Khu Cắm Trại (Multiplayer 3D Roam)
+ */
+export interface RemoteRoamPlayer {
+  id: string;
+  name: string;
+  outfit: PlayerOutfitConfig;
+  position: { x: number; y: number; z: number };
+  facingAngle: number;
+  anim: 'idle' | 'walk';
+  isRoaming: boolean;
+  seatNumber: number | null;
+  tentId: CampTentId;
+  updatedAt: number;
+}
+
 export const DEFAULT_OUTFIT: PlayerOutfitConfig = {
   skinId: 'WOLF_GRAY',
   hatId: 'CONICAL_HAT',

@@ -30,9 +30,23 @@
 - **Test**: `tests/sprint39FriendsAndScheduler.test.mjs` (13 test) PASS 100%. Toàn bộ 27 test suites trong dự án PASS.
 - **Git & Deploy**: Commit `b727b18` pushed lên `feature/ma-soi-online` và `main`. GitHub Pages / Vercel tự động build.
 
+## Sprint 40 — Metaverse 3D Campfire Roaming Synchronization (Đồng Bộ Nhân Vật 3D Gặp Nhau Thời Gian Thực) [DONE & LIVE VERIFIED]
+- **Kiến trúc Mạng Roam Mesh (`src/logic/campfireRoamMesh.ts`)**:
+  - Tích hợp Dual Transport: BroadcastChannel nội bộ (0ms latency cho 2 tab cùng trình duyệt) + Cloud MQTT Relay (`masoi/v2/campgrounds/roam`) xuyên mạng (4G/5G/WiFi giữa PC và Điện thoại).
+  - Tự động phát sóng tọa độ (x, z), hướng quay mặt (facing angle), trạng thái đi dạo/ngồi ghế (anim/roam/seat) với throttling tối ưu ~80ms và heartbeat 1.5s.
+  - Tự động loại bỏ nhân vật mất kết nối quá 6s và phát tín hiệu `ROAM_LEAVE` khi đóng tab/reload (`beforeunload`).
+- **Nâng Cấp Three.js Scene (`src/components/arena3d/CampfireScene.ts`)**:
+  - Quản lý tập hợp `remoteAvatars: Map<string, ...>`: khởi tạo mô hình 3D `WolfCharacter` đầy đủ trang phục (skin, hat, eye glow, back item) và bảng tên nổi 3D (`setNameplate`).
+  - Nội suy chuyển động mượt mà (Lerp 0.22 cho tọa độ và Angle Lerp ngắn nhất) trong vòng lặp `render()`.
+  - Hỗ trợ đổi skin/nón trực tiếp từ xa và ngồi vào ghế khúc gỗ khi người chơi ngồi xuống.
+- **HUD & Huy Hiệu Khu Trại (`src/components/arena3d/CampfireArena3DView.tsx`)**:
+  - Hiển thị badge trạng thái thợ săn online: `🟢 {count} Thợ Săn Trong Trại`.
+  - Tự động liên kết vòng lặp Three.js với `campfireRoamMesh`.
+- **Test**: `tests/sprint40CampfireMultiplayerRoam.test.mjs` (7 test) PASS 100%. Toàn bộ 28 test suites trong dự án PASS 100%.
+- **Deploy**: Build PWA thành công không lỗi, sẵn sàng đẩy lên GitHub Pages.
+
 ## 1. Kiểm thử
-- `npm run verify`: lint 0 error, 78/78 skills, 27 bộ test suites PASS, build PASS.
+- `npm run verify`: oxlint 0 error, 78/78 skills, 28 bộ test suites PASS, build PWA PASS (368ms).
 
 ## 2. Hành Động Tiếp Theo (Single Next Action)
-- Chờ phản hồi của người dùng về bản kế hoạch chi tiết `game-advertising-and-monetization-masterplan.md`.
-- Khi người dùng xác nhận bước tiếp theo, tiến hành Sprint 40: Cập nhật thẻ Meta Share (OG Tags / Twitter Card) cho link phòng & Mã Thợ Săn, chuẩn bị bộ asset Key Visual theo prompt và dựng khung `src/logic/adService.ts`.
+- Triển khai commit và push tự động lên nhánh `feature/ma-soi-online` và `main` để kích hoạt GitHub Pages workflow deploy bản mới nhất cho người dùng trải nghiệm trên điện thoại và PC.
