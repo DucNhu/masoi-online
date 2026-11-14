@@ -1,52 +1,24 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-11-13 08:48 (Asia/Ho_Chi_Minh) — Sprint 40 Planning [Chiến Lược Toàn Diện: Quảng Bá Game (UA) & Kiếm Tiền Quảng Cáo (Monetization)].
-- **Lưu ý vận hành**: Quota sub-agent model Flash đã hết. Toàn bộ code & test do Coordinator trực tiếp thực thi và kiểm chứng.
+- **Thời gian cập nhật**: 2026-11-14 07:05 (Asia/Ho_Chi_Minh) — Studio Director 3D Character Aesthetic Upgrade & Skill Porting.
+- **Vận hành**: Đã hoàn tất di chuyển 2 skill `studio-director` và `studio-audit` từ `pokemon-combat`, tích hợp và pass 100% `verify-ai-skills.mjs` (80 skills).
 
-## Chiến Lược Quảng Cáo Game — 2 Trụ Cột Tương Hỗ [APPROVED BY USER]
-- **Trụ cột 1 (User Acquisition & Organic Virality)**: Kịch bản video ngắn TikTok/Reels/Shorts dựa trên các tình huống Ma Sói bi hài/kịch tính; ready-to-use AI prompts cho Key Visual, thumbnail và BGM trailer; tối ưu link chia sẻ phòng và Mã Thợ Săn.
-- **Trụ cột 2 (In-Game Ads Monetization)**: Kiến trúc Decoupled AdService (Web PWA & Mobile Capacitor Native), tập trung vào Rewarded Ads xem nhận Vàng/Skin/Danh hiệu và Interstitial sau khi kết thúc ván (`GameOverModal`), bảo toàn trải nghiệm chơi game không bị gián đoạn.
-- **Kế hoạch chi tiết**: Xem tại artifact `game-advertising-and-monetization-masterplan.md`.
-
-## Sprint 37 — Sửa điều khiển phím mũi tên 3D [DONE]
-- Sửa công thức vector di chuyển theo hướng mắt nhìn camera `computeCameraRelativeMovement()`.
-- Chặn cuộn trang (`preventDefault` cho Arrow keys + Space). Nhả phím khi `blur`.
-- Test: `tests/sprint37ControlsAndScheduler.test.mjs` (7 test) PASS 100%.
-
-## Sprint 38 — Account Gate 1 ô nhập & Supabase Cloud Integration [DONE & LIVE VERIFIED]
-- Database: Supabase Project `masoi-online` (`qjoeeryaocljubdrvpdq`) đã chạy thành công `supabase/migrations/001_account_gate.sql`.
-- Đã xác thực trực tiếp trên Cloud: Concurrency race condition, multi-device blocking, release session on leave, reload persistence qua sessionStorage.
-- Test: `tests/sprint38AccountGate.test.mjs` (32 test) + E2E Chrome PASS 100%.
-
-## Sprint 39 — Kết Bạn (Hunter Code), Hẹn Giờ Chơi & Thông Báo Service Worker [DONE & VERIFIED]
-- **Mã Thợ Săn (Hunter Code)**: Sinh mã chuẩn `HS-XXXXXX` cho từng user; tìm kiếm, gửi lời mời, chấp nhận (quan hệ 2 chiều), từ chối và hủy bạn bè (`src/logic/friendService.ts`).
-- **Hẹn Giờ Chơi ("Hẹn chơi sau mấy tiếng")**: Tạo lịch hẹn với bạn bè hoặc công khai, các preset nhanh `Sau 1h, 2h, 3h, 4h, 6h`, chọn lều bàn chơi (`src/logic/schedulerService.ts`).
-- **Service Worker & Push Notifications (Nhắc trước 15 phút)**:
-  - `public/sw-notifications.js` lắng nghe `notificationclick` (focus tab game / chuyển đến lều hẹn) và `push`.
-  - `src/logic/notificationService.ts` quản lý quyền thông báo, âm thanh chuông báo, rung haptic và gửi notification chuẩn PWA.
-  - Vòng lặp Daemon chạy ngầm mỗi 10s kiểm tra mốc `now >= scheduledAt - 15 * 60 * 1000` để bắn thông báo.
-  - Có nút "Test 15p" trong modal để người dùng thử nghiệm thông báo trình duyệt ngay tức thì!
-- **Giao diện Modal 3D**: `src/components/FriendsAndSchedulerModal.tsx` tích hợp nút `👥 Bạn Bè & Hẹn Giờ` ở cả thanh điều khiển trên và thanh Dock dưới của Đấu trường 3D Campfire.
-- **Test**: `tests/sprint39FriendsAndScheduler.test.mjs` (13 test) PASS 100%. Toàn bộ 27 test suites trong dự án PASS.
-- **Git & Deploy**: Commit `b727b18` pushed lên `feature/ma-soi-online` và `main`. GitHub Pages / Vercel tự động build.
-
-## Sprint 40 — Metaverse 3D Campfire Roaming Synchronization (Đồng Bộ Nhân Vật 3D Gặp Nhau Thời Gian Thực) [DONE & LIVE VERIFIED]
-- **Kiến trúc Mạng Roam Mesh (`src/logic/campfireRoamMesh.ts`)**:
-  - Tích hợp Dual Transport: BroadcastChannel nội bộ (0ms latency cho 2 tab cùng trình duyệt) + Cloud MQTT Relay (`masoi/v2/campgrounds/roam`) xuyên mạng (4G/5G/WiFi giữa PC và Điện thoại).
-  - Tự động phát sóng tọa độ (x, z), hướng quay mặt (facing angle), trạng thái đi dạo/ngồi ghế (anim/roam/seat) với throttling tối ưu ~80ms và heartbeat 1.5s.
-  - Tự động loại bỏ nhân vật mất kết nối quá 6s và phát tín hiệu `ROAM_LEAVE` khi đóng tab/reload (`beforeunload`).
-- **Nâng Cấp Three.js Scene (`src/components/arena3d/CampfireScene.ts`)**:
-  - Quản lý tập hợp `remoteAvatars: Map<string, ...>`: khởi tạo mô hình 3D `WolfCharacter` đầy đủ trang phục (skin, hat, eye glow, back item) và bảng tên nổi 3D (`setNameplate`).
-  - Nội suy chuyển động mượt mà (Lerp 0.22 cho tọa độ và Angle Lerp ngắn nhất) trong vòng lặp `render()`.
-  - Hỗ trợ đổi skin/nón trực tiếp từ xa và ngồi vào ghế khúc gỗ khi người chơi ngồi xuống.
-- **HUD & Huy Hiệu Khu Trại (`src/components/arena3d/CampfireArena3DView.tsx`)**:
-  - Hiển thị badge trạng thái thợ săn online: `🟢 {count} Thợ Săn Trong Trại`.
-  - Tự động liên kết vòng lặp Three.js với `campfireRoamMesh`.
-- **Test**: `tests/sprint40CampfireMultiplayerRoam.test.mjs` (7 test) PASS 100%. Toàn bộ 28 test suites trong dự án PASS 100%.
-- **Deploy**: Build PWA thành công không lỗi, sẵn sàng đẩy lên GitHub Pages.
+## Studio Director — Nâng Cấp Tạo Hình Nhân Vật Chibi 3D (Kawaii / Anime Chibi Aesthetics) [DONE & 100% VERIFIED]
+- **Bối cảnh & Chỉ đạo từ Studio Director**:
+  - Người dùng phản hồi nhân vật 3D bị cứng như các ống trụ ghép vào nhau.
+  - Studio Director kích hoạt quy trình tái thiết kế 4 cụm giải phẫu 3D trong `src/components/arena3d/WolfMeshBuilder.ts`:
+    1. **Thân (Torso)**: Loại bỏ ống trụ đơn điệu `CylinderGeometry(0.28, 0.36, 0.72)`. Thay bằng kết hợp ngực áo chibi thon gọn (`CylinderGeometry(0.24, 0.32, 0.38)`) và bụng tròn phúng phính mũm mĩm (`SphereGeometry(0.33)` scale `(1.04, 0.95, 1.08)`), tạo dáng quả lê Chibi siêu đáng yêu.
+    2. **Váy / Tà áo khoác xòe (Flared Hem & Skirt)**: Bổ sung tà áo xòe nhẹ bồng bềnh (`CylinderGeometry(0.33, 0.44, 0.22)`), viền bo gấu phồng tròn mềm mại (`TorusGeometry(0.44, 0.035)`) và đai thắt lưng (`TorusGeometry(0.335, 0.025)`), che khe khớp hông khi ngồi và tạo độ bồng bềnh khi đi dạo.
+    3. **Vai (Shoulders) & Cánh tay**: Bổ sung cầu vai tròn phồng Chibi (`SphereGeometry(0.12)`), tay áo thuôn gọn từ bắp tay về cổ tay (`CylinderGeometry(0.115, 0.082, 0.42)`), bàn tay tròn trĩnh (`SphereGeometry(0.09)`), bảo toàn 100% thứ tự con (`children[0]` sleeve, `children[1]` hand) cho raycast limb test.
+    4. **Mắt (Eyes) & Gương mặt**: Mắt to tròn anime long lanh (`SphereGeometry(0.088)` scale `(1.0, 1.25, 0.35)`), viền mi trên cong thanh tú (`TorusGeometry(0.085, 0.016)`), 2 đốm sáng phản chiếu kép (Dual Catchlights: đốm chính to tròn + đốm phụ lấp lánh như ngấn nước) và hai má ửng hồng phúng phính.
+- **Bảo toàn bất biến & Kiểm thử (100% PASS)**:
+  - `tests/sprint25Wolf3DArena.test.mjs` (6/6 PASS).
+  - `tests/sprint40CampfireMultiplayerRoam.test.mjs` (7/7 PASS).
+  - `tests/sprint16AiArchitecture.test.mjs` (PASS 80 skills: 73 templates, 7 project, 33 active, 29 manual, 18 dormant).
+  - `npm run verify` (`oxlint` 0 lỗi + `verify-ai-skills` PASS + `npm test` 28/28 suites PASS + `tsc -b && vite build` 420ms PASS).
 
 ## 1. Kiểm thử
-- `npm run verify`: oxlint 0 error, 78/78 skills, 28 bộ test suites PASS, build PWA PASS (368ms).
+- `npm run verify`: oxlint 0 error, 80/80 skills PASS, 28 bộ test suites PASS, build PWA PASS (420ms).
 
 ## 2. Hành Động Tiếp Theo (Single Next Action)
-- Triển khai commit và push tự động lên nhánh `feature/ma-soi-online` và `main` để kích hoạt GitHub Pages workflow deploy bản mới nhất cho người dùng trải nghiệm trên điện thoại và PC.
+- Git commit và git push tự động lên cả 2 nhánh `feature/ma-soi-online` và `main` để kích hoạt GitHub Pages deploy bản mới nhất cho người dùng trải nghiệm trực quan trên điện thoại và PC.

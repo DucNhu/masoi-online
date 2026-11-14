@@ -3,10 +3,10 @@
   "scope": "repository AI workflows only; not pet combat skills",
   "date": "2026-10-02",
   "counts": {
-    "total": 78,
+    "total": 80,
     "template": 73,
-    "project": 5,
-    "active": 31,
+    "project": 7,
+    "active": 33,
     "manual": 29,
     "dormant": 18
   },
@@ -436,6 +436,20 @@
       "path": ".agents/skills/story-readiness/SKILL.md",
       "kind": "template",
       "target": "Claude-Code-Game-Studios/.claude/skills/story-readiness/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "studio-audit",
+      "path": ".agents/skills/studio-audit/SKILL.md",
+      "kind": "project",
+      "target": ".agents/skills/studio-audit/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "studio-director",
+      "path": ".agents/skills/studio-director/SKILL.md",
+      "kind": "project",
+      "target": ".agents/skills/studio-director/SKILL.md",
       "trigger": "active"
     },
     {

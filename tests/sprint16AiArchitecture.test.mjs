@@ -11,14 +11,14 @@ import test from 'node:test';
 import { verifySkills } from '../scripts/verify-ai-skills.mjs';
 import { AiNarratorService } from '../src/logic/aiNarratorService.ts';
 
-test('AI Architecture - TASK-1501: verifySkills executes and passes 100% on 78 skills', () => {
+test('AI Architecture - TASK-1501: verifySkills executes and passes 100% on 80 skills', () => {
   const report = verifySkills();
   assert.strictEqual(report.verdict, 'PASS', 'Skill verification verdict must be PASS');
   assert.strictEqual(report.failures.length, 0, 'Failures must be empty');
-  assert.strictEqual(report.counts.total, 78, 'Total skills must be 78');
+  assert.strictEqual(report.counts.total, 80, 'Total skills must be 80');
   assert.strictEqual(report.counts.template, 73, 'Template skills must be 73');
-  assert.strictEqual(report.counts.project, 5, 'Project skills must be 5');
-  assert.strictEqual(report.counts.active, 31, 'Active skills must be 31');
+  assert.strictEqual(report.counts.project, 7, 'Project skills must be 7');
+  assert.strictEqual(report.counts.active, 33, 'Active skills must be 33');
   assert.strictEqual(report.counts.manual, 29, 'Manual skills must be 29');
   assert.strictEqual(report.counts.dormant, 18, 'Dormant skills must be 18');
 });
