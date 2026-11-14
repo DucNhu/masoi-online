@@ -9,6 +9,7 @@ import {
   INVALID_MESSAGES,
   USERNAME_MAX,
 } from '../logic/accountService';
+import { BRAND_ASSETS } from '../constants/assets';
 
 const LAST_USERNAME_KEY = 'masoi_account_username'; // localStorage: chỉ để điền sẵn ô nhập
 const TAB_ACCOUNT_KEY = 'masoi_tab_account'; // sessionStorage: tài khoản của RIÊNG tab này, dùng để tự vào lại khi reload
@@ -161,7 +162,28 @@ export const AccountGate: React.FC<Props> = ({ children }) => {
           if (!busy) void submit(name);
         }}
       >
-        <div style={{ fontSize: '2.4rem', textAlign: 'center' }}>🏕️</div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>
+          <div
+            style={{
+              width: 72,
+              height: 72,
+              borderRadius: 20,
+              border: '1.5px solid rgba(250, 204, 21, 0.55)',
+              boxShadow: '0 0 20px rgba(250, 204, 21, 0.25), 0 8px 16px rgba(0, 0, 0, 0.4)',
+              overflow: 'hidden',
+              background: 'radial-gradient(circle, #2e1065 0%, #0f172a 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <img
+              src={BRAND_ASSETS.appIcon}
+              alt="Ma Sói 3D Logo"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          </div>
+        </div>
         <h1 style={styles.title}>Ma Sói 3D</h1>
         <p style={styles.subtitle}>
           {isLost
@@ -233,8 +255,8 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '28px 22px',
     borderRadius: 22,
     background: 'rgba(15, 15, 30, 0.82)',
-    border: '1px solid rgba(244, 196, 48, 0.25)',
-    boxShadow: '0 20px 60px rgba(0,0,0,0.7), 0 0 30px rgba(139, 30, 45, 0.25)',
+    border: '1px solid rgba(244, 196, 48, 0.3)',
+    boxShadow: '0 20px 60px rgba(0,0,0,0.7), 0 0 30px rgba(245, 158, 11, 0.2)',
     backdropFilter: 'blur(18px)',
     WebkitBackdropFilter: 'blur(18px)',
     color: '#f8fafc',
@@ -274,7 +296,8 @@ const styles: Record<string, React.CSSProperties> = {
     marginTop: 6,
     borderRadius: 14,
     border: 'none',
-    background: 'linear-gradient(135deg, #8b1e2d 0%, #2d1b4e 100%)',
+    background: 'linear-gradient(135deg, #4338ca 0%, #7c3aed 45%, #ea580c 100%)',
+    boxShadow: '0 4px 16px rgba(234, 88, 12, 0.35)',
     color: '#fff',
     fontWeight: 800,
     fontSize: '1rem',

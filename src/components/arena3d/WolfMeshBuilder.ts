@@ -36,6 +36,15 @@ export class WolfCharacter {
   private blushMaterial: THREE.MeshStandardMaterial;
   private noseMaterial: THREE.MeshStandardMaterial;
   private bootMaterial: THREE.MeshStandardMaterial;
+  private furMaterial: THREE.MeshStandardMaterial;
+  private laceMaterial: THREE.MeshStandardMaterial;
+  private scleraMaterial: THREE.MeshStandardMaterial;
+  private darkPupilMaterial: THREE.MeshStandardMaterial;
+  private eyelashMaterial: THREE.MeshStandardMaterial;
+  private mouthMaterial: THREE.MeshStandardMaterial;
+  private buttonMaterial: THREE.MeshStandardMaterial;
+  private highlightMaterial: THREE.MeshBasicMaterial;
+  private cheekHighlightMaterial: THREE.MeshBasicMaterial;
 
   // Dynamic mesh references for rebuilds
   private hairGroup: THREE.Group;
@@ -74,12 +83,14 @@ export class WolfCharacter {
       color: skinData.jacketColor,
       roughness: 0.65,
       metalness: 0.1,
+      side: THREE.DoubleSide,
     });
 
     this.scarfMaterial = new THREE.MeshStandardMaterial({
       color: skinData.scarfColor,
       roughness: 0.75,
       metalness: 0.05,
+      side: THREE.DoubleSide,
     });
 
     this.hairMaterial = new THREE.MeshStandardMaterial({
@@ -91,7 +102,7 @@ export class WolfCharacter {
     this.eyeMaterial = new THREE.MeshStandardMaterial({
       color: eyeHex,
       emissive: eyeHex,
-      emissiveIntensity: 1.3,
+      emissiveIntensity: 0.55,
       roughness: 0.15,
       metalness: 0.1,
     });
@@ -113,6 +124,53 @@ export class WolfCharacter {
       roughness: 0.7,
     });
 
+    this.furMaterial = new THREE.MeshStandardMaterial({
+      color: 0xfffbeb,
+      roughness: 0.85,
+    });
+
+    this.laceMaterial = new THREE.MeshStandardMaterial({
+      color: 0xfffbeb,
+      roughness: 0.8,
+      side: THREE.DoubleSide,
+    });
+
+    this.scleraMaterial = new THREE.MeshStandardMaterial({
+      color: 0xfffafa,
+      roughness: 0.4,
+    });
+
+    this.darkPupilMaterial = new THREE.MeshStandardMaterial({
+      color: 0x1e1b4b,
+      roughness: 0.3,
+    });
+
+    this.eyelashMaterial = new THREE.MeshStandardMaterial({
+      color: 0x1e1b4b,
+      roughness: 0.5,
+    });
+
+    this.mouthMaterial = new THREE.MeshStandardMaterial({
+      color: 0x9f1239,
+      roughness: 0.6,
+    });
+
+    this.buttonMaterial = new THREE.MeshStandardMaterial({
+      color: 0xd97706,
+      metalness: 0.75,
+      roughness: 0.25,
+    });
+
+    this.highlightMaterial = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+    });
+
+    this.cheekHighlightMaterial = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.75,
+    });
+
     this.buildBaseMesh();
     this.buildArchetypeFeatures(skinData);
     this.updateOutfit(outfit);
@@ -126,236 +184,473 @@ export class WolfCharacter {
   }
 
   private buildBaseMesh(): void {
-    // === 1. THÂN & ÁO KHOÁC CHIBI BẦU BĨNH (COZY KAWAII CHIBI TORSO & JACKET) ===
-    // Khối ngực áo chibi bo tròn thon gọn
-    const chestGeo = new THREE.CylinderGeometry(0.24, 0.32, 0.38, 24);
-    const chestMesh = new THREE.Mesh(chestGeo, this.jacketMaterial);
-    chestMesh.position.y = 0.52;
-    chestMesh.castShadow = true;
-    chestMesh.receiveShadow = true;
-    this.bodyGroup.add(chestMesh);
+    // === 1. THÂN CHIBI LIỀN MẠCH DÁNG GIỌT NƯỚC XUÔI MỀM (LATHEGEOMETRY) ===
+    // Khép kín ở cổ (r = 0.12, y = 0.76) rồi cong xuôi mềm xuống dưới:
+    // (0.12, 0.76) -> (0.20, 0.73) -> (0.26, 0.67) -> (0.23, 0.56) -> (0.205, 0.46)
+    // TUYỆT ĐỐI không có điểm nào ngoài rìa cao hơn bên trong làm vểnh nhọn đầu vai
+    const torsoPoints: THREE.Vector2[] = [
+      new THREE.Vector2(0, 0.46),
+      new THREE.Vector2(0.205, 0.46),
+      new THREE.Vector2(0.23, 0.56),
+      new THREE.Vector2(0.26, 0.67),
+      new THREE.Vector2(0.20, 0.73),
+      new THREE.Vector2(0.12, 0.76),
+      new THREE.Vector2(0, 0.76),
+    ];
+    const torsoGeo = new THREE.LatheGeometry(torsoPoints, 32);
+    const torsoMesh = new THREE.Mesh(torsoGeo, this.jacketMaterial);
+    torsoMesh.castShadow = true;
+    torsoMesh.receiveShadow = true;
+    this.bodyGroup.add(torsoMesh);
 
-    // Khối bụng chibi phúng phính mũm mĩm
-    const bellyGeo = new THREE.SphereGeometry(0.33, 24, 24);
-    const bellyMesh = new THREE.Mesh(bellyGeo, this.jacketMaterial);
-    bellyMesh.scale.set(1.04, 0.95, 1.08);
-    bellyMesh.position.set(0, 0.38, 0.04);
-    bellyMesh.castShadow = true;
-    bellyMesh.receiveShadow = true;
-    this.bodyGroup.add(bellyMesh);
+    // Cổ áo lá sen / Áo choàng vai Peter Pan bo tròn cong xuôi mềm ôm sát thân như bánh mochi
+    const capeletPoints: THREE.Vector2[] = [
+      new THREE.Vector2(0.125, 0.76),
+      new THREE.Vector2(0.21, 0.73),
+      new THREE.Vector2(0.27, 0.67),
+      new THREE.Vector2(0.26, 0.58),
+      new THREE.Vector2(0.22, 0.52),
+      new THREE.Vector2(0.205, 0.51),
+    ];
+    const capeletGeo = new THREE.LatheGeometry(capeletPoints, 32);
+    const capeletMesh = new THREE.Mesh(capeletGeo, this.scarfMaterial);
+    capeletMesh.castShadow = true;
+    capeletMesh.receiveShadow = true;
+    this.scarfMesh = capeletMesh;
+    this.bodyGroup.add(capeletMesh);
 
-    // Tà áo / váy xòe nhẹ bồng bềnh
-    const skirtGeo = new THREE.CylinderGeometry(0.33, 0.44, 0.22, 24, 1, true);
+    // Vòng bo cổ ấm áp ở chân cổ
+    const collarGeo = new THREE.TorusGeometry(0.125, 0.024, 16, 32);
+    const collarMesh = new THREE.Mesh(collarGeo, this.scarfMaterial);
+    collarMesh.rotation.x = Math.PI / 2;
+    collarMesh.position.set(0, 0.76, 0);
+    collarMesh.castShadow = true;
+    this.bodyGroup.add(collarMesh);
+
+    // Nơ xinh trước ngực: Nút thắt tròn giữa ngực (z = 0.25, y = 0.62)
+    const knotGeo = new THREE.SphereGeometry(0.034, 16, 16);
+    const knotMesh = new THREE.Mesh(knotGeo, this.scarfMaterial);
+    knotMesh.position.set(0, 0.62, 0.25);
+    knotMesh.castShadow = true;
+    this.bodyGroup.add(knotMesh);
+
+    // 2 cánh nơ phồng tròn bằng SphereGeometry bóp nhẹ
+    const bowWingGeo = new THREE.SphereGeometry(0.046, 16, 16);
+
+    const leftBow = new THREE.Mesh(bowWingGeo, this.scarfMaterial);
+    leftBow.scale.set(1.35, 0.82, 0.65);
+    leftBow.position.set(-0.06, 0.62, 0.245);
+    leftBow.rotation.z = 0.20;
+    leftBow.rotation.y = 0.12;
+    leftBow.castShadow = true;
+    this.bodyGroup.add(leftBow);
+
+    const rightBow = new THREE.Mesh(bowWingGeo, this.scarfMaterial);
+    rightBow.scale.set(1.35, 0.82, 0.65);
+    rightBow.position.set(0.06, 0.62, 0.245);
+    rightBow.rotation.z = -0.20;
+    rightBow.rotation.y = -0.12;
+    rightBow.castShadow = true;
+    this.bodyGroup.add(rightBow);
+
+    // Dải ruy băng nơ rủ nhẹ
+    const ribbonGeo = new THREE.CapsuleGeometry(0.014, 0.07, 8, 12);
+    const leftRibbon = new THREE.Mesh(ribbonGeo, this.scarfMaterial);
+    leftRibbon.position.set(-0.028, 0.56, 0.245);
+    leftRibbon.rotation.z = 0.22;
+    leftRibbon.castShadow = true;
+    this.bodyGroup.add(leftRibbon);
+
+    const rightRibbon = new THREE.Mesh(ribbonGeo, this.scarfMaterial);
+    rightRibbon.position.set(0.028, 0.56, 0.245);
+    rightRibbon.rotation.z = -0.22;
+    rightRibbon.castShadow = true;
+    this.bodyGroup.add(rightRibbon);
+
+    // 2 cúc áo tròn xinh xắn trước ngực
+    const buttonGeo = new THREE.SphereGeometry(0.022, 14, 14);
+
+    const topButton = new THREE.Mesh(buttonGeo, this.buttonMaterial);
+    topButton.scale.set(1.0, 1.0, 0.45);
+    topButton.position.set(0, 0.54, 0.235);
+    topButton.castShadow = true;
+    this.bodyGroup.add(topButton);
+
+    const bottomButton = new THREE.Mesh(buttonGeo, this.buttonMaterial);
+    bottomButton.scale.set(1.0, 1.0, 0.45);
+    bottomButton.position.set(0, 0.49, 0.225);
+    bottomButton.castShadow = true;
+    this.bodyGroup.add(bottomButton);
+
+    // === 2. VÁY XÒE CHỮ A XẾP LY LƯỢN SÓNG LIỀN KHỐI (VERTEX-MODULATED PLEATED BELL SKIRT) ===
+    // Khởi tạo CylinderGeometry 96 segments rồi điều biến đỉnh (vertex-modulation):
+    // Eo y = 0.46 (r = 0.205) mượt 100% không gai nhọn -> gấu y = 0.12 (r = 0.45) tỏa 14 múi xếp ly bồng bềnh
+    const skirtGeo = new THREE.CylinderGeometry(0.205, 0.45, 0.34, 96, 16, false);
+    const pos = skirtGeo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i);
+      const y = pos.getY(i);
+      const z = pos.getZ(i);
+      if (Math.hypot(x, z) > 0.001) {
+        const t = (0.17 - y) / 0.34; // 0 tại eo (y = +0.17), 1 tại gấu (y = -0.17)
+        const theta = Math.atan2(z, x);
+        const baseR = 0.205 + Math.pow(t, 0.88) * 0.245;
+        const pleatWave = Math.pow(t, 1.15) * 0.032 * Math.cos(theta * 14);
+        const finalR = baseR + pleatWave;
+        pos.setX(i, Math.cos(theta) * finalR);
+        pos.setZ(i, Math.sin(theta) * finalR);
+      }
+    }
+    skirtGeo.computeVertexNormals();
+
     const skirtMesh = new THREE.Mesh(skirtGeo, this.jacketMaterial);
-    skirtMesh.position.set(0, 0.22, 0.02);
+    skirtMesh.position.set(0, 0.29, 0.01);
     skirtMesh.castShadow = true;
     skirtMesh.receiveShadow = true;
     this.bodyGroup.add(skirtMesh);
 
-    // Viền bo gấu phồng tròn
-    const hemGeo = new THREE.TorusGeometry(0.44, 0.035, 12, 32);
-    const hemMesh = new THREE.Mesh(hemGeo, this.jacketMaterial);
-    hemMesh.rotation.x = Math.PI / 2;
-    hemMesh.position.set(0, 0.11, 0.02);
-    hemMesh.castShadow = true;
-    hemMesh.receiveShadow = true;
-    this.bodyGroup.add(hemMesh);
+    // Lớp váy lót ren trắng kem (0xfffbeb) lượn sóng 28 múi bèo nhún nhỏ ngay dưới gấu váy (y = 0.115)
+    const laceGeo = new THREE.CylinderGeometry(0.42, 0.455, 0.04, 96, 4, true);
+    const lacePos = laceGeo.attributes.position;
+    for (let i = 0; i < lacePos.count; i++) {
+      const x = lacePos.getX(i);
+      const y = lacePos.getY(i);
+      const z = lacePos.getZ(i);
+      if (Math.hypot(x, z) > 0.001) {
+        const theta = Math.atan2(z, x);
+        const tLace = (0.02 - y) / 0.04;
+        const laceWave = (0.010 + tLace * 0.012) * Math.cos(theta * 28);
+        const rCurrent = Math.hypot(x, z) + laceWave;
+        lacePos.setX(i, Math.cos(theta) * rCurrent);
+        lacePos.setZ(i, Math.sin(theta) * rCurrent);
+      }
+    }
+    laceGeo.computeVertexNormals();
+    const laceMesh = new THREE.Mesh(laceGeo, this.laceMaterial);
+    laceMesh.position.set(0, 0.115, 0.01);
+    laceMesh.castShadow = true;
+    this.bodyGroup.add(laceMesh);
 
-    // Nẹp áo / khóa kéo thể thao giữa ngực
-    const zipperGeo = new THREE.BoxGeometry(0.03, 0.64, 0.04);
-    const zipperMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5 });
-    const zipperMesh = new THREE.Mesh(zipperGeo, zipperMat);
-    zipperMesh.position.set(0, 0.42, 0.33);
-    this.bodyGroup.add(zipperMesh);
+    // Đai ruy băng mềm tại đúng eo cao y = 0.46
+    const waistBeltGeo = new THREE.TorusGeometry(0.208, 0.020, 12, 32);
+    const waistBeltMesh = new THREE.Mesh(waistBeltGeo, this.scarfMaterial);
+    waistBeltMesh.rotation.x = Math.PI / 2;
+    waistBeltMesh.position.set(0, 0.46, 0);
+    waistBeltMesh.castShadow = true;
+    this.bodyGroup.add(waistBeltMesh);
 
-    // Đai thắt lưng tạo điểm nhấn eo
-    const beltGeo = new THREE.TorusGeometry(0.335, 0.025, 12, 32);
-    const beltMesh = new THREE.Mesh(beltGeo, zipperMat);
-    beltMesh.rotation.x = Math.PI / 2;
-    beltMesh.position.set(0, 0.33, 0.03);
-    beltMesh.castShadow = true;
-    this.bodyGroup.add(beltMesh);
+    // Nơ nhỏ xinh sau lưng
+    const backBowKnot = new THREE.Mesh(new THREE.SphereGeometry(0.028, 12, 12), this.scarfMaterial);
+    backBowKnot.position.set(0, 0.46, -0.215);
+    backBowKnot.castShadow = true;
+    this.bodyGroup.add(backBowKnot);
 
-    // VÒNG KHĂN QUÀNG CỔ ẤM ÁP (COZY CAMPING SCARF)
-    const scarfGeo = new THREE.TorusGeometry(0.26, 0.075, 16, 32);
-    this.scarfMesh = new THREE.Mesh(scarfGeo, this.scarfMaterial);
-    this.scarfMesh.rotation.x = Math.PI / 2;
-    this.scarfMesh.position.set(0, 0.74, 0.02);
-    this.scarfMesh.castShadow = true;
-    this.bodyGroup.add(this.scarfMesh);
+    const backBowWingGeo = new THREE.SphereGeometry(0.040, 12, 12);
+    const leftBackBow = new THREE.Mesh(backBowWingGeo, this.scarfMaterial);
+    leftBackBow.scale.set(1.25, 0.8, 0.55);
+    leftBackBow.position.set(-0.05, 0.46, -0.21);
+    leftBackBow.rotation.z = 0.20;
+    this.bodyGroup.add(leftBackBow);
 
-    // Vạt khăn quàng buông xuống ngực
-    const scarfTailGeo = new THREE.CylinderGeometry(0.065, 0.08, 0.32, 16);
-    const scarfTail = new THREE.Mesh(scarfTailGeo, this.scarfMaterial);
-    scarfTail.position.set(0.09, 0.56, 0.32);
-    scarfTail.rotation.z = -0.15;
-    scarfTail.rotation.x = 0.2;
-    this.bodyGroup.add(scarfTail);
+    const rightBackBow = new THREE.Mesh(backBowWingGeo, this.scarfMaterial);
+    rightBackBow.scale.set(1.25, 0.8, 0.55);
+    rightBackBow.position.set(0.05, 0.46, -0.21);
+    rightBackBow.rotation.z = -0.20;
+    this.bodyGroup.add(rightBackBow);
 
-    // Chân & Giày bốt cắm trại (Hip Joint Groups, Legs and Boots)
-    const legGeo = new THREE.CylinderGeometry(0.12, 0.14, 0.38, 16);
-    const bootSoleGeo = new THREE.BoxGeometry(0.22, 0.12, 0.42);
+    // === 3. CHÂN & GIÀY BỐT CHIBI BO TRÒN (KHÔNG ĐÂM XUYÊN VÁY KHI NGỒI) ===
+    // Khớp hông hạ thấp (y = 0.16) để khi ngồi (rotation.x = -1.25) giày thò nhẹ dưới gấu váy y ~ 0.08..0.12
+    const legGeo = new THREE.CapsuleGeometry(0.082, 0.12, 12, 16);
+    const bootGeo = new THREE.SphereGeometry(0.11, 16, 16);
+    const bootFurGeo = new THREE.TorusGeometry(0.082, 0.018, 12, 24);
 
-    // Khớp hông chân trái (-0.20, 0.34, 0)
-    this.leftLeg.position.set(-0.20, 0.34, 0);
+    // Khớp hông chân trái
+    this.leftLeg.position.set(-0.15, 0.16, 0.02);
     const leftLegMesh = new THREE.Mesh(legGeo, this.jacketMaterial);
-    leftLegMesh.position.set(0, -0.16, 0);
+    leftLegMesh.position.set(0, -0.06, 0);
     leftLegMesh.castShadow = true;
     this.leftLeg.add(leftLegMesh);
 
-    const leftBoot = new THREE.Mesh(bootSoleGeo, this.bootMaterial);
-    leftBoot.position.set(0, -0.32, 0.05);
+    const leftBoot = new THREE.Mesh(bootGeo, this.bootMaterial);
+    leftBoot.scale.set(0.88, 0.65, 1.20);
+    leftBoot.position.set(0, -0.14, 0.03);
     leftBoot.castShadow = true;
     this.leftLeg.add(leftBoot);
+
+    const leftBootFur = new THREE.Mesh(bootFurGeo, this.furMaterial);
+    leftBootFur.rotation.x = Math.PI / 2;
+    leftBootFur.position.set(0, -0.11, 0.01);
+    leftBootFur.castShadow = true;
+    this.leftLeg.add(leftBootFur);
+
     this.bodyGroup.add(this.leftLeg);
 
-    // Khớp hông chân phải (0.20, 0.34, 0)
-    this.rightLeg.position.set(0.20, 0.34, 0);
+    // Khớp hông chân phải
+    this.rightLeg.position.set(0.15, 0.16, 0.02);
     const rightLegMesh = new THREE.Mesh(legGeo, this.jacketMaterial);
-    rightLegMesh.position.set(0, -0.16, 0);
+    rightLegMesh.position.set(0, -0.06, 0);
     rightLegMesh.castShadow = true;
     this.rightLeg.add(rightLegMesh);
 
-    const rightBoot = new THREE.Mesh(bootSoleGeo, this.bootMaterial);
-    rightBoot.position.set(0, -0.32, 0.05);
+    const rightBoot = new THREE.Mesh(bootGeo, this.bootMaterial);
+    rightBoot.scale.set(0.88, 0.65, 1.20);
+    rightBoot.position.set(0, -0.14, 0.03);
     rightBoot.castShadow = true;
     this.rightLeg.add(rightBoot);
+
+    const rightBootFur = new THREE.Mesh(bootFurGeo, this.furMaterial);
+    rightBootFur.rotation.x = Math.PI / 2;
+    rightBootFur.position.set(0, -0.11, 0.01);
+    rightBootFur.castShadow = true;
+    this.rightLeg.add(rightBootFur);
+
     this.bodyGroup.add(this.rightLeg);
 
-    // Mặc định khởi tạo ngồi (isStanding = false):
-    this.leftLeg.rotation.x = -Math.PI / 2.2;
-    this.rightLeg.rotation.x = -Math.PI / 2.2;
+    // Mặc định khởi tạo ngồi (isStanding = false): góc nghiêng -1.25 rad (< -1.0)
+    this.leftLeg.rotation.x = -1.25;
+    this.rightLeg.rotation.x = -1.25;
     this.bodyGroup.position.y = 0;
     this.headGroup.position.y = 0.98;
 
-    // === 2. TAY ÁO & BÀN TAY CHIBI BO TRÒN (ARMS & CHIBI HANDS) ===
-    // Dáng tay áo phồng nhẹ ở bắp tay và thuôn gọn về cổ tay
-    const sleeveGeo = new THREE.CylinderGeometry(0.115, 0.082, 0.42, 18);
-    sleeveGeo.translate(0, -0.18, 0);
+    // === 4. VAI & CÁNH TAY XOAY ĐÚNG CHIỀU CHỮ A (BISHOP SLEEVES & HANDS) ===
+    // Đảo đúng chiều chữ A trong Three.js:
+    // leftArm (ở -X, hướng xuống -Y): rotation.z = -0.38 (xoay ra ngoài sang trái -X)
+    // rightArm (ở +X): rotation.z = +0.38 (xoay ra ngoài sang phải +X)
+    // Khớp vai đặt tại (±0.24, 0.66, 0.02) ôm liền mượt từ cầu vai xuôi ra ngoài
+    // Điểm đầu vai bắt đầu từ tâm trục (0, 0.055) tạo chỏm cầu kín tròn trịa 100%, không hở miệng ống
+    const sleevePoints: THREE.Vector2[] = [
+      new THREE.Vector2(0, 0.055),
+      new THREE.Vector2(0.055, 0.048),
+      new THREE.Vector2(0.088, 0.020),
+      new THREE.Vector2(0.095, -0.020),
+      new THREE.Vector2(0.096, -0.060),
+      new THREE.Vector2(0.088, -0.120),
+      new THREE.Vector2(0.098, -0.190),
+      new THREE.Vector2(0.118, -0.260),
+      new THREE.Vector2(0.105, -0.310),
+      new THREE.Vector2(0.072, -0.340),
+      new THREE.Vector2(0, -0.340),
+    ];
+    const sleeveGeo = new THREE.LatheGeometry(sleevePoints, 24);
 
-    // Bàn tay tròn trĩnh dễ thương
-    const handGeo = new THREE.SphereGeometry(0.09, 16, 16);
-    handGeo.translate(0, -0.40, 0);
+    const handGeo = new THREE.SphereGeometry(0.085, 20, 20);
+    const thumbGeo = new THREE.SphereGeometry(0.032, 12, 12);
+    const cuffGeo = new THREE.TorusGeometry(0.076, 0.022, 12, 24);
 
-    // Cầu vai tròn chibi (Puffy shoulder)
-    const shoulderGeo = new THREE.SphereGeometry(0.12, 16, 16);
+    // TAY TRÁI (Khớp vai đặt tại -0.24, 0.66, 0.02, góc nghiêng chữ A -0.38)
+    this.leftArm.position.set(-0.24, 0.66, 0.02);
+    this.leftArm.rotation.z = -0.38;
 
-    // Tay trái
     const leftSleeve = new THREE.Mesh(sleeveGeo, this.jacketMaterial);
     leftSleeve.castShadow = true;
-    const leftHand = new THREE.Mesh(handGeo, this.skinMaterial);
-    leftHand.castShadow = true;
-    const leftShoulderPuff = new THREE.Mesh(shoulderGeo, this.jacketMaterial);
-    leftShoulderPuff.castShadow = true;
+    leftSleeve.receiveShadow = true;
 
-    this.leftArm.position.set(-0.42, 0.72, 0.04);
-    this.leftArm.add(leftSleeve);       // child 0: leftSleeve
-    this.leftArm.add(leftHand);         // child 1: leftHand (BẢO TOÀN INVARIANT CHO TEST)
-    this.leftArm.add(leftShoulderPuff); // child 2: leftShoulderPuff
+    const leftHand = new THREE.Mesh(handGeo, this.skinMaterial);
+    leftHand.scale.set(0.95, 1.05, 0.88);
+    leftHand.position.set(0, -0.38, 0);
+    leftHand.castShadow = true;
+
+    const leftThumb = new THREE.Mesh(thumbGeo, this.skinMaterial);
+    leftThumb.scale.set(1.0, 1.2, 0.85);
+    leftThumb.position.set(0.062, 0.015, 0.032);
+    leftHand.add(leftThumb);
+
+    const leftCuff = new THREE.Mesh(cuffGeo, this.furMaterial);
+    leftCuff.rotation.x = Math.PI / 2;
+    leftCuff.position.set(0, -0.33, 0);
+    leftCuff.castShadow = true;
+
+    // BẢO TOÀN TUYỆT ĐỐI BẤT BIẾN TEST:
+    // child 0: leftSleeve, child 1: leftHand
+    this.leftArm.add(leftSleeve); // child 0
+    this.leftArm.add(leftHand);   // child 1
+    this.leftArm.add(leftCuff);   // child 2
     this.bodyGroup.add(this.leftArm);
 
-    // Tay phải
+    // TAY PHẢI (Khớp vai đặt tại 0.24, 0.66, 0.02, góc nghiêng chữ A +0.38)
+    this.rightArm.position.set(0.24, 0.66, 0.02);
+    this.rightArm.rotation.z = 0.38;
+
     const rightSleeve = new THREE.Mesh(sleeveGeo, this.jacketMaterial);
     rightSleeve.castShadow = true;
-    const rightHand = new THREE.Mesh(handGeo, this.skinMaterial);
-    rightHand.castShadow = true;
-    const rightShoulderPuff = new THREE.Mesh(shoulderGeo, this.jacketMaterial);
-    rightShoulderPuff.castShadow = true;
+    rightSleeve.receiveShadow = true;
 
-    this.rightArm.position.set(0.42, 0.72, 0.04);
-    this.rightArm.add(rightSleeve);       // child 0: rightSleeve
-    this.rightArm.add(rightHand);         // child 1: rightHand
-    this.rightArm.add(rightShoulderPuff); // child 2: rightShoulderPuff
+    const rightHand = new THREE.Mesh(handGeo, this.skinMaterial);
+    rightHand.scale.set(0.95, 1.05, 0.88);
+    rightHand.position.set(0, -0.38, 0);
+    rightHand.castShadow = true;
+
+    const rightThumb = new THREE.Mesh(thumbGeo, this.skinMaterial);
+    rightThumb.scale.set(1.0, 1.2, 0.85);
+    rightThumb.position.set(-0.062, 0.015, 0.032);
+    rightHand.add(rightThumb);
+
+    const rightCuff = new THREE.Mesh(cuffGeo, this.furMaterial);
+    rightCuff.rotation.x = Math.PI / 2;
+    rightCuff.position.set(0, -0.33, 0);
+    rightCuff.castShadow = true;
+
+    this.rightArm.add(rightSleeve); // child 0
+    this.rightArm.add(rightHand);   // child 1
+    this.rightArm.add(rightCuff);   // child 2
     this.bodyGroup.add(this.rightArm);
 
-    // === 3. ĐẦU CHIBI BẦU BĨNH 3D (SMOOTH CHIBI HEAD) ===
+    // === 5. ĐẦU CHIBI BẦU BĨNH & MẮT ANIME KAWAII ĐA LỚP ===
     this.headGroup.position.set(0, 0.98, 0.02);
 
-    // child 0 của headGroup BẮT BUỘC là headMesh (SphereGeometry 0.34)
-    const headGeo = new THREE.SphereGeometry(0.34, 24, 24);
+    // BẢO TOÀN INVARIANT TEST: child 0 của headGroup BẮT BUỘC là headMesh
+    const headGeo = new THREE.SphereGeometry(0.35, 32, 32);
     const headMesh = new THREE.Mesh(headGeo, this.skinMaterial);
+    headMesh.scale.set(1.06, 0.97, 1.0);
     headMesh.castShadow = true;
-    this.headGroup.add(headMesh);
+    this.headGroup.add(headMesh); // child 0
 
-    // Hai má ửng hồng phúng phính mũm mĩm (Cute Pink Blushes)
-    const blushGeo = new THREE.SphereGeometry(0.075, 16, 16);
+    // Hai má ửng hồng phúng phính bầu bĩnh
+    const blushGeo = new THREE.SphereGeometry(0.08, 18, 18);
     const leftBlush = new THREE.Mesh(blushGeo, this.blushMaterial);
-    leftBlush.scale.set(1.15, 0.65, 0.22);
-    leftBlush.position.set(-0.175, -0.055, 0.29);
+    leftBlush.scale.set(1.15, 0.68, 0.22);
+    leftBlush.position.set(-0.175, -0.055, 0.295);
     this.headGroup.add(leftBlush);
 
     const rightBlush = new THREE.Mesh(blushGeo, this.blushMaterial);
-    rightBlush.scale.set(1.15, 0.65, 0.22);
-    rightBlush.position.set(0.175, -0.055, 0.29);
+    rightBlush.scale.set(1.15, 0.68, 0.22);
+    rightBlush.position.set(0.175, -0.055, 0.295);
     this.headGroup.add(rightBlush);
 
-    // Mũi nhỏ xinh (Cute button nose)
-    const noseGeo = new THREE.SphereGeometry(0.03, 12, 12);
+    // Chấm sáng lung linh trên má
+    const cheekHighlightGeo = new THREE.SphereGeometry(0.014, 8, 8);
+    const leftCheekSparkle = new THREE.Mesh(cheekHighlightGeo, this.cheekHighlightMaterial);
+    leftCheekSparkle.position.set(-0.175, -0.045, 0.315);
+    this.headGroup.add(leftCheekSparkle);
+
+    const rightCheekSparkle = new THREE.Mesh(cheekHighlightGeo, this.cheekHighlightMaterial);
+    rightCheekSparkle.position.set(0.175, -0.045, 0.315);
+    this.headGroup.add(rightCheekSparkle);
+
+    // Mũi hạt đậu nhỏ xinh
+    const noseGeo = new THREE.SphereGeometry(0.022, 12, 12);
     const noseMesh = new THREE.Mesh(noseGeo, this.noseMaterial);
-    noseMesh.position.set(0, -0.02, 0.335);
+    noseMesh.scale.set(1.1, 0.85, 0.75);
+    noseMesh.position.set(0, -0.035, 0.342);
     this.headGroup.add(noseMesh);
 
-    // Miệng cười nhẹ nhàng (Gentle Smile)
-    const smileGeo = new THREE.TorusGeometry(0.045, 0.012, 8, 16, Math.PI);
-    const smileMat = new THREE.MeshBasicMaterial({ color: 0x9f1239 });
-    const smileMesh = new THREE.Mesh(smileGeo, smileMat);
-    smileMesh.position.set(0, -0.1, 0.32);
-    smileMesh.rotation.z = Math.PI; // Vòng cung cười lên
-    this.headGroup.add(smileMesh);
+    // Miệng cười mèo/sói nhí chữ ω (:3) đáng yêu ghép 2 cung tròn nhỏ cạnh nhau
+    const lipGeo = new THREE.TorusGeometry(0.024, 0.007, 8, 16, Math.PI);
+    const leftLip = new THREE.Mesh(lipGeo, this.mouthMaterial);
+    leftLip.rotation.z = Math.PI;
+    leftLip.position.set(-0.02, -0.088, 0.334);
+    this.headGroup.add(leftLip);
 
-    // ĐÔI MẮT CHIBI TO TRÒN LONG LANH (GLOWING CHIBI EYES - ĐÚNG 2 THREE.Mesh)
-    const eyeGeo = new THREE.SphereGeometry(0.088, 20, 20);
+    const rightLip = new THREE.Mesh(lipGeo, this.mouthMaterial);
+    rightLip.rotation.z = Math.PI;
+    rightLip.position.set(0.02, -0.088, 0.334);
+    this.headGroup.add(rightLip);
 
-    // 2 đốm sáng phản chiếu lấp lánh (Dual Sparkling Catchlights)
-    const mainHighlightGeo = new THREE.SphereGeometry(0.032, 12, 12);
-    const subHighlightGeo = new THREE.SphereGeometry(0.016, 8, 8);
-    const highlightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    // ĐÔI MẮT ANIME ĐA LỚP ÔM CONG THEO GÒ MÁ (MULTI-LAYER NENDOROID EYES)
+    // Lớp nền lòng trắng mắt (Sclera)
+    const scleraGeo = new THREE.SphereGeometry(0.095, 24, 24);
 
-    // Mắt trái
+    const leftSclera = new THREE.Mesh(scleraGeo, this.scleraMaterial);
+    leftSclera.scale.set(0.96, 1.10, 0.28);
+    leftSclera.position.set(-0.125, 0.03, 0.308);
+    leftSclera.rotation.y = -0.20;
+    this.headGroup.add(leftSclera);
+
+    const rightSclera = new THREE.Mesh(scleraGeo, this.scleraMaterial);
+    rightSclera.scale.set(0.96, 1.10, 0.28);
+    rightSclera.position.set(0.125, 0.03, 0.308);
+    rightSclera.rotation.y = 0.20;
+    this.headGroup.add(rightSclera);
+
+    // Tròng mắt màu chính (đẩy vào this.eyes, BẢO TOÀN this.eyes.length === 2)
+    const eyeGeo = new THREE.SphereGeometry(0.078, 24, 24);
+
     const leftEye = new THREE.Mesh(eyeGeo, this.eyeMaterial);
-    leftEye.scale.set(1.0, 1.25, 0.35);
-    leftEye.position.set(-0.13, 0.06, 0.305);
+    leftEye.scale.set(0.92, 1.14, 0.30);
+    leftEye.position.set(-0.125, 0.03, 0.316);
+    leftEye.rotation.y = -0.20;
 
-    const leftMainHighlight = new THREE.Mesh(mainHighlightGeo, highlightMat);
-    leftMainHighlight.position.set(0.028, 0.032, 0.065);
-    leftEye.add(leftMainHighlight);
+    const rightEye = new THREE.Mesh(eyeGeo, this.eyeMaterial);
+    rightEye.scale.set(0.92, 1.14, 0.30);
+    rightEye.position.set(0.125, 0.03, 0.316);
+    rightEye.rotation.y = 0.20;
 
-    const leftSubHighlight = new THREE.Mesh(subHighlightGeo, highlightMat);
-    leftSubHighlight.position.set(-0.022, -0.025, 0.062);
-    leftEye.add(leftSubHighlight);
+    // Con ngươi sâu thẳm gọn gàng (Dark Pupil: position.z = 0.048 nhô rõ trên mặt cầu 0.078)
+    const pupilGeo = new THREE.SphereGeometry(0.043, 18, 18);
+
+    const leftPupil = new THREE.Mesh(pupilGeo, this.darkPupilMaterial);
+    leftPupil.scale.set(0.90, 1.05, 0.85);
+    leftPupil.position.set(0, 0.006, 0.048);
+    leftEye.add(leftPupil);
+
+    const rightPupil = new THREE.Mesh(pupilGeo, this.darkPupilMaterial);
+    rightPupil.scale.set(0.90, 1.05, 0.85);
+    rightPupil.position.set(0, 0.006, 0.048);
+    rightEye.add(rightPupil);
+
+    // 3 đốm sáng lấp lánh (Triple Kawaii Catchlights đặt ở z = 0.076..0.080 nhô sắc nét trên con ngươi)
+    const catchlight1Geo = new THREE.SphereGeometry(0.025, 12, 12);
+    const catchlight2Geo = new THREE.SphereGeometry(0.014, 10, 10);
+    const catchlight3Geo = new THREE.SphereGeometry(0.008, 8, 8);
+
+    // Left Eye catchlights
+    const leftC1 = new THREE.Mesh(catchlight1Geo, this.highlightMaterial);
+    leftC1.position.set(-0.024, 0.028, 0.076);
+    leftEye.add(leftC1);
+
+    const leftC2 = new THREE.Mesh(catchlight2Geo, this.highlightMaterial);
+    leftC2.position.set(0.022, -0.024, 0.078);
+    leftEye.add(leftC2);
+
+    const leftC3 = new THREE.Mesh(catchlight3Geo, this.highlightMaterial);
+    leftC3.position.set(0.014, 0.014, 0.080);
+    leftEye.add(leftC3);
+
+    // Right Eye catchlights
+    const rightC1 = new THREE.Mesh(catchlight1Geo, this.highlightMaterial);
+    rightC1.position.set(0.024, 0.028, 0.076);
+    rightEye.add(rightC1);
+
+    const rightC2 = new THREE.Mesh(catchlight2Geo, this.highlightMaterial);
+    rightC2.position.set(-0.022, -0.024, 0.078);
+    rightEye.add(rightC2);
+
+    const rightC3 = new THREE.Mesh(catchlight3Geo, this.highlightMaterial);
+    rightC3.position.set(-0.014, 0.014, 0.080);
+    rightEye.add(rightC3);
 
     this.headGroup.add(leftEye);
     this.eyes.push(leftEye);
 
-    // Mắt phải
-    const rightEye = new THREE.Mesh(eyeGeo, this.eyeMaterial);
-    rightEye.scale.set(1.0, 1.25, 0.35);
-    rightEye.position.set(0.13, 0.06, 0.305);
-
-    const rightMainHighlight = new THREE.Mesh(mainHighlightGeo, highlightMat);
-    rightMainHighlight.position.set(0.028, 0.032, 0.065);
-    rightEye.add(rightMainHighlight);
-
-    const rightSubHighlight = new THREE.Mesh(subHighlightGeo, highlightMat);
-    rightSubHighlight.position.set(-0.022, -0.025, 0.062);
-    rightEye.add(rightSubHighlight);
-
     this.headGroup.add(rightEye);
     this.eyes.push(rightEye);
 
-    // Viền mi trên cong thanh tú (Eyelashes) tạo ánh nhìn anime mềm mại đáng yêu
-    const lashGeo = new THREE.TorusGeometry(0.085, 0.016, 8, 16, Math.PI * 0.75);
-    const lashMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5 });
+    // Mí mắt trên cong vòm ngang thanh nhã (XÓA BỎ VẠCH ĐỨNG GÂY DẤU CỘNG +)
+    // Dùng arc = Math.PI * 0.85 với rotation.z = Math.PI * 0.075 úp chuẩn xác lên đỉnh trên của mắt
+    const lashGeo = new THREE.TorusGeometry(0.084, 0.013, 10, 24, Math.PI * 0.85);
 
-    const leftLash = new THREE.Mesh(lashGeo, lashMat);
-    leftLash.rotation.set(-0.15, 0, Math.PI * 0.125);
-    leftLash.position.set(-0.13, 0.075, 0.32);
+    const leftLash = new THREE.Mesh(lashGeo, this.eyelashMaterial);
+    leftLash.rotation.set(-0.12, -0.20, Math.PI * 0.075);
+    leftLash.position.set(-0.125, 0.052, 0.320);
     this.headGroup.add(leftLash);
 
-    const rightLash = new THREE.Mesh(lashGeo, lashMat);
-    rightLash.rotation.set(-0.15, 0, Math.PI * 0.125);
-    rightLash.position.set(0.13, 0.075, 0.32);
+    const rightLash = new THREE.Mesh(lashGeo, this.eyelashMaterial);
+    rightLash.rotation.set(-0.12, 0.20, Math.PI * 0.075);
+    rightLash.position.set(0.125, 0.052, 0.320);
     this.headGroup.add(rightLash);
+
+    // Chân mày nhỏ thanh mảnh đặt cao hơn mắt (y = 0.155, z = 0.315), vòm ngang hiền hòa
+    const browGeo = new THREE.TorusGeometry(0.055, 0.008, 8, 16, Math.PI * 0.6);
+
+    const leftBrow = new THREE.Mesh(browGeo, this.eyelashMaterial);
+    leftBrow.position.set(-0.125, 0.155, 0.315);
+    leftBrow.rotation.set(0.12, -0.18, Math.PI * 0.2);
+    this.headGroup.add(leftBrow);
+
+    const rightBrow = new THREE.Mesh(browGeo, this.eyelashMaterial);
+    rightBrow.position.set(0.125, 0.155, 0.315);
+    rightBrow.rotation.set(0.12, 0.18, Math.PI * 0.2);
+    this.headGroup.add(rightBrow);
 
     // Thêm Hair Group và Face Features Group
     this.headGroup.add(this.hairGroup);
@@ -383,34 +678,45 @@ export class WolfCharacter {
       this.tailMesh = undefined;
     }
 
-    // 1. Mũ tóc 3D ôm quanh đầu
+    const hasHat = this.outfit.hatId && this.outfit.hatId !== 'NONE';
+
+    // 1. Mũ tóc 3D ôm quanh đầu (Khi đội mũ, hạ nhẹ độ phồng đỉnh scale.y = 0.92 để không xuyên mũ)
     const hairCapGeo = new THREE.SphereGeometry(0.355, 24, 24, 0, Math.PI * 2, 0, Math.PI * 0.65);
     const hairCap = new THREE.Mesh(hairCapGeo, this.hairMaterial);
+    hairCap.scale.set(1.0, hasHat ? 0.92 : 1.0, 1.0);
     hairCap.position.set(0, 0.02, -0.02);
     hairCap.castShadow = true;
     this.hairGroup.add(hairCap);
 
-    // 2. Mái tóc phía trước (Front stylized bangs)
-    const bangAngles = [-0.18, -0.06, 0.06, 0.18];
-    bangAngles.forEach((angle, i) => {
-      const bangGeo = new THREE.ConeGeometry(0.055, 0.18 + (i % 2) * 0.04, 12);
+    // 2. Mái ngố / Mái mưa Chibi ôm sát trán (Forehead hugging bangs)
+    // Nằm thấp hơn hatSlot (y = 0.24) tại y = 0.19, z = 0.315 để không bao giờ đâm xuyên mũ
+    const bangOffsets = [-0.15, -0.05, 0.05, 0.15];
+    const bangGeo = new THREE.SphereGeometry(0.075, 16, 16);
+    bangOffsets.forEach((xOffset, i) => {
       const bang = new THREE.Mesh(bangGeo, this.hairMaterial);
-      bang.position.set(angle * 1.1, 0.22, 0.28);
-      bang.rotation.x = -Math.PI * 0.75;
-      bang.rotation.z = angle * 0.8;
+      bang.scale.set(0.92 + (i % 2) * 0.06, 1.35, 0.38);
+      bang.position.set(xOffset, 0.19, 0.315);
+      bang.rotation.x = -0.32;
+      bang.rotation.y = xOffset * 0.6;
+      bang.castShadow = true;
       this.hairGroup.add(bang);
     });
 
-    // 3. Hai lọn tóc mai ôm má (Side bangs)
-    const sideBangGeo = new THREE.CylinderGeometry(0.04, 0.06, 0.26, 12);
+    // 3. Hai lọn tóc mai ôm má mềm mại bằng CapsuleGeometry
+    const sideBangGeo = new THREE.CapsuleGeometry(0.048, 0.20, 10, 14);
+
     const leftSideBang = new THREE.Mesh(sideBangGeo, this.hairMaterial);
+    leftSideBang.scale.set(1.1, 1.0, 0.8);
     leftSideBang.position.set(-0.31, 0.05, 0.12);
-    leftSideBang.rotation.z = -0.2;
+    leftSideBang.rotation.z = -0.22;
+    leftSideBang.rotation.x = 0.10;
     this.hairGroup.add(leftSideBang);
 
     const rightSideBang = new THREE.Mesh(sideBangGeo, this.hairMaterial);
+    rightSideBang.scale.set(1.1, 1.0, 0.8);
     rightSideBang.position.set(0.31, 0.05, 0.12);
-    rightSideBang.rotation.z = 0.2;
+    rightSideBang.rotation.z = 0.22;
+    rightSideBang.rotation.x = 0.10;
     this.hairGroup.add(rightSideBang);
 
     // 4. Đặc điểm riêng từng nhân vật
@@ -420,22 +726,42 @@ export class WolfCharacter {
       this.outfit.hatId === 'COWBOY';
 
     if (skinData.id === 'WOLF_BLOOD') {
-      // DẠNG SÓI HỒNG NGUYỆT: Có mõm sói bo tròn mịn màng + tai sói ngầu
-      const muzzleGeo = new THREE.CylinderGeometry(0.12, 0.18, 0.28, 16);
-      const muzzleMesh = new THREE.Mesh(muzzleGeo, this.skinMaterial);
-      muzzleMesh.position.set(0, -0.06, 0.38);
-      muzzleMesh.rotation.x = Math.PI / 2;
-      this.faceFeaturesGroup.add(muzzleMesh);
+      // DẠNG SÓI HỒNG NGUYỆT: Kemonomimi / Sói Nhí Chibi
+      // Giữ trọn khuôn mặt bầu bĩnh đáng yêu có miệng :3, điểm thêm 2 răng nanh sói trắng xinh xắn
+      const fangGeo = new THREE.ConeGeometry(0.010, 0.026, 8);
+      const fangMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
 
+      const leftFang = new THREE.Mesh(fangGeo, fangMat);
+      leftFang.position.set(-0.032, -0.098, 0.338);
+      leftFang.rotation.x = Math.PI;
+      this.faceFeaturesGroup.add(leftFang);
+
+      const rightFang = new THREE.Mesh(fangGeo, fangMat);
+      rightFang.position.set(0.032, -0.098, 0.338);
+      rightFang.rotation.x = Math.PI;
+      this.faceFeaturesGroup.add(rightFang);
+
+      // Chiếc mũi sói nhỏ xinh hơi nhô nhẹ (z = 0.355)
       const noseTipMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4 });
-      const wolfNose = new THREE.Mesh(new THREE.SphereGeometry(0.055, 12, 12), noseTipMat);
-      wolfNose.position.set(0, -0.04, 0.52);
+      const wolfNose = new THREE.Mesh(new THREE.SphereGeometry(0.025, 12, 12), noseTipMat);
+      wolfNose.scale.set(1.15, 0.85, 0.9);
+      wolfNose.position.set(0, -0.032, 0.355);
       this.faceFeaturesGroup.add(wolfNose);
 
-      // Tai sói nhọn mềm mại
+      // Tai sói bông mềm mại
       const earGeo = new THREE.ConeGeometry(0.12, 0.35, 12);
+      const innerEarMat = new THREE.MeshStandardMaterial({ color: 0xf87171, roughness: 0.5 });
+      const innerEarGeo = new THREE.ConeGeometry(0.065, 0.24, 12);
+
       const leftEar = new THREE.Mesh(earGeo, this.hairMaterial);
+      const leftInner = new THREE.Mesh(innerEarGeo, innerEarMat);
+      leftInner.position.set(0, 0, 0.03);
+      leftEar.add(leftInner);
+
       const rightEar = new THREE.Mesh(earGeo, this.hairMaterial);
+      const rightInner = new THREE.Mesh(innerEarGeo, innerEarMat);
+      rightInner.position.set(0, 0, 0.03);
+      rightEar.add(rightInner);
 
       if (flaredEars) {
         leftEar.position.set(-0.24, 0.26, -0.02);
@@ -451,14 +777,16 @@ export class WolfCharacter {
       this.faceFeaturesGroup.add(leftEar);
       this.faceFeaturesGroup.add(rightEar);
 
-      // Đuôi sói xù sau lưng
-      const tailGeo = new THREE.ConeGeometry(0.15, 0.65, 12);
+      // Đuôi sói bông xù sau lưng bo tròn giọt nước CapsuleGeometry
+      const tailGeo = new THREE.CapsuleGeometry(0.14, 0.46, 12, 18);
       this.tailMesh = new THREE.Mesh(tailGeo, this.hairMaterial);
+      this.tailMesh.scale.set(1.05, 1.25, 0.9);
       this.tailMesh.position.set(0, 0.28, -0.42);
       this.tailMesh.rotation.x = -Math.PI / 3;
+      this.tailMesh.castShadow = true;
       this.bodyGroup.add(this.tailMesh);
     } else if (skinData.id === 'KITSUNE_FOX') {
-      // DẠNG HỒ LY TINH LINH: Có tai cáo trắng viền hồng xinh xắn + đuôi hồ ly
+      // DẠNG HỒ LY TINH LINH: Có tai cáo trắng viền hồng xinh xắn + đuôi hồ ly bông xù
       const earGeo = new THREE.ConeGeometry(0.11, 0.32, 12);
       const innerEarMat = new THREE.MeshStandardMaterial({ color: 0xf472b6, roughness: 0.5 });
       const innerEarGeo = new THREE.ConeGeometry(0.06, 0.24, 12);
@@ -487,23 +815,49 @@ export class WolfCharacter {
       this.faceFeaturesGroup.add(leftEar);
       this.faceFeaturesGroup.add(rightEar);
 
-      // Đuôi hồ ly cong mềm mại
-      const tailGeo = new THREE.CylinderGeometry(0.08, 0.18, 0.68, 16);
-      this.tailMesh = new THREE.Mesh(tailGeo, this.hairMaterial);
-      this.tailMesh.position.set(0, 0.3, -0.42);
-      this.tailMesh.rotation.x = -Math.PI / 3.5;
+      // Đuôi hồ ly cong mềm mại bằng CapsuleGeometry kèm chóp lông trắng kem
+      const foxTailGeo = new THREE.CapsuleGeometry(0.15, 0.48, 14, 18);
+      this.tailMesh = new THREE.Mesh(foxTailGeo, this.hairMaterial);
+      this.tailMesh.scale.set(1.1, 1.28, 0.92);
+      this.tailMesh.position.set(0, 0.30, -0.42);
+      this.tailMesh.rotation.x = -Math.PI / 3.4;
+      this.tailMesh.castShadow = true;
+
+      const foxTipGeo = new THREE.SphereGeometry(0.11, 14, 14);
+      const foxTip = new THREE.Mesh(foxTipGeo, this.furMaterial);
+      foxTip.position.set(0, 0.28, 0);
+      this.tailMesh.add(foxTip);
+
       this.bodyGroup.add(this.tailMesh);
     } else if (skinData.id === 'CAMPER_GIRL') {
-      // DẠNG NỮ SINH CẮM TRẠI: Mái tóc dài ngang lưng hai bên (Charming Twin Locks)
-      const lockGeo = new THREE.CylinderGeometry(0.05, 0.07, 0.52, 12);
+      // DẠNG NỮ SINH CẮM TRẠI: Mái tóc bím dài ngang lưng mềm mại bằng CapsuleGeometry
+      const lockGeo = new THREE.CapsuleGeometry(0.058, 0.42, 10, 16);
+      const tieGeo = new THREE.TorusGeometry(0.055, 0.015, 10, 20);
+
       const leftLock = new THREE.Mesh(lockGeo, this.hairMaterial);
+      leftLock.scale.set(1.05, 1.0, 0.85);
       leftLock.position.set(-0.28, -0.12, 0.02);
       leftLock.rotation.z = -0.15;
+      leftLock.rotation.x = 0.08;
+      leftLock.castShadow = true;
+
+      const leftTie = new THREE.Mesh(tieGeo, this.scarfMaterial);
+      leftTie.rotation.x = Math.PI / 2;
+      leftTie.position.set(0, 0.14, 0);
+      leftLock.add(leftTie);
       this.hairGroup.add(leftLock);
 
       const rightLock = new THREE.Mesh(lockGeo, this.hairMaterial);
+      rightLock.scale.set(1.05, 1.0, 0.85);
       rightLock.position.set(0.28, -0.12, 0.02);
       rightLock.rotation.z = 0.15;
+      rightLock.rotation.x = 0.08;
+      rightLock.castShadow = true;
+
+      const rightTie = new THREE.Mesh(tieGeo, this.scarfMaterial);
+      rightTie.rotation.x = Math.PI / 2;
+      rightTie.position.set(0, 0.14, 0);
+      rightLock.add(rightTie);
       this.hairGroup.add(rightLock);
     }
   }
@@ -526,6 +880,7 @@ export class WolfCharacter {
     if (eyeData) {
       this.eyeMaterial.color.setHex(eyeData.hex);
       this.eyeMaterial.emissive.setHex(eyeData.hex);
+      this.eyeMaterial.emissiveIntensity = 0.55;
     }
 
     // 4. Cập nhật Mũ
@@ -744,13 +1099,13 @@ export class WolfCharacter {
 
     let hatClearance = 0.36;
     if (hatId === 'WITCH') {
-      hatClearance = 0.72; // 0.24 + 0.48
+      hatClearance = 0.72;
     } else if (hatId === 'CONICAL_HAT') {
-      hatClearance = 0.51; // 0.24 + 0.27
+      hatClearance = 0.52;
     } else if (hatId === 'COWBOY') {
-      hatClearance = 0.49; // 0.24 + 0.25
+      hatClearance = 0.50;
     } else if (hatId === 'CROWN') {
-      hatClearance = 0.44; // 0.24 + 0.20
+      hatClearance = 0.46;
     } else {
       hatClearance = 0.36;
     }
@@ -758,10 +1113,10 @@ export class WolfCharacter {
     const hasTallEars = skinId === 'WOLF_BLOOD' || skinId === 'KITSUNE_FOX';
     const earClearance =
       hasTallEars && (hatId === 'NONE' || hatId === 'BANDANA' || hatId === 'CROWN')
-        ? 0.56
+        ? 0.58
         : 0.36;
 
-    return baseHeadY + Math.max(hatClearance, earClearance) + 0.25;
+    return baseHeadY + Math.max(hatClearance, earClearance) + 0.28;
   }
 
   // === BẢNG TÊN NỔI 3D (3D FLOATING NAMEPLATE) ===
@@ -828,8 +1183,8 @@ export class WolfCharacter {
       this.bodyGroup.position.y = 0.22;
       this.headGroup.position.y = 1.20;
     } else {
-      this.leftLeg.rotation.x = -Math.PI / 2.2;
-      this.rightLeg.rotation.x = -Math.PI / 2.2;
+      this.leftLeg.rotation.x = -1.25;
+      this.rightLeg.rotation.x = -1.25;
       this.bodyGroup.position.y = 0;
       this.headGroup.position.y = 0.98;
     }
@@ -861,14 +1216,16 @@ export class WolfCharacter {
         this.headGroup.rotation.z = Math.sin(this.animTime * 1.2) * 0.02;
         this.leftArm.rotation.x = 0;
         this.rightArm.rotation.x = 0;
+        this.leftArm.rotation.z = -0.38;
+        this.rightArm.rotation.z = 0.38;
         if (this.isStanding) {
           this.leftLeg.rotation.x = 0;
           this.rightLeg.rotation.x = 0;
         } else {
-          this.leftLeg.rotation.x = -Math.PI / 2.2;
-          this.rightLeg.rotation.x = -Math.PI / 2.2;
+          this.leftLeg.rotation.x = -1.25;
+          this.rightLeg.rotation.x = -1.25;
         }
-        this.eyeMaterial.emissiveIntensity = 1.2 + Math.sin(this.animTime * 4) * 0.3;
+        this.eyeMaterial.emissiveIntensity = 0.55 + Math.sin(this.animTime * 3) * 0.10;
         break;
       }
       case 'howl': {
@@ -878,31 +1235,35 @@ export class WolfCharacter {
         this.headGroup.position.y = baseHeadY + currentHeadOffset;
         this.leftArm.rotation.x = -Math.PI / 6;
         this.rightArm.rotation.x = -Math.PI / 6;
+        this.leftArm.rotation.z = -0.38;
+        this.rightArm.rotation.z = 0.38;
         if (this.isStanding) {
           this.leftLeg.rotation.x = 0;
           this.rightLeg.rotation.x = 0;
         } else {
-          this.leftLeg.rotation.x = -Math.PI / 2.2;
-          this.rightLeg.rotation.x = -Math.PI / 2.2;
+          this.leftLeg.rotation.x = -1.25;
+          this.rightLeg.rotation.x = -1.25;
         }
-        this.eyeMaterial.emissiveIntensity = 2.0;
+        this.eyeMaterial.emissiveIntensity = 1.1;
         break;
       }
       case 'point': {
         currentHeadOffset = 0;
         this.bodyGroup.position.y = baseBodyY;
         this.rightArm.rotation.x = -Math.PI / 2;
+        this.rightArm.rotation.z = 0.12;
         this.leftArm.rotation.x = 0;
+        this.leftArm.rotation.z = -0.38;
         this.headGroup.position.y = baseHeadY;
         this.headGroup.rotation.x = 0.08;
         if (this.isStanding) {
           this.leftLeg.rotation.x = 0;
           this.rightLeg.rotation.x = 0;
         } else {
-          this.leftLeg.rotation.x = -Math.PI / 2.2;
-          this.rightLeg.rotation.x = -Math.PI / 2.2;
+          this.leftLeg.rotation.x = -1.25;
+          this.rightLeg.rotation.x = -1.25;
         }
-        this.eyeMaterial.emissiveIntensity = 1.5;
+        this.eyeMaterial.emissiveIntensity = 0.85;
         break;
       }
       case 'slumber': {
@@ -912,14 +1273,16 @@ export class WolfCharacter {
         this.headGroup.position.y = baseHeadY + currentHeadOffset;
         this.leftArm.rotation.x = 0.08;
         this.rightArm.rotation.x = 0.08;
+        this.leftArm.rotation.z = -0.38;
+        this.rightArm.rotation.z = 0.38;
         if (this.isStanding) {
           this.leftLeg.rotation.x = 0;
           this.rightLeg.rotation.x = 0;
         } else {
-          this.leftLeg.rotation.x = -Math.PI / 2.2;
-          this.rightLeg.rotation.x = -Math.PI / 2.2;
+          this.leftLeg.rotation.x = -1.25;
+          this.rightLeg.rotation.x = -1.25;
         }
-        this.eyeMaterial.emissiveIntensity = 0.15;
+        this.eyeMaterial.emissiveIntensity = 0.12;
         break;
       }
       case 'walk': {
@@ -931,13 +1294,15 @@ export class WolfCharacter {
         this.rightLeg.rotation.x = -Math.sin(walkCycle) * 0.65;
         this.leftArm.rotation.x = -Math.sin(walkCycle) * 0.5;
         this.rightArm.rotation.x = Math.sin(walkCycle) * 0.5;
+        this.leftArm.rotation.z = -0.38;
+        this.rightArm.rotation.z = 0.38;
         const bob = Math.abs(Math.sin(walkCycle)) * 0.045;
         currentHeadOffset = bob;
         this.bodyGroup.position.y = 0.22 + bob;
         this.headGroup.position.y = 1.20 + bob;
         this.headGroup.rotation.x = 0;
         this.headGroup.rotation.z = Math.sin(walkCycle * 0.5) * 0.03;
-        this.eyeMaterial.emissiveIntensity = 1.2 + Math.sin(this.animTime * 4) * 0.3;
+        this.eyeMaterial.emissiveIntensity = 0.55 + Math.sin(this.animTime * 3) * 0.10;
         break;
       }
     }
@@ -952,19 +1317,61 @@ export class WolfCharacter {
       this.skinMaterial.color.setHex(0x64748b);
       this.skinMaterial.transparent = true;
       this.skinMaterial.opacity = 0.45;
+
       this.jacketMaterial.color.setHex(0x334155);
       this.jacketMaterial.transparent = true;
       this.jacketMaterial.opacity = 0.45;
-      this.eyeMaterial.emissiveIntensity = 0.2;
+
+      this.scarfMaterial.color.setHex(0x475569);
+      this.scarfMaterial.transparent = true;
+      this.scarfMaterial.opacity = 0.45;
+
+      this.hairMaterial.color.setHex(0x334155);
+      this.hairMaterial.transparent = true;
+      this.hairMaterial.opacity = 0.45;
+
+      this.bootMaterial.color.setHex(0x1e293b);
+      this.bootMaterial.transparent = true;
+      this.bootMaterial.opacity = 0.45;
+
+      this.furMaterial.transparent = true;
+      this.furMaterial.opacity = 0.35;
+
+      this.laceMaterial.transparent = true;
+      this.laceMaterial.opacity = 0.35;
+
+      this.blushMaterial.opacity = 0.15;
+      this.eyeMaterial.emissiveIntensity = 0.15;
     } else {
       const skinData = this.getSkinData(this.outfit.skinId);
       this.skinMaterial.color.setHex(skinData.skinTone);
       this.skinMaterial.transparent = false;
       this.skinMaterial.opacity = 1.0;
+
       this.jacketMaterial.color.setHex(skinData.jacketColor);
       this.jacketMaterial.transparent = false;
       this.jacketMaterial.opacity = 1.0;
-      this.eyeMaterial.emissiveIntensity = 1.3;
+
+      this.scarfMaterial.color.setHex(skinData.scarfColor);
+      this.scarfMaterial.transparent = false;
+      this.scarfMaterial.opacity = 1.0;
+
+      this.hairMaterial.color.setHex(skinData.hairColor);
+      this.hairMaterial.transparent = false;
+      this.hairMaterial.opacity = 1.0;
+
+      this.bootMaterial.color.setHex(0x1e293b);
+      this.bootMaterial.transparent = false;
+      this.bootMaterial.opacity = 1.0;
+
+      this.furMaterial.transparent = false;
+      this.furMaterial.opacity = 1.0;
+
+      this.laceMaterial.transparent = false;
+      this.laceMaterial.opacity = 1.0;
+
+      this.blushMaterial.opacity = 0.6;
+      this.eyeMaterial.emissiveIntensity = 0.55;
     }
   }
 }

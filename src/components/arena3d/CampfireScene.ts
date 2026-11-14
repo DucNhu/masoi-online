@@ -93,6 +93,7 @@ export class CampfireScene {
 
   private onSeatClickCallback?: (seatNumber: number) => void;
   private onSeatHoverCallback?: (seatNumber: number | null) => void;
+  private onZoomChangeCallback?: (zoomPercent: number, radius: number) => void;
 
   private canvasElement?: HTMLCanvasElement;
   private wheelHandler?: (e: WheelEvent) => void;
@@ -106,6 +107,29 @@ export class CampfireScene {
 
   /** Các phím mà trình duyệt mặc định dùng để cuộn trang — phải chặn khi điều khiển 3D */
   public static readonly SCROLL_KEYS: readonly string[] = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '];
+
+  public static readonly MIN_CAMERA_RADIUS = 3.8;
+  public static readonly MAX_CAMERA_RADIUS = 24.0;
+  public static readonly DEFAULT_ROAM_RADIUS = 8.5;
+  public static readonly DEFAULT_SEATED_RADIUS = 11.5;
+
+  public static clampCameraRadius(radius: number): number {
+    return Math.max(CampfireScene.MIN_CAMERA_RADIUS, Math.min(CampfireScene.MAX_CAMERA_RADIUS, radius));
+  }
+
+  public static radiusToZoomPercent(radius: number, baseRadius = 8.5): number {
+    return Math.round((baseRadius / CampfireScene.clampCameraRadius(radius)) * 100);
+  }
+
+  public static computeProportionalHeight(radius: number, isRoaming: boolean): number {
+    const clampedRadius = CampfireScene.clampCameraRadius(radius);
+    if (isRoaming) {
+      const ratio = 5.0 / 8.5;
+      return Math.max(2.2, Math.min(14.5, clampedRadius * ratio));
+    }
+    const ratio = 7.0 / 11.5;
+    return Math.max(2.6, Math.min(14.5, clampedRadius * ratio));
+  }
 
   /**
    * Tính vector di chuyển (đã chuẩn hóa) tương đối với góc nhìn camera.
@@ -786,6 +810,16 @@ export class CampfireScene {
   // === ĐIỀU KHIỂN & TƯƠNG TÁC (INTERACTIONS) ===
   private initInteractions(canvas: HTMLCanvasElement): void {
     this.canvasElement = canvas;
+    let initialPinchDistance = 0;
+    let wasPinching = false;
+
+    const getTouchDistance = (touches: TouchList): number => {
+      if (touches.length < 2) return 0;
+      const dx = touches[0].clientX - touches[1].clientX;
+      const dy = touches[0].clientY - touches[1].clientY;
+      return Math.hypot(dx, dy);
+    };
+
     const getPos = (e: MouseEvent | TouchEvent) => {
       if ('touches' in e && e.touches.length > 0) {
         return { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -796,6 +830,13 @@ export class CampfireScene {
     };
 
     const onPointerDown = (e: MouseEvent | TouchEvent) => {
+      if ('touches' in e && e.touches.length >= 2) {
+        this.isDragging = false;
+        wasPinching = true;
+        initialPinchDistance = getTouchDistance(e.touches);
+        return;
+      }
+
       this.isDragging = true;
       const pos = getPos(e);
       this.previousMousePosition = pos;
@@ -804,6 +845,18 @@ export class CampfireScene {
     };
 
     const onPointerMove = (e: MouseEvent | TouchEvent) => {
+      if ('touches' in e && e.touches.length >= 2) {
+        this.isDragging = false;
+        wasPinching = true;
+        const currentDist = getTouchDistance(e.touches);
+        if (initialPinchDistance > 0) {
+          const deltaDist = initialPinchDistance - currentDist;
+          this.zoom(deltaDist * 0.04);
+        }
+        initialPinchDistance = currentDist;
+        return;
+      }
+
       if (!this.isDragging) return;
       const currentPos = getPos(e);
       const deltaX = currentPos.x - this.previousMousePosition.x;
@@ -818,6 +871,21 @@ export class CampfireScene {
     };
 
     const onPointerUp = (e: MouseEvent | TouchEvent) => {
+      if (wasPinching) {
+        this.isDragging = false;
+        initialPinchDistance = 0;
+        if (!('touches' in e) || e.touches.length === 0) {
+          wasPinching = false;
+        } else if (e.touches.length === 1) {
+          const remainingPos = getPos(e);
+          this.previousMousePosition = remainingPos;
+          this.pointerDownCoord = remainingPos;
+          wasPinching = false;
+        }
+        canvas.style.cursor = this.hoveredSeat !== null ? 'pointer' : 'grab';
+        return;
+      }
+
       if (!this.isDragging) return;
       this.isDragging = false;
       canvas.style.cursor = this.hoveredSeat !== null ? 'pointer' : 'grab';
@@ -864,9 +932,7 @@ export class CampfireScene {
     // Cuộn chuột để Zoom
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      const zoomSpeed = 0.006;
-      this.cameraRadius = Math.max(4.5, Math.min(22.0, this.cameraRadius + e.deltaY * zoomSpeed));
-      this.updateCameraPosition();
+      this.zoom(e.deltaY * 0.008);
     };
 
     // Rê chuột hover ghế hoặc nhân vật
@@ -908,6 +974,18 @@ export class CampfireScene {
       this.keysPressed[e.key] = true;
       this.keysPressed[e.key.toLowerCase()] = true;
 
+      // Phím tắt Thu / Phóng Camera (+ / = và - / _): hoạt động ở cả 2 chế độ roaming và seated
+      if (e.key === '+' || e.key === '=' || e.code === 'NumpadAdd') {
+        e.preventDefault();
+        this.zoomIn(1.2);
+        return;
+      }
+      if (e.key === '-' || e.key === '_' || e.code === 'NumpadSubtract') {
+        e.preventDefault();
+        this.zoomOut(1.2);
+        return;
+      }
+
       if (!this.isRoaming) {
         const stepAngle = 0.06;
         const zoomStep = 0.6;
@@ -918,11 +996,9 @@ export class CampfireScene {
           this.cameraAngle -= stepAngle;
           this.updateCameraPosition();
         } else if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') {
-          this.cameraRadius = Math.max(4.5, this.cameraRadius - zoomStep);
-          this.updateCameraPosition();
+          this.zoom(-zoomStep);
         } else if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') {
-          this.cameraRadius = Math.min(22.0, this.cameraRadius + zoomStep);
-          this.updateCameraPosition();
+          this.zoom(zoomStep);
         } else if (e.key.toLowerCase() === 'r') {
           this.resetCamera();
         }
@@ -957,6 +1033,7 @@ export class CampfireScene {
     canvas.addEventListener('touchstart', onPointerDown, { passive: true });
     window.addEventListener('touchmove', onPointerMove, { passive: true });
     window.addEventListener('touchend', onPointerUp, { passive: true });
+    window.addEventListener('touchcancel', onPointerUp, { passive: true });
 
     canvas.addEventListener('wheel', onWheel, { passive: false });
     canvas.addEventListener('mousemove', onMouseMoveHover);
@@ -976,7 +1053,7 @@ export class CampfireScene {
     }
 
     // Đưa camera về bao quát bàn cắm trại
-    this.cameraRadius = 11.5;
+    this.cameraRadius = CampfireScene.DEFAULT_SEATED_RADIUS;
     this.cameraHeight = 7.0;
     this.targetCameraCenter.set(0, 1.2, 0);
     this.updateCameraPosition();
@@ -987,6 +1064,7 @@ export class CampfireScene {
     if (this.onLocalRoamChangeCallback) {
       this.onLocalRoamChangeCallback(this.getLocalRoamState());
     }
+    this.onZoomChangeCallback?.(this.getZoomPercent(), this.cameraRadius);
   }
 
   public standUp(): void {
@@ -1002,7 +1080,7 @@ export class CampfireScene {
       this.roamAvatar.root.rotation.y = this.roamFacingAngle;
     }
 
-    this.cameraRadius = 8.5;
+    this.cameraRadius = CampfireScene.DEFAULT_ROAM_RADIUS;
     this.cameraHeight = 5.0;
     this.updateCameraPosition();
 
@@ -1012,6 +1090,7 @@ export class CampfireScene {
     if (this.onLocalRoamChangeCallback) {
       this.onLocalRoamChangeCallback(this.getLocalRoamState());
     }
+    this.onZoomChangeCallback?.(this.getZoomPercent(), this.cameraRadius);
   }
 
   public setRoaming(enable: boolean): void {
@@ -1309,9 +1388,35 @@ export class CampfireScene {
     }
   }
 
+  public setOnZoomChange(callback: (zoomPercent: number, radius: number) => void): void {
+    this.onZoomChangeCallback = callback;
+    callback(this.getZoomPercent(), this.cameraRadius);
+  }
+
+  public getCameraRadius(): number {
+    return this.cameraRadius;
+  }
+
+  public getZoomPercent(): number {
+    return CampfireScene.radiusToZoomPercent(
+      this.cameraRadius,
+      this.isRoaming ? CampfireScene.DEFAULT_ROAM_RADIUS : CampfireScene.DEFAULT_SEATED_RADIUS
+    );
+  }
+
+  public zoomIn(step = 1.4): void {
+    this.zoom(-Math.abs(step));
+  }
+
+  public zoomOut(step = 1.4): void {
+    this.zoom(Math.abs(step));
+  }
+
   public zoom(delta: number): void {
-    this.cameraRadius = Math.max(4.5, Math.min(22.0, this.cameraRadius + delta));
+    this.cameraRadius = CampfireScene.clampCameraRadius(this.cameraRadius + delta);
+    this.cameraHeight = CampfireScene.computeProportionalHeight(this.cameraRadius, this.isRoaming);
     this.updateCameraPosition();
+    this.onZoomChangeCallback?.(this.getZoomPercent(), this.cameraRadius);
   }
 
   public orbit(deltaAngle: number): void {
@@ -1320,14 +1425,15 @@ export class CampfireScene {
   }
 
   public resetCamera(): void {
-    this.cameraRadius = 11.5;
+    this.cameraRadius = this.isRoaming ? CampfireScene.DEFAULT_ROAM_RADIUS : CampfireScene.DEFAULT_SEATED_RADIUS;
     this.cameraAngle = Math.PI / 2;
-    this.cameraHeight = 7.0;
+    this.cameraHeight = this.isRoaming ? 5.0 : 7.0;
     const tent = CAMP_TENTS.find((t) => t.id === this.activeTentId);
     if (tent) {
       this.targetCameraCenter.set(tent.lookAt[0], tent.lookAt[1], tent.lookAt[2]);
     }
     this.updateCameraPosition();
+    this.onZoomChangeCallback?.(this.getZoomPercent(), this.cameraRadius);
   }
 
   public resize(width: number, height: number): void {
@@ -1575,6 +1681,7 @@ export class CampfireScene {
     if (this.pointerUpHandler) {
       window.removeEventListener('mouseup', this.pointerUpHandler);
       window.removeEventListener('touchend', this.pointerUpHandler);
+      window.removeEventListener('touchcancel', this.pointerUpHandler);
     }
     if (this.keyDownHandler) {
       window.removeEventListener('keydown', this.keyDownHandler);

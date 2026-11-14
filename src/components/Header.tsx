@@ -168,13 +168,17 @@ export const Header: React.FC<HeaderProps> = ({
           <div
             className="gamebar-brand-icon-box"
             style={{
-              borderColor: isNight ? 'rgba(165, 180, 252, 0.45)' : 'rgba(245, 158, 11, 0.45)',
-              boxShadow: isNight ? '0 0 12px rgba(99, 102, 241, 0.35)' : '0 0 12px rgba(245, 158, 11, 0.35)',
+              borderRadius: '10px',
+              overflow: 'hidden',
+              borderColor: isNight ? 'rgba(250, 204, 21, 0.55)' : 'rgba(245, 158, 11, 0.6)',
+              boxShadow: isNight
+                ? '0 0 12px rgba(250, 204, 21, 0.35), 0 0 20px rgba(99, 102, 241, 0.25)'
+                : '0 0 14px rgba(245, 158, 11, 0.45)',
             }}
           >
             <img
               src={BRAND_ASSETS.appIcon}
-              alt="Ma Sói Logo"
+              alt="Ma Sói 3D — Sói Nhí Cắm Trại"
               className="gamebar-brand-icon-img"
             />
             <div

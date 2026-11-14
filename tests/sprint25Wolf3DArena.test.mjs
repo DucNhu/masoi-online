@@ -209,3 +209,83 @@ test('Sprint 32 - 3D Character Raycast & Seat Interaction QA: Raycast hits on ch
   assert.ok(headMesh, 'Character has head mesh');
   assert.equal(getSeatFromObject(headMesh), 5, 'Head hit resolves seatNumber 5');
 });
+
+test('Sprint 41 - 3D Kawaii Chibi Sculpting: Nendoroid proportions, Lathe seamless torso, 14 pleated skirt folds, bishop sleeves & multi-layer sparkling eyes', () => {
+  const char = new WolfCharacter(DEFAULT_OUTFIT);
+
+  // 1. Torso & Capelet dùng LatheGeometry liền khối mềm mại
+  const latheMeshes = char.bodyGroup.children.filter(
+    (c) => c instanceof THREE.Mesh && c.geometry instanceof THREE.LatheGeometry
+  );
+  assert.ok(latheMeshes.length >= 2, 'Must have at least 2 LatheGeometry meshes (torso, capelet)');
+
+  // 2. Váy xếp ly lượn sóng 14 múi liền khối (Vertex-Modulated Pleated Bell Skirt)
+  const pleatedSkirtMesh = char.bodyGroup.children.find(
+    (c) =>
+      c instanceof THREE.Mesh &&
+      c.geometry instanceof THREE.CylinderGeometry &&
+      Math.abs(c.position.y - 0.29) < 0.05
+  );
+  assert.ok(pleatedSkirtMesh, 'Must have vertex-modulated pleated bell skirt mesh');
+  assert.ok(
+    pleatedSkirtMesh.geometry.attributes.position.count > 500,
+    'Skirt has high-density vertices for 14 pleats'
+  );
+
+  // 3. Khớp vai chuẩn Chibi (-0.24, 0.66, 0.02) và (0.24, 0.66, 0.02)
+  assert.equal(char.leftArm.position.x, -0.24, 'Left arm shoulder x must be -0.24 (no gap)');
+  assert.equal(char.rightArm.position.x, 0.24, 'Right arm shoulder x must be 0.24 (no gap)');
+  assert.equal(char.leftArm.position.y, 0.66, 'Left arm shoulder y must be 0.66');
+  assert.equal(char.rightArm.position.y, 0.66, 'Right arm shoulder y must be 0.66');
+
+  // Tay chữ A đáng yêu (xoay ra ngoài)
+  assert.equal(char.leftArm.rotation.z, -0.38, 'Left arm A-pose rotation.z must be -0.38');
+  assert.equal(char.rightArm.rotation.z, 0.38, 'Right arm A-pose rotation.z must be 0.38');
+
+  // Tay áo phồng Bishop Sleeve (child 0) & Bàn tay Nendoroid có ngón cái (child 1) & Bo cổ tay lông (child 2)
+  assert.ok(char.leftArm.children[0].geometry instanceof THREE.LatheGeometry, 'Sleeve is LatheGeometry');
+  assert.ok(char.leftArm.children[1].geometry instanceof THREE.SphereGeometry, 'Hand is SphereGeometry');
+  assert.ok(char.leftArm.children[1].children.length >= 1, 'Hand has thumb child');
+  assert.ok(char.leftArm.children[2].geometry instanceof THREE.TorusGeometry, 'Fur cuff is TorusGeometry');
+
+  // 4. Mắt Anime đa lớp & Triple Kawaii Catchlights
+  assert.equal(char.eyes.length, 2, 'Wolf has exactly 2 glowing eyes');
+  for (const eye of char.eyes) {
+    // 1 pupil + 3 catchlights = 4 children
+    assert.equal(eye.children.length, 4, 'Each eye must have 4 children: 1 dark pupil + 3 sparkling catchlights');
+  }
+
+  // 5. Archetype features: Sói Nhí Kemonomimi có 2 răng nanh sói trắng
+  const bloodWolf = new WolfCharacter({
+    skinId: 'WOLF_BLOOD',
+    hatId: 'NONE',
+    eyeGlowId: 'RED',
+    backItemId: 'NONE',
+  });
+  const bloodFeatures = bloodWolf['faceFeaturesGroup'].children;
+  const fangs = bloodFeatures.filter(
+    (c) => c instanceof THREE.Mesh && c.geometry instanceof THREE.ConeGeometry
+  );
+  assert.ok(fangs.length >= 2, 'Wolf blood must have cute white fangs');
+
+  const kitsune = new WolfCharacter({
+    skinId: 'KITSUNE_FOX',
+    hatId: 'NONE',
+    eyeGlowId: 'RED',
+    backItemId: 'NONE',
+  });
+  assert.ok(kitsune['tailMesh']?.geometry instanceof THREE.CapsuleGeometry, 'Kitsune tail must be CapsuleGeometry');
+
+  const camper = new WolfCharacter({
+    skinId: 'CAMPER_GIRL',
+    hatId: 'NONE',
+    eyeGlowId: 'RED',
+    backItemId: 'NONE',
+  });
+  const camperHair = camper['hairGroup'].children;
+  const twinLocks = camperHair.filter(
+    (c) => c instanceof THREE.Mesh && c.geometry instanceof THREE.CapsuleGeometry && Math.abs(c.position.y - (-0.12)) < 0.05
+  );
+  assert.equal(twinLocks.length, 2, 'Camper girl twin locks must be CapsuleGeometry');
+});
+

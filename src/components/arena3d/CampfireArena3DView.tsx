@@ -123,6 +123,59 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
   const [isWardrobeOpen, setIsWardrobeOpen] = useState<boolean>(false);
   const [isFriendsOpen, setIsFriendsOpen] = useState<boolean>(false);
 
+  // Mức Zoom hiện tại & Ref giữ timer nhấn giữ nút Zoom
+  const [zoomPercent, setZoomPercent] = useState<number>(100);
+  const zoomHoldTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const zoomHoldDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isHoldActiveRef = useRef<boolean>(false);
+
+  // Dọn dẹp timer giữ nút Zoom khi unmount
+  const stopZoomHold = useCallback(() => {
+    if (zoomHoldDelayRef.current !== null) {
+      clearTimeout(zoomHoldDelayRef.current);
+      zoomHoldDelayRef.current = null;
+    }
+    if (zoomHoldTimerRef.current !== null) {
+      clearInterval(zoomHoldTimerRef.current);
+      zoomHoldTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      stopZoomHold();
+    };
+  }, [stopZoomHold]);
+
+  // Kích hoạt 1 bước Zoom và đồng bộ %
+  const triggerZoomStep = useCallback((delta: number) => {
+    if (sceneRef.current) {
+      sceneRef.current.zoom(delta);
+      if ('getZoomPercent' in sceneRef.current && typeof (sceneRef.current as any).getZoomPercent === 'function') {
+        setZoomPercent((sceneRef.current as any).getZoomPercent());
+      } else {
+        setZoomPercent((prev) => Math.min(250, Math.max(50, Math.round(prev - delta * 10))));
+      }
+    }
+    NativeBridge.hapticImpact('light');
+  }, []);
+
+  // Nhấn giữ liên tục nút Zoom (sau 220ms lặp mỗi 90ms)
+  const startZoomHold = useCallback(
+    (delta: number) => {
+      stopZoomHold();
+      isHoldActiveRef.current = false;
+      zoomHoldDelayRef.current = setTimeout(() => {
+        isHoldActiveRef.current = true;
+        triggerZoomStep(delta);
+        zoomHoldTimerRef.current = setInterval(() => {
+          triggerZoomStep(delta);
+        }, 90);
+      }, 220);
+    },
+    [stopZoomHold, triggerZoomStep]
+  );
+
   // Khởi động Daemon kiểm tra lịch hẹn và bắn thông báo trước 15 phút
   useEffect(() => {
     notificationService.startReminderDaemon((onTrigger) => {
@@ -328,6 +381,10 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
     const scene = new CampfireScene(canvasRef.current);
     sceneRef.current = scene;
 
+    if ('setOnZoomChange' in scene && typeof (scene as any).setOnZoomChange === 'function') {
+      (scene as any).setOnZoomChange((pct: number) => setZoomPercent(pct));
+    }
+
     scene.setPhase(isNightMode);
     scene.setLanguage(lang);
     scene.updatePlayerProfile(playerName, myOutfit);
@@ -414,6 +471,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
 
     return () => {
       clearTimeout(resizeTimer);
+      stopZoomHold();
       window.removeEventListener('resize', handleResize);
       unsubUpdate();
       unsubLeave();
@@ -873,6 +931,7 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
       // Phím tắt nhanh 3D toàn cục
       if (key === 'R') {
         sceneRef.current?.resetCamera();
+        setZoomPercent(100);
         NativeBridge.hapticImpact('light');
         return;
       }
@@ -1429,48 +1488,11 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
           {isVoiceOn ? <Volume2 size={16} color="#c084fc" /> : <VolumeX size={16} color="#94a3b8" />}
         </button>
 
-        {/* Nút ➕ Zoom In */}
-        <button
-          onClick={() => {
-            sceneRef.current?.zoom(-1.2);
-            NativeBridge.hapticImpact('light');
-          }}
-          className="hud-icon-btn has-tooltip tooltip-left hide-on-mobile"
-          data-tooltip={lang === 'en' ? 'Zoom in (Scroll up / Key W)' : 'Phóng to (Cuộn chuột lên / Phím W)'}
-          style={{
-            width: '36px',
-            height: '36px',
-            minWidth: '36px',
-            minHeight: '36px',
-            borderRadius: '10px',
-          }}
-        >
-          <ZoomIn size={16} color="#cbd5e1" />
-        </button>
-
-        {/* Nút ➖ Zoom Out */}
-        <button
-          onClick={() => {
-            sceneRef.current?.zoom(1.2);
-            NativeBridge.hapticImpact('light');
-          }}
-          className="hud-icon-btn has-tooltip tooltip-left hide-on-mobile"
-          data-tooltip={lang === 'en' ? 'Zoom out (Scroll down / Key S)' : 'Thu nhỏ (Cuộn chuột xuống / Phím S)'}
-          style={{
-            width: '36px',
-            height: '36px',
-            minWidth: '36px',
-            minHeight: '36px',
-            borderRadius: '10px',
-          }}
-        >
-          <ZoomOut size={16} color="#cbd5e1" />
-        </button>
-
         {/* Nút 🔄 Reset Camera */}
         <button
           onClick={() => {
             sceneRef.current?.resetCamera();
+            setZoomPercent(100);
             NativeBridge.hapticImpact('light');
           }}
           className="hud-icon-btn has-tooltip tooltip-left"
@@ -2445,6 +2467,174 @@ export const CampfireArena3DView: React.FC<CampfireArena3DViewProps> = ({
           </button>
         </div>
       )}
+
+      {/* === CỤM ĐIỀU KHIỂN THU PHÓNG NỔI TRỰC QUAN (FLOATING ZOOM CONTROLS) === */}
+      <div
+        className="floating-zoom-controls"
+        style={{
+          position: 'absolute',
+          bottom: '122px',
+          right: '16px',
+          zIndex: 26,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '4px',
+          padding: '4px',
+          borderRadius: '24px',
+          background: 'rgba(15, 23, 42, 0.88)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '1.5px solid rgba(251, 191, 36, 0.4)',
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.55), 0 0 14px rgba(56, 189, 248, 0.18)',
+          touchAction: 'manipulation',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+        }}
+      >
+        {/* Nút Zoom In (+) */}
+        <button
+          type="button"
+          data-testid="btn-zoom-in"
+          aria-label="Phóng to"
+          title={lang === 'en' ? 'Zoom in (Press or Hold)' : 'Phóng to (Bấm hoặc Nhấn giữ)'}
+          onClick={() => {
+            if (isHoldActiveRef.current) {
+              isHoldActiveRef.current = false;
+              return;
+            }
+            triggerZoomStep(-1.0);
+          }}
+          onPointerDown={() => startZoomHold(-1.0)}
+          onPointerUp={stopZoomHold}
+          onPointerLeave={stopZoomHold}
+          onPointerCancel={stopZoomHold}
+          style={{
+            width: '44px',
+            height: '44px',
+            minWidth: '44px',
+            minHeight: '44px',
+            borderRadius: '16px',
+            background: 'linear-gradient(135deg, rgba(253, 224, 71, 0.18) 0%, rgba(56, 189, 248, 0.18) 100%)',
+            border: '1.5px solid rgba(253, 224, 71, 0.45)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            color: '#fde047',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+            touchAction: 'manipulation',
+            position: 'relative',
+            transition: 'transform 0.1s ease, background 0.15s ease',
+          }}
+        >
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <ZoomIn size={20} color="#fde047" />
+            <span
+              style={{
+                position: 'absolute',
+                right: '-5px',
+                top: '-5px',
+                fontSize: '11px',
+                fontWeight: 900,
+                color: '#38bdf8',
+                lineHeight: 1,
+                textShadow: '0 0 4px rgba(56, 189, 248, 0.8)',
+              }}
+            >
+              +
+            </span>
+          </div>
+        </button>
+
+        {/* Nút giữa Mức Zoom ({zoomPercent}%) */}
+        <button
+          type="button"
+          data-testid="btn-zoom-reset"
+          aria-label={lang === 'en' ? `Zoom: ${zoomPercent}%, click to reset` : `Mức zoom: ${zoomPercent}%, nhấn để về mặc định`}
+          title={lang === 'en' ? 'Reset zoom to 100%' : 'Đặt lại mức phóng to 100%'}
+          onClick={() => {
+            sceneRef.current?.resetCamera();
+            setZoomPercent(100);
+            NativeBridge.hapticImpact('light');
+          }}
+          style={{
+            minWidth: '44px',
+            height: '26px',
+            padding: '0 4px',
+            borderRadius: '8px',
+            background: 'rgba(15, 23, 42, 0.95)',
+            border: '1px solid rgba(56, 189, 248, 0.35)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            color: '#38bdf8',
+            fontSize: '0.68rem',
+            fontWeight: 800,
+            letterSpacing: '-0.02em',
+            fontFamily: 'monospace',
+            touchAction: 'manipulation',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          {zoomPercent}%
+        </button>
+
+        {/* Nút Zoom Out (-) */}
+        <button
+          type="button"
+          data-testid="btn-zoom-out"
+          aria-label="Thu nhỏ"
+          title={lang === 'en' ? 'Zoom out (Press or Hold)' : 'Thu nhỏ (Bấm hoặc Nhấn giữ)'}
+          onClick={() => {
+            if (isHoldActiveRef.current) {
+              isHoldActiveRef.current = false;
+              return;
+            }
+            triggerZoomStep(1.0);
+          }}
+          onPointerDown={() => startZoomHold(1.0)}
+          onPointerUp={stopZoomHold}
+          onPointerLeave={stopZoomHold}
+          onPointerCancel={stopZoomHold}
+          style={{
+            width: '44px',
+            height: '44px',
+            minWidth: '44px',
+            minHeight: '44px',
+            borderRadius: '16px',
+            background: 'rgba(30, 41, 59, 0.75)',
+            border: '1.5px solid rgba(148, 163, 184, 0.35)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            color: '#cbd5e1',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+            touchAction: 'manipulation',
+            position: 'relative',
+            transition: 'transform 0.1s ease, background 0.15s ease',
+          }}
+        >
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <ZoomOut size={20} color="#38bdf8" />
+            <span
+              style={{
+                position: 'absolute',
+                right: '-5px',
+                top: '-5px',
+                fontSize: '11px',
+                fontWeight: 900,
+                color: '#94a3b8',
+                lineHeight: 1,
+              }}
+            >
+              -
+            </span>
+          </div>
+        </button>
+      </div>
 
       {/* Wardrobe Modal */}
       <Wardrobe3DModal

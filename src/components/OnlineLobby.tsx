@@ -517,15 +517,21 @@ export const OnlineLobby: React.FC<Props> = ({ onBackToOffline, onGameStarted })
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <img 
                   src={BRAND_ASSETS.appIcon} 
-                  alt="Logo" 
-                  style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid var(--accent-gold)' }} 
+                  alt="Ma Sói 3D — Sói Nhí Cắm Trại" 
+                  style={{
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '8px',
+                    border: '1.5px solid rgba(250, 204, 21, 0.65)',
+                    boxShadow: '0 0 8px rgba(250, 204, 21, 0.35)',
+                  }} 
                 />
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 900, margin: 0, letterSpacing: '0.5px' }} className="font-cinzel">
-                  MA SÓI HUYẾT NGUYỆT
+                  MA SÓI TRẠI ĐÊM 3D
                 </h2>
               </div>
               <p style={{ margin: '3px 0 0 0', fontSize: '0.78rem', color: '#cbd5e1' }}>
-                Đấu trường sinh tử thời gian thực • Đục NAT P2P 4G/5G
+                Hội trại suy luận thời gian thực • Kết nối bạn bè 4G/5G
               </p>
             </div>
           </div>
