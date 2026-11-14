@@ -33,4 +33,4 @@
 - `npm run verify`: oxlint 0 error, 80/80 skills PASS, 29/29 test suites PASS, build PWA PASS (366ms).
 
 ## 2. Hành Động Tiếp Theo (Single Next Action)
-- Git commit và git push tự động lên cả 2 nhánh `feature/ma-soi-online` và `main` để kích hoạt GitHub Pages deploy bản mới nhất cho người dùng trải nghiệm trực quan trên điện thoại và PC.
+- Đã push commit `d2ab67e` lên cả `feature/ma-soi-online` và `main` (GitHub Pages tự động deploy). Đợi người dùng trải nghiệm trên điện thoại và chọn 1 trong các hướng nâng cấp kế tiếp (Bản đồ thu nhỏ khu cắm trại / Biểu cảm vẫy tay chào nhau 3D / Bảng thành tích Sổ Tay Hội Trại).
