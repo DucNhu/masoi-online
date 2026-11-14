@@ -1,9 +1,9 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-11-14 20:46 (Asia/Ho_Chi_Minh) — Fix tương thích Vercel Deploy (`node >=20.0.0`, chuẩn hóa `vercel.json` SPA rewrite).
-- **Vận hành**: Đã kiểm tra trạng thái Vercel, nới lỏng giới hạn Node.js để tương thích container Vercel mặc định Node 20/22, đơn giản hóa rewrite rules.
+- **Thời gian cập nhật**: 2026-11-14 22:58 (Asia/Ho_Chi_Minh) — Hoàn tất triển khai Vercel chính thức (Claimed & Live) + Tương thích Node >=20, chuẩn hóa rewrite.
+- **Vận hành**: Triển khai Vercel thành công, người dùng đã claim liên kết vào tài khoản Vercel cá nhân.
 
-## Sprint 42 — Điêu Khắc Chibi Nendoroid 3D & Chống Kẹt Cache Deploy Vercel [DONE & 100% VERIFIED]
+## Sprint 42 — Điêu Khắc Chibi Nendoroid 3D & Triển Khai Vercel [DONE & 100% VERIFIED]
 - **Điêu khắc nhân vật Chibi 3D (`src/components/arena3d/WolfMeshBuilder.ts`) — Xóa bỏ 100% ống trụ rời rạc**:
   1. **Thân & Cổ Áo Choàng**: Khối thân babydoll liền mạch bằng `LatheGeometry` kết hợp cổ áo lá sen bo tròn mềm mại, nơ ruy băng ngực và cúc vàng xinh xắn.
   2. **Vai & Tay Áo Phồng Búp Bê**: Chỏm cầu vai kín tròn xuôi tự nhiên, góc mở tay chữ A duyên dáng (`∓0.38 rad`), tay áo phồng Lantern `LatheGeometry`, bo cổ tay kem và bàn tay tròn mũm mĩm.
@@ -13,7 +13,8 @@
   - Đặt `engines.node = ">=20.0.0"` tương thích cả Node 20 và Node 22 trên Vercel.
   - Đơn giản hóa rule `vercel.json` rewrites về `{ source: "/(.*)", destination: "/index.html" }` tránh lỗi biên dịch regex path-to-regexp trên Vercel Edge.
   - Bật `skipWaiting`, `clientsClaim`, `cleanupOutdatedCaches` trong Workbox và lắng nghe `controllerchange` tự động tải bản mới ngay khi có deploy.
-  - Link triển khai GitHub Pages hiện tại: `https://ducnhu.github.io/masoi-online/`.
+  - Đã claim thành công dự án lên tài khoản Vercel chính chủ.
+  - Link song hành GitHub Pages: `https://ducnhu.github.io/masoi-online/`.
 
 ## Sprint 41 — Nhận Diện Logo Thân Thiện & Cụm Điều Khiển Zoom Mobile 3D [DONE & 100% VERIFIED]
 - **Kết quả nghiệm thu định lượng**:
