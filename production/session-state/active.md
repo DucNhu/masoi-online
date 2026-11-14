@@ -1,7 +1,7 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-11-14 07:42 (Asia/Ho_Chi_Minh) — Studio Director: Điêu khắc Tạo hình Chibi Nendoroid 3D (Vòng 3 đạt 10/10 Eye-First Gate), Cấu hình Vercel & PWA Auto-Update + Sprint 41 Friendly Logo & Zoom Controls.
-- **Vận hành**: Điều phối song song đa Subagent (`Model: flash`) với Disjoint File Leases + Nghiệm thu 3 vòng bằng mắt thật trên ảnh render WebGL thực tế (`10/10 PASS`).
+- **Thời gian cập nhật**: 2026-11-14 20:46 (Asia/Ho_Chi_Minh) — Fix tương thích Vercel Deploy (`node >=20.0.0`, chuẩn hóa `vercel.json` SPA rewrite).
+- **Vận hành**: Đã kiểm tra trạng thái Vercel, nới lỏng giới hạn Node.js để tương thích container Vercel mặc định Node 20/22, đơn giản hóa rewrite rules.
 
 ## Sprint 42 — Điêu Khắc Chibi Nendoroid 3D & Chống Kẹt Cache Deploy Vercel [DONE & 100% VERIFIED]
 - **Điêu khắc nhân vật Chibi 3D (`src/components/arena3d/WolfMeshBuilder.ts`) — Xóa bỏ 100% ống trụ rời rạc**:
@@ -10,10 +10,10 @@
   3. **Váy Xếp Ly 14 Múi Lượn Sóng & Ren Lót**: Lưới váy chữ A dập sóng hình sin 14 múi liền khối từ đai eo xuống gấu váy, kèm lớp váy lót ren trắng kem lượn sóng cánh hoa (ngồi không bị giày đâm xuyên váy).
   4. **Đôi Mắt Anime Đa Lớp & Khuôn Mặt**: Lòng trắng ôm cong theo má, tròng mắt ngọc phát sáng dịu, con ngươi tím than sâu thẳm, 3 đốm sáng lấp lánh, hàng mi cong, miệng mèo `:3`, tóc mái ngố không xuyên mũ và 2 răng nanh sói nhí Kemonomimi đáng yêu.
 - **Hạ tầng Deploy Vercel & Tự động làm mới PWA (`package.json`, `vercel.json`, `vite.config.ts`, `src/main.tsx`)**:
-  - Khóa `engines.node = "22.x"` cho container build Vercel tương thích `vite@8.3`.
-  - Khai báo tường minh `framework: "vite"`, `outputDirectory: "dist"`, SPA rewrite loại trừ tài nguyên tĩnh và header `no-cache` cho `sw.js`, `index.html`, `manifest.webmanifest`.
+  - Đặt `engines.node = ">=20.0.0"` tương thích cả Node 20 và Node 22 trên Vercel.
+  - Đơn giản hóa rule `vercel.json` rewrites về `{ source: "/(.*)", destination: "/index.html" }` tránh lỗi biên dịch regex path-to-regexp trên Vercel Edge.
   - Bật `skipWaiting`, `clientsClaim`, `cleanupOutdatedCaches` trong Workbox và lắng nghe `controllerchange` tự động tải bản mới ngay khi có deploy.
-  - Phát hiện tên miền `ma-soi-online.vercel.app` hiện đang trỏ vào repo cũ khác (không phải repo `DucNhu/masoi-online`), trong khi bản mới nhất luôn tự động xuất bản tại `https://ducnhu.github.io/masoi-online/`.
+  - Link triển khai GitHub Pages hiện tại: `https://ducnhu.github.io/masoi-online/`.
 
 ## Sprint 41 — Nhận Diện Logo Thân Thiện & Cụm Điều Khiển Zoom Mobile 3D [DONE & 100% VERIFIED]
 - **Kết quả nghiệm thu định lượng**:
