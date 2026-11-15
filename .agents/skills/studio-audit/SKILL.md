@@ -1,6 +1,6 @@
 ---
 name: studio-audit
-description: "Tự động rà soát toàn diện dự án Game Studio: đồ họa, âm thanh SFX, hoạt ảnh 3 lớp, kiểm thử tự động và tự động remake ngay các phần chưa hợp lý mà không cần chờ hỏi."
+description: "Tự động rà soát toàn diện dự án Game Studio: đồ họa (khử sạch mảng trắng canvas, khoang kín, halo, paw-locking), âm thanh SFX, hoạt ảnh 3 lớp (Player Action 3-Layer Invariant), kiểm thử tự động và tự động remake ngay các phần chưa hợp lý mà không cần chờ hỏi."
 allowed-tools: "run_command, read_file, edit_file, write_file"
 metadata:
   argument-hint: "[all | art | audio | combat | scenes]"
@@ -90,9 +90,9 @@ Mọi tính năng tương tác do người chơi kích hoạt (Đổi Pet, Tung 
    - Cấm tuyệt đối quái đứng trên mây hoặc tảng đá trôi lơ lửng không có chân đế. Bắt buộc có bóng đổ `DynamicDropShadow`.
 3. **Quét Toàn Vẹn Địa Hình (Continuous Terrain Audit)**:
    - Cấm địa hình bị cắt lát thành các dải ngang lơ lửng ("bánh kem 3 tầng"). Mặt đất phải có móng đá tự nhiên liền mạch.
-4. **Hàng Rào Mắt Nhìn Độc Quyền Của Studio PM Trước Khi Ký Duyệt (/learn PM Final Eye-First Gatekeeper)**:
+4. **Hàng Rào Mắt Nhìn Độc Quyền Của Studio PM Trước Khi Ký Duyệt (/learn PM Final Eye-First Gatekeeper & Mandatory All-Slide/All-Frame Inspection Law)**:
    - Subagent thực thi không được phép tự ý kết luận `PASS` hoặc tự chuyển trạng thái Jira sang `In Review`.
-   - **Studio PM (Agent chính)** bắt buộc dùng `read_file` mở từng bức ảnh sprite sheet, contact sheet và ảnh chụp PlayMode ra soi trực tiếp bằng mắt theo tiêu chí **Đẹp & Chuẩn 10/10** (0 lỗ thủng pinhole, 0 thu nhỏ tỷ lệ nhân vật giữa các frame, 0 cắt đôi VFX, đúng trang phục/giải phẫu/nhịp chạy đổi chân, không có khối nhựa procedural trôi lơ lửng, các style VFX khác biệt rõ ràng, tỷ lệ Pet đồng hành cân xứng, không có NPC bị cắt nửa người ở rìa camera).
+   - **Studio PM (Agent chính)** bắt buộc dùng `read_file` mở **100% tất cả các bức ảnh trong slide VÀ toàn bộ từng file `.png` đơn lẻ cấu thành nên ảnh động GIF** (cấm nhìn 1 frame đại diện rồi suy diễn cả bộ đạt chuẩn) ra soi trực tiếp bằng mắt theo tiêu chí **Đẹp & Chuẩn 10/10**: đếm đủ 4 chân (0 dị dạng 5 chân hoặc cụt chân/vạt phẳng ngực), sạch 100% mảng trắng kẹt ở khe đuôi/cổ/bụng, 0 lỗ thủng pinhole/mất lòng trắng mắt, 0 thu nhỏ tỷ lệ nhân vật giữa các frame, 0 cắt đôi VFX hay dính VFX rời trên body, đúng huyết thống tiến hóa từ cấp trước (cấm biến Khủng long thành Rùa), chân tiếp đất đúng tâm bóng đổ và PlayMode hài hòa.
    - Thấy bất kỳ hạt sạn nào $\rightarrow$ **Studio PM lập tức bác bỏ (`REJECTED BY PM EYE-FIRST AUDIT`)**, giữ/trả Jira về `In Progress` (`assignee: dev`) và giao Subagent sửa tận gốc ngay tại chỗ cho đến khi PM nhìn bằng mắt đạt 10/10.
 
 ---
@@ -104,19 +104,20 @@ Trình bày theo format súc tích:
 2. **Các điểm không hợp lý đã phát hiện & ĐÃ TỰ ĐỘNG SỬA NGAY**.
 3. **Trạng thái xanh (Evidence)**: Dẫn link file log, XML test, và checkpoint.
 
+
 ---
 
 ## 7. Gate và Bàn Giao Bước Tiếp Theo (Handoff & Verification Gate)
 
 ### Quy định quyền ghi và phê duyệt (Approval-before-write contract)
-- Trước mutation, Studio Audit phải trình bày rõ ràng exact paths và kiểm tra phê duyệt scope; tuân thủ nguyên tắc approval-before-write.
-- Quyền ghi chỉ bao phủ đúng scope đã được phê duyệt; không tự ý mở rộng phạm vi ra ngoài task.
+- Trước mutation, phải trình bày rõ ràng exact paths và kiểm tra phạm vi phê duyệt (approval) của task hiện tại.
+- Quyền ghi chỉ bao phủ đúng scope đã được phê duyệt (approval-before-write); nếu thiếu phê duyệt hoặc mở rộng phạm vi ngoài scope thì phải dừng lại xin ý kiến người dùng.
 
 ### Đánh giá Gate và Handoff
-- Kết luận theo từng gate với các mức verdict chuẩn:
+- Mọi kết quả nghiệm thu phải được kết luận với verdict rõ ràng:
   - `PASS`: Toàn bộ tiêu chí đạt 10/10 và các bài test xanh.
   - `CONCERNS`: Còn tồn tại điểm cần theo dõi thêm.
   - `FAIL`: Phát hiện lỗi nghiêm trọng chưa khắc phục được.
   - `BLOCKED`: Bị chặn bởi dependency hoặc thiếu công cụ.
-  - `NOT RUN`: Chưa đủ điều kiện để kích hoạt gate kiểm thử.
-- Bàn giao handoff cho PM với hành động tiếp theo (next step) cụ thể để lập kế hoạch giải quyết.
+  - `NOT RUN`: Các bước kiểm thử chưa được thực thi.
+- Kết thúc bằng handoff cho PM với đúng một hành động tiếp theo (next step) cụ thể, ghi nhận trạng thái vào `production/session-state/active.md`.

@@ -9,6 +9,8 @@ metadata:
 
 # /create-ti-chop-vfx-set — Bộ VFX kỹ năng Tí Chớp
 
+> **Cấu hình ChatGPT bắt buộc**: luôn chạy model `gpt-6-astra` + mức suy luận `medium` (đã khóa trong `.codex/config.toml` của dự án để tối ưu quota); CLI ảnh trực tiếp dùng `gpt-image-2` quality `high`. Lỗi/hết quota → dừng & báo cáo, cấm âm thầm fallback.
+
 Tạo bốn bộ hiệu ứng điện độc lập cho Tí Chớp Stage 1 dựa trên moveset trong `design/pets/electric/pet-electric-a.md`. Cảm hứng cơ chế có thể đến từ fantasy electric mascot combat như lao nhanh, điện cầu, phóng điện diện rộng và gọi sét; tên gọi, silhouette, nhịp hiệu ứng và asset phải là thiết kế nguyên bản của Tí Chớp.
 
 ## Phạm vi, quyền ghi và công cụ
@@ -32,7 +34,9 @@ Tạo bốn bộ hiệu ứng điện độc lập cho Tí Chớp Stage 1 dựa 
 Mỗi phần có nhịp hoặc pivot khác nhau phải là sheet/prefab riêng. Không vẽ Tí Chớp hoặc bất kỳ body nhân vật nào vào VFX.
 
 ## Hợp đồng hình ảnh
-
+- **Tiêu chuẩn Tí Chớp VFX Atlas (Bắt buộc cho mọi VFX kỹ năng trong dự án — Chốt 2026-10-12)**:
+  * Tuyệt đối không dùng pixel art cũ (256x256) hoặc texture mờ đục.
+  * Mọi chuỗi VFX phải đạt chuẩn **Crisp 2D Cel-Shaded HD** tương đương `Assets/Art/Pokemons/TiChop/vfx-atlas-alpha-v2.png` (nguồn `design/assets/vfx/electric/ti-chop/hd/`): cell tối thiểu 512×512, viền cứng 2-3px dark contour, đổ bóng phẳng 3 cấp độ (core neon, midtone rực rỡ, shadow đậm), không blur, không gradient antialiasing.
 - Phong cách khớp Tí Chớp: lõi trắng-vàng, cyan điện, xanh lam đậm ở biên; silhouette sắc, dễ đọc trên cả nền sáng và tối.
 - PNG có alpha thật (`A = 0`), clean alpha edges, không nền, chữ, nhãn, grid, watermark hoặc bóng sàn.
 - Mỗi sheet là một hàng ngang; cell bằng nhau, hiệu ứng nằm trọn trong safe padding và không chạm biên.

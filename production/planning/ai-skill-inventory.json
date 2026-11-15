@@ -3,10 +3,10 @@
   "scope": "repository AI workflows only; not pet combat skills",
   "date": "2026-10-02",
   "counts": {
-    "total": 80,
+    "total": 85,
     "template": 73,
-    "project": 7,
-    "active": 33,
+    "project": 12,
+    "active": 38,
     "manual": 29,
     "dormant": 18
   },
@@ -93,6 +93,13 @@
       "path": ".agents/skills/code-review/SKILL.md",
       "kind": "template",
       "target": "Claude-Code-Game-Studios/.claude/skills/code-review/SKILL.md",
+      "trigger": "active"
+    },
+    {
+      "name": "concept-art",
+      "path": ".agents/skills/concept-art/SKILL.md",
+      "kind": "project",
+      "target": ".agents/skills/concept-art/SKILL.md",
       "trigger": "active"
     },
     {
@@ -201,6 +208,13 @@
       "trigger": "manual"
     },
     {
+      "name": "evd-test",
+      "path": ".agents/skills/evd-test/SKILL.md",
+      "kind": "project",
+      "target": ".agents/skills/evd-test/SKILL.md",
+      "trigger": "active"
+    },
+    {
       "name": "gate-check",
       "path": ".agents/skills/gate-check/SKILL.md",
       "kind": "template",
@@ -269,6 +283,13 @@
       "kind": "template",
       "target": "Claude-Code-Game-Studios/.claude/skills/perf-profile/SKILL.md",
       "trigger": "manual"
+    },
+    {
+      "name": "player-eye-audit",
+      "path": ".agents/skills/player-eye-audit/SKILL.md",
+      "kind": "project",
+      "target": ".agents/skills/player-eye-audit/SKILL.md",
+      "trigger": "active"
     },
     {
       "name": "playtest-report",
@@ -551,6 +572,13 @@
       "trigger": "manual"
     },
     {
+      "name": "ui-state-matrix-test",
+      "path": ".agents/skills/ui-state-matrix-test/SKILL.md",
+      "kind": "project",
+      "target": ".agents/skills/ui-state-matrix-test/SKILL.md",
+      "trigger": "active"
+    },
+    {
       "name": "ux-design",
       "path": ".agents/skills/ux-design/SKILL.md",
       "kind": "template",
@@ -570,6 +598,13 @@
       "kind": "template",
       "target": "Claude-Code-Game-Studios/.claude/skills/vertical-slice/SKILL.md",
       "trigger": "dormant"
+    },
+    {
+      "name": "world-builder",
+      "path": ".agents/skills/world-builder/SKILL.md",
+      "kind": "project",
+      "target": ".agents/skills/world-builder/SKILL.md",
+      "trigger": "active"
     }
   ]
 }

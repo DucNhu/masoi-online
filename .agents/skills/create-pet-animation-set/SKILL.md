@@ -9,6 +9,8 @@ metadata:
 
 # /create-pet-animation-set — Full Body Animation Set
 
+> **Cấu hình ChatGPT bắt buộc**: luôn chạy model `gpt-6-astra` + mức suy luận `medium` (đã khóa trong `.codex/config.toml` của dự án để tối ưu quota); CLI ảnh trực tiếp dùng `gpt-image-2` quality `high`. Lỗi/hết quota → dừng & báo cáo, cấm âm thầm fallback.
+
 Biến một concept đã được chọn thành bộ sprite body hoàn chỉnh, có thể kiểm định và ghép Unity. Không dùng concept lineup như sprite runtime.
 
 ## Phạm vi, quyền ghi và công cụ
@@ -26,14 +28,14 @@ Nếu người dùng không nói khác, `full frame` nghĩa là **một evolutio
 
 | Sheet | Frame | Nội dung tối thiểu |
 |---|---:|---|
-| Idle | 4 | Neutral → inhale → secondary motion → settle |
-| Run | 6 | Contact/compression/push-off đối xứng, loop kín |
+| Idle | 4 | Neutral (mắt mở, tĩnh) → Inhale (thở vào, tai vểnh, lông phập phồng) → Blink & Secondary Motion (mắt chớp nhắm/hé, tai rung, đuôi uốn lượn) → Settle (thở ra, mắt mở lại) |
+| Run | 6 | Contact/compression/push-off đối xứng, đuôi và tai đung đưa theo bước chạy, loop kín |
 | Jump | 5 | Anticipation → launch → apex → descent → landing |
-| Skill 1 body | 5 | Anticipation → release → peak → recoil → recovery |
-| Skill 2 body | 5 | Anticipation → charge → release → recoil → recovery |
-| Skill 3 body | 6 | Pha đặc thù theo GDD, có release/VFX trigger rõ |
-| Skill 4 body | 7 | Charge lớn → release → sustain/peak → recoil → recovery |
-| Hurt/Faint | 6 | Hurt → recoil → stagger → collapse → faint → faint hold |
+| Skill 1 body | 5 | Anticipation → release (miệng mở to nhe nanh/gầm thét) → peak → recoil → recovery |
+| Skill 2 body | 5 | Anticipation → charge (tai cụp, gồng mình) → release (há miệng phóng đòn) → recoil → recovery |
+| Skill 3 body | 6 | Pha đặc thù theo GDD, có release/VFX trigger rõ (miệng mở gầm hô uy lực) |
+| Skill 4 body | 7 | Charge lớn → release (miệng há to cực đại gầm vang phóng đòn) → sustain/peak → recoil → recovery |
+| Hurt/Faint | 6 | Hurt (nhắm tịt mắt, giật lùi) → recoil → stagger → collapse → faint → faint hold |
 
 Tổng mặc định: **8 sheet / 44 frame body**. `Full evolution line` phải được yêu cầu rõ và lặp bộ này cho từng stage. VFX, concept, portrait, icon và UI không thuộc “full frame body”; tạo riêng khi người dùng yêu cầu.
 
@@ -44,15 +46,28 @@ Tổng mặc định: **8 sheet / 44 frame body**. `Full evolution line` phải 
 3. Dùng đúng form của stage được yêu cầu trong concept lineup. Không pha đặc điểm giữa các stage.
 4. Nếu hồ sơ thiếu breakdown của action/skill, trình bày phần cần bổ sung và exact GDD path; chỉ sửa khi scope đó đã được duyệt, nếu chưa thì hỏi và giữ generation phụ thuộc BLOCKED. Không tự bịa chuyển động trái moveset hoặc đổi frame contract đã biết.
 
-## Hợp đồng tạo ảnh
+## Hợp đồng tạo ảnh & Tiêu chuẩn hoạt ảnh có hồn
 
+- **Quy chuẩn hoạt ảnh có hồn (Soulful Animation Standard — 2026-10-12)**:
+  - **Mắt phải chớp (Eye Blinking)**: Mọi hoạt ảnh Idle và hoạt ảnh kéo dài bắt buộc phải có frame chớp mắt (nhắm mi - mở lại), ánh mắt linh hoạt có thần, cấm để mắt đờ đẫn hoặc trợn trừng xuyên suốt.
+  - **Phản xạ trúng đòn & gục ngã thật (Zero Zombie Hurt & Zero Rotated-Idle Fake)**: Khi trúng đòn (Hurt) hoặc gục ngã (Faint), mắt bắt buộc nhắm chặt/nheo đau đớn kèm giật lùi; tuyệt đối cấm lấy ảnh đứng yên xoay nghiêng hoặc ép dẹt xuống làm ảnh trúng đòn/gục ngã khiến mặt vẫn mở mắt cười tươi vô cảm.
+  - **Chuẩn hóa kích thước theo Khối Đầu – Lồng Ngực (Core Head/Torso Scaling over Pixel Area)**: Cấm cân bằng kích thước giữa Idle – Run – Jump theo tổng diện tích điểm ảnh (`pixel area`) làm đầu và thân bị thu nhỏ 20–30% khi duỗi dài đuôi lúc chạy; bắt buộc khóa tỷ lệ theo chiều cao khối đầu và lồng ngực.
+  - **Chuyển động phụ họa (Secondary Motion)**: Các chi tiết trang trí, tai, đuôi, bờm lông, râu, sừng, phụ kiện phải đung đưa rung nhẹ hoặc uốn lượn theo nhịp thở; cấm đứng im đơ cứng như khúc gỗ.
+  - **Khẩu hình tung chiêu (Open Mouth on Cast)**: Toàn bộ đòn đánh/gồng lực/cast skill miệng phải mở ra (nhe nanh, gầm thét, hô hét, tụ phóng năng lượng), cấm ngậm miệng đơ.
 - Trong mode generate đã được yêu cầu, tạo **mỗi action bằng một lần image generation riêng**, dùng concept canonical làm identity reference; prompt-only chỉ trả prompt.
 - Mỗi prompt phải mô tả từng frame, không dùng mô tả chung chung.
-- True 2D orthographic side profile, luôn facing right, scale nhân vật ổn định.
-- Mỗi sheet là một hàng ngang với số cell bằng số frame; mọi cell bằng nhau, có safe padding và không để silhouette chạm ranh giới.
+- True 2D orthographic side profile, luôn facing right, scale nhân vật ổn định xuyên suốt mọi frame trong cùng một strip (dùng chung một hệ số tỷ lệ `strip_scale` khóa theo chiều cao cơ thể chuẩn, tuyệt đối cấm scale độc lập theo bề ngang tổng làm nhân vật bị thu nhỏ/lùn đi 25–50% ở các frame vươn tay, đá bay hoặc phóng chiêu).
+- **Đệm cách ly an toàn & Quản lý tỷ lệ bằng code (Safe Margin Buffer $\ge 120\text{px}$ — Chỉ thị 2026-10-25 & /learn 2026-10-29)**:
+  - Mỗi sheet là một hàng ngang với số cell bằng số frame; mọi cell bằng nhau (mở rộng `cell_w` nếu động tác có đòn vươn xa thay vì thu nhỏ chiều cao nhân vật).
+  - Nhân vật bắt buộc vẽ gọn gàng (chiếm tối đa 55-60% chiều ngang mỗi cell), căn giữa ô.
+  - Để khoảng trống cách ly an toàn tối thiểu **120-150px** giữa các tư thế kế cận.
+  - CẤM TUYỆT ĐỐI để chi tiết dài (đuôi, ngọn lửa đuôi, cánh, vuốt lao vồ, Linh Cầu, sóng khí công) bị cắt cụt ở mép frame hoặc lọt sang dính vào sau lưng nhân vật ở frame bên cạnh.
+  - CẤM TUYỆT ĐỐI dùng chroma-key lọc màu làm thủng lỗ chỗ (pinholes) trên da, mặt, lông hoặc trang phục; bắt buộc tách nền bằng Recraft `removeBackground` và bảo toàn 100% độ đục (`Alpha = 255`) bên trong cơ thể.
+  - Tỷ lệ to nhỏ trong game hoàn toàn do code quản lý sắc nét thông qua thuộc tính `visualScale` trong ScriptableObject (`PokemonDataSO`) hoặc PPU; không cố vẽ nhân vật to chật ních texture.
+  - **Quyền Nghiệm Thu Cuối Cùng Thuộc Về Studio PM**: Subagent thực thi chỉ nộp file PNG/GIF về cho PM; chỉ sau khi Studio PM trực tiếp mở từng sheet bằng `read_file` xác nhận ĐẸP 10/10 mới được duyệt chuyển sang `In Review`.
 - Grounded frame dùng chung baseline; animation in-place phải khóa root/pelvis.
 - PNG có alpha thật `A = 0`, clean alpha edge, không nền, bóng sàn, chữ, nhãn, grid hoặc watermark.
-- Pixel art dùng hard integer clusters, không blur/anti-alias. Body không chứa projectile, beam, splash, elemental trail, impact hoặc VFX khác.
+- Pixel art dùng hard integer clusters (hoặc HD Cel-Shading theo spec), không blur/anti-alias. Body không chứa projectile, beam, splash, elemental trail, impact hoặc VFX khác.
 - Không tự tạo GIF preview.
 
 ## Tên và vị trí source

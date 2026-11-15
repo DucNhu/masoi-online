@@ -9,6 +9,8 @@ metadata:
 
 # /create-skill — Full Skill Set cho Pet
 
+> **Cấu hình ChatGPT bắt buộc**: luôn chạy model `gpt-6-astra` + mức suy luận `medium` (đã khóa trong `.codex/config.toml` của dự án để tối ưu quota); CLI ảnh trực tiếp dùng `gpt-image-2` quality `high`. Lỗi/hết quota → dừng & báo cáo, cấm âm thầm fallback.
+
 ## Phạm vi, quyền ghi và công cụ
 
 - Chỉ áp dụng cho bộ chiêu combat Pet, không áp dụng audit/authoring AI skill. Đọc `production/session-state/active.md` trước kế hoạch; PM sở hữu memory, executor trả handoff thay vì sửa `active.md`.
@@ -24,8 +26,11 @@ Trong skill này, **full skill luôn có nghĩa là full cả 4 skill của Pet*
 
 Mỗi skill phải có hai lớp tách biệt:
 
-1. **Body cast**: animation của Pet, chỉ mô tả anticipation → release/active → peak → recoil → recovery. Không bake projectile, beam, bụi, lá bay, tia sáng hay impact vào body.
-2. **VFX**: asset độc lập để gắn qua prefab/`MoveDataSO.vfxPrefab`, có projectile/impact hoặc pulse/beam tùy cơ chế.
+1. **Body cast**: animation của Pet, chỉ mô tả anticipation → release/active peak roar → recoil → recovery. BẮT BUỘC ĐÚNG 4 FRAMES TRONG 1 SLIDE HÀNG NGANG DUY NHẤT (Aspect Ratio ~4:1, trích xuất thành 4 frame rời 512x512). Tuyệt đối không tạo 5 hay 6 frames. Tuyệt đối cấm gom nhiều chiêu vào một atlas ma trận lưới đa hàng (như `cast-atlas-alpha-v2.png`). Không bake projectile, beam, bụi, lá bay, tia sáng hay impact vào body.
+2. **VFX & Điểm neo phóng chiêu theo giải phẫu từng loài (Species-Specific Mouth/Claw VFX Socket Anchor)**:
+   - VFX là asset độc lập để gắn qua prefab/`MoveDataSO.vfxPrefab`, có projectile/impact hoặc pulse/beam tùy cơ chế.
+   - **Cấm tuyệt đối đặt tâm hiệu ứng ở giữa bụng dùng chung** cho nhiều loài Linh thú: Mọi hiệu ứng phun (lửa, nước, tia sét, chưởng) bắt buộc neo đúng vào tọa độ **miệng/mõm** (`mouthSocket`) của từng loài ở đúng frame há miệng phóng đòn; mọi hiệu ứng cào/đập bắt buộc neo đúng vào **móng vuốt/bàn chân trước** (`clawSocket`) chạm mục tiêu, tránh lệch hiệu ứng lên đỉnh đầu hoặc cào vào không khí.
+   - Mọi hiệu ứng chấn địa/cột sét/cột lửa chạm đất bắt buộc tiếp xúc khớp mặt sàn có vầng chấn động lan ngang, cấm bị cắt cụt phẳng lì lơ lửng giữa không trung.
 
 ## Quy trình
 
