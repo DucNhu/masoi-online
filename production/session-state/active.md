@@ -1,37 +1,41 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-11-14 22:58 (Asia/Ho_Chi_Minh) — Hoàn tất triển khai Vercel chính thức (Claimed & Live) + Tương thích Node >=20, chuẩn hóa rewrite.
-- **Vận hành**: Triển khai Vercel thành công, người dùng đã claim liên kết vào tài khoản Vercel cá nhân.
+- **Thời gian cập nhật**: 2026-11-15 11:25 (Asia/Ho_Chi_Minh) — Hoàn tất Sprint 43: Sẵn Sàng Xuất Bản App Store & Google Play Toàn Cầu + Đa Ngôn Ngữ i18n & Key Art 3D Campfire.
+- **Vận hành**: `npm run verify` đạt 100% PASS (0 error, 30 bộ test suite, PWA build thành công). Tự động push lên nhánh `feature/ma-soi-online` và `main` để kích hoạt deploy CI/CD.
+
+## Sprint 43 — Sẵn Sàng Phát Hành Toàn Cầu (App Store & Google Play) & Đa Ngôn Ngữ Web [DONE & 100% VERIFIED]
+- **Key Art Lửa Trại 3D Sắc Nét (`public/og-image.jpg`, `public/og-image.png`)**:
+  - Đã cập nhật ảnh key art 3D Campfire độ phân giải cao (806KB) làm banner quảng bá mặc định cho OpenGraph, Zalo, Facebook, Twitter và Feature Graphic trên Store.
+- **SEO & OpenGraph Quốc Tế (`index.html`)**:
+  - Bổ sung `og:locale` (`vi_VN`) cùng danh sách các ngôn ngữ thay thế quốc tế `og:locale:alternate` (`en_US`, `ja_JP`, `ko_KR`, `zh_CN`, `fr_FR`, `es_ES`, `de_DE`).
+  - Cập nhật mô tả song ngữ Việt - Anh phục vụ hiển thị rich card preview mượt mà trên toàn cầu.
+- **Cấu hình Capacitor Store Metadata (`capacitor.config.ts`)**:
+  - Bảo toàn tuyệt đối `appId: 'com.masoi.online'`, `webDir: 'dist'`, bổ sung cấu hình và xuất khẩu `STORE_DISPLAY_NAMES` cho từng vùng quốc gia (`Ma Sói Online` cho `vi`, `Werewolf Online: 3D Campfire` cho quốc tế và bản dịch bản địa hóa cho Nhật, Hàn, Trung, Pháp, Tây Ban Nha, Đức).
+- **Engine Trích Xuất Metadata ASO Bản Địa (`src/utils/i18nCatalog.ts`)**:
+  - Cung cấp hàm `getStoreAppMetadata(localeCode?: string)` và từ điển `STORE_METADATA_MAP` cho 10+ thị trường trọng điểm: `vi-VN`, `en-US`, `ja-JP`, `ko-KR`, `zh-CN`, `es-ES`, `fr-FR`, `de-DE`, `pt-BR`, `th-TH`, `id-ID`.
+  - Hỗ trợ cơ chế prefix matching và fallback thông minh về `en-US` hoặc `vi-VN`.
+- **Bộ Tài Liệu Xuất Bản Store Hoàn Chỉnh (`production/store-listing-global.md`)**:
+  - Sẵn sàng copy-paste trực tiếp lên Apple App Store Connect và Google Play Console:
+    - Bundle ID (`com.masoi.online`), SKU (`MASOI_ONLINE_GLOBAL_2026`), Danh mục (`Games > Board`), Độ tuổi (`12+` / `Teen`).
+    - Bản dịch đầy đủ tiêu đề, phụ đề, mô tả ngắn, mô tả chi tiết và từ khóa ASO cho Việt Nam, Quốc tế Anh, Nhật Bản, Hàn Quốc, Tây Ban Nha/LATAM, Thái Lan, Indonesia.
+    - Quyền truy cập Native: iOS `NSMicrophoneUsageDescription` (Việt & Anh), Android `RECORD_AUDIO`, `INTERNET`, `VIBRATE`.
+    - Quy trình build và đồng bộ Capacitor (`npm run mobile:sync`, `npm run mobile:ios`, `npm run mobile:android`).
+- **Bộ Kiểm Thử Tự Động Sprint 43 (`tests/sprint43GlobalStoreAndI18n.test.mjs`, `package.json`)**:
+  - Đạt 7/7 test cases PASS (100%):
+    1. TASK-4301: `GLOBAL_LANGUAGES` vượt chuẩn 128+ quốc gia (133 entries) và phủ đủ 5 vùng địa lý (`ASIA`, `EUROPE`, `AMERICAS`, `MEA`, `OCEANIA`).
+    2. TASK-4302: `getStoreAppMetadata` hỗ trợ đầy đủ 10+ ngôn ngữ trọng điểm quốc tế.
+    3. TASK-4303: `getStoreAppMetadata` xử lý fallback tiền tố và mặc định chuẩn xác.
+    4. TASK-4304: `index.html` chứa thẻ `og:locale` và các `og:locale:alternate` quốc tế.
+    5. TASK-4305: `capacitor.config.ts` bảo toàn `appId: com.masoi.online` và export `STORE_DISPLAY_NAMES`.
+    6. TASK-4306: Key art OpenGraph `public/og-image.jpg` và `public/og-image.png` được cập nhật sắc nét (>500KB).
+    7. TASK-4307: Tài liệu `production/store-listing-global.md` đầy đủ metadata App Store & Google Play.
 
 ## Sprint 42 — Điêu Khắc Chibi Nendoroid 3D & Triển Khai Vercel [DONE & 100% VERIFIED]
-- **Điêu khắc nhân vật Chibi 3D (`src/components/arena3d/WolfMeshBuilder.ts`) — Xóa bỏ 100% ống trụ rời rạc**:
-  1. **Thân & Cổ Áo Choàng**: Khối thân babydoll liền mạch bằng `LatheGeometry` kết hợp cổ áo lá sen bo tròn mềm mại, nơ ruy băng ngực và cúc vàng xinh xắn.
-  2. **Vai & Tay Áo Phồng Búp Bê**: Chỏm cầu vai kín tròn xuôi tự nhiên, góc mở tay chữ A duyên dáng (`∓0.38 rad`), tay áo phồng Lantern `LatheGeometry`, bo cổ tay kem và bàn tay tròn mũm mĩm.
-  3. **Váy Xếp Ly 14 Múi Lượn Sóng & Ren Lót**: Lưới váy chữ A dập sóng hình sin 14 múi liền khối từ đai eo xuống gấu váy, kèm lớp váy lót ren trắng kem lượn sóng cánh hoa (ngồi không bị giày đâm xuyên váy).
-  4. **Đôi Mắt Anime Đa Lớp & Khuôn Mặt**: Lòng trắng ôm cong theo má, tròng mắt ngọc phát sáng dịu, con ngươi tím than sâu thẳm, 3 đốm sáng lấp lánh, hàng mi cong, miệng mèo `:3`, tóc mái ngố không xuyên mũ và 2 răng nanh sói nhí Kemonomimi đáng yêu.
-- **Hạ tầng Deploy Vercel & Tự động làm mới PWA (`package.json`, `vercel.json`, `vite.config.ts`, `src/main.tsx`)**:
-  - Đặt `engines.node = ">=20.0.0"` tương thích cả Node 20 và Node 22 trên Vercel.
-  - Đơn giản hóa rule `vercel.json` rewrites về `{ source: "/(.*)", destination: "/index.html" }` tránh lỗi biên dịch regex path-to-regexp trên Vercel Edge.
-  - Bật `skipWaiting`, `clientsClaim`, `cleanupOutdatedCaches` trong Workbox và lắng nghe `controllerchange` tự động tải bản mới ngay khi có deploy.
-  - Đã claim thành công dự án lên tài khoản Vercel chính chủ.
-  - Link song hành GitHub Pages: `https://ducnhu.github.io/masoi-online/`.
+- Hoàn tất điêu khắc Chibi 3D Babydoll liền khối và hạ tầng deploy Vercel + PWA Auto-refresh.
 
-## Sprint 41 — Nhận Diện Logo Thân Thiện & Cụm Điều Khiển Zoom Mobile 3D [DONE & 100% VERIFIED]
-- **Kết quả nghiệm thu định lượng**:
-  - `tests/sprint41FriendlyLogoAndZoom.test.mjs` đạt 9/9 test cases PASS (100%):
-    1. TASK-4101: Toán học giới hạn bán kính Camera (`MIN_CAMERA_RADIUS=3.8`, `MAX_CAMERA_RADIUS=24.0`) và hàm `clampCameraRadius`.
-    2. TASK-4102: Quy đổi bán kính sang phần trăm Zoom (`radiusToZoomPercent` mặc định 8.5 -> 100%, <8.5 -> >100%, >8.5 -> <100%).
-    3. TASK-4103: Tính toán độ cao góc nhìn tương ứng (`computeProportionalHeight` ở cả chế độ Roam và Seated).
-    4. TASK-4104: Mã nguồn `CampfireScene.ts` hỗ trợ đầy đủ `zoomIn`, `zoomOut`, `setOnZoomChange`, Pinch-to-Zoom 2 ngón (`touches.length >= 2`).
-    5. TASK-4105: Phím tắt thu phóng `+`/`=`/`NumpadAdd` & `-`/`_`/`NumpadSubtract`, chặn cuộn trang với `SCROLL_KEYS`.
-    6. TASK-4106: `CampfireArena3DView.tsx` có đủ 3 nút `btn-zoom-in`, `btn-zoom-out`, `btn-zoom-reset`, kích thước 44px, không có `hide-on-mobile`.
-    7. TASK-4107: Cơ chế nhấn giữ liên tục (Press & Hold) qua `onPointerDown/Up/Leave/Cancel`, delay 220ms, interval 90ms.
-    8. TASK-4108: `public/favicon.svg` loại bỏ hoàn toàn mắt đỏ `#ef4444`, sử dụng mắt hổ phách `amberEye`, khăn quàng `scarfGrad`, trăng vàng `moonGlow`, má hồng và catchlights.
-    9. TASK-4109: Nhận diện thương hiệu thân thiện `BRAND_ASSETS.appIcon` tích hợp trên `AccountGate.tsx`, `Header.tsx`, `OnlineLobby.tsx`.
-
-## 1. Kiểm thử
-- `npm run test:sprint41`: 9/9 tests PASS.
-- `npm run verify`: oxlint 0 error, 80/80 skills PASS, 29/29 test suites PASS, build PWA PASS (366ms).
+## 1. Kiểm thử Toàn Diện
+- `npm run test:sprint43`: 7/7 tests PASS.
+- `npm run verify`: oxlint 0 error, 80/80 skills PASS, 30/30 test suites PASS, build PWA PASS (418ms).
 
 ## 2. Hành Động Tiếp Theo (Single Next Action)
-- Đã push commit `d2ab67e` lên cả `feature/ma-soi-online` và `main` (GitHub Pages tự động deploy). Đợi người dùng trải nghiệm trên điện thoại và chọn 1 trong các hướng nâng cấp kế tiếp (Bản đồ thu nhỏ khu cắm trại / Biểu cảm vẫy tay chào nhau 3D / Bảng thành tích Sổ Tay Hội Trại).
+- Đẩy commit mới lên nhánh `feature/ma-soi-online` và `main` theo quy tắc Continuous Deploy, kiểm tra kết quả deploy tự động trên Vercel và GitHub Pages.

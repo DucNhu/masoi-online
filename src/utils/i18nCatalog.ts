@@ -1642,3 +1642,141 @@ export function searchLanguages(
     );
   });
 }
+
+export interface StoreAppMetadata {
+  locale: string;
+  appName: string;
+  subtitle: string;
+  promoText: string;
+  description: string;
+  keywords: string[];
+}
+
+export const STORE_METADATA_MAP: Record<string, StoreAppMetadata> = {
+  'vi-VN': {
+    locale: 'vi-VN',
+    appName: 'Ma Sói Online',
+    subtitle: 'Khu Cắm Trại 3D • Voice Chat • Ma Sói Thời Gian Thực',
+    promoText: 'Trải nghiệm Đêm Đồng Thời kịch tính, tự do dạo bước Khu Cắm Trại 3D và Voice Chat sống động cùng bạn bè khắp nơi!',
+    description: 'Ma Sói Online mang trải nghiệm board game ma sói kinh điển lên một tầm cao mới với Đấu Trường Lửa Trại 3D thời gian thực. Tùy biến nhân vật Chibi 3D, khám phá cơ chế Đêm Đồng Thời loại bỏ thời gian chết, hỗ trợ Quản Trò Thông Minh, hệ thống Voice Chat WebRTC độ trễ siêu thấp và hỗ trợ 128+ quốc gia.',
+    keywords: ['ma soi', 'ma soi online', 'werewolf 3d', 'board game', 'quan tro', 'ma soi tieng viet', 'voice chat', 'party game'],
+  },
+  'en-US': {
+    locale: 'en-US',
+    appName: 'Werewolf Online: 3D Campfire',
+    subtitle: '3D Social Deduction • Simultaneous Night • Voice Chat',
+    promoText: 'Experience the next-gen 3D Werewolf Campfire with simultaneous night phases, proximity voice chat, and real-time social deduction!',
+    description: 'Werewolf Online brings the classic social deduction party game to life in an immersive 3D Campfire Arena. Customize your 3D avatar, roam freely around the bonfire, engage in simultaneous night actions with zero downtime, and communicate via crystal-clear real-time voice chat with players worldwide across 128+ countries.',
+    keywords: ['werewolf online', 'mafia online', 'social deduction', '3d werewolf', 'voice chat', 'party game', 'board game', 'campfire 3d'],
+  },
+  'ja-JP': {
+    locale: 'ja-JP',
+    appName: '人狼オンライン: 3Dキャンプファイア',
+    subtitle: '3Dリアルタイム人狼・ボイスチャット・心理戦',
+    promoText: '3D焚き火エリアで繰り広げられる新世代リアルタイム人狼ゲーム！同時進行の夜フェーズとクリアなボイスチャット搭載。',
+    description: '『人狼オンライン: 3Dキャンプファイア』は、世界中のプレイヤーと楽しめる次世代3D人狼ゲームです。可愛いちびキャラをカスタマイズし、焚き火の周りを自由に探索。待ち時間ゼロの「同時夜フェーズ」と超低遅延ボイスチャットで、緊迫した心理戦をお楽しみください。',
+    keywords: ['人狼', '人狼ゲーム', '3D人狼', 'ボイスチャット', 'オンラインゲーム', '心理戦', '推理ゲーム', 'パーティーゲーム'],
+  },
+  'ko-KR': {
+    locale: 'ko-KR',
+    appName: '웨어울프 온라인: 3D 캠프파이어',
+    subtitle: '3D 실시간 마피아・보이스 채팅・심리 추리 게임',
+    promoText: '3D 모닥불 광장에서 펼쳐지는 실시간 마피아 게임! 대기 시간 없는 동시 밤 페이즈와 고음질 보이스 채팅 지원.',
+    description: '웨어울프 온라인은 몰입感 넘치는 3D 캠프파이어 무대에서 펼쳐지는 차세대 소셜 디덕션 마피아 게임입니다. 개성 있는 3D 캐릭터 커스터마이징, 실시간 음성 대화, 혁신적인 동시 밤 액션으로 전 세계 플레이어들과 최고의 심리전을 경험해보세요.',
+    keywords: ['마피아', '웨어울프', '3D 마피아', '보이스 채팅', '추리 게임', '파티 게임', '보드게임', '온라인 마피아'],
+  },
+  'zh-CN': {
+    locale: 'zh-CN',
+    appName: '狼人杀3D: 篝火营地',
+    subtitle: '3D实时狼人杀・实时语音・沉浸式推理',
+    promoText: '新一代3D篝火狼人杀！双阵营夜间同步行动，零等待时间，超低延迟实时语音畅聊。',
+    description: '《狼人杀3D: 篝火营地》将经典社交推理桌游带入沉浸式3D篝火世界。自由装扮Q版3D角色，围绕篝火自由漫步。首创「全员夜间同步行动」彻底消除漫长等待，配合清晰流畅的高清语音聊天，与全球玩家展开智慧博弈！',
+    keywords: ['狼人杀', '3D狼人杀', '语音桌游', '社交推理', '派对游戏', '桌游', '实时语音', '多人联机'],
+  },
+  'es-ES': {
+    locale: 'es-ES',
+    appName: 'Hombre Lobo 3D: Fogata Online',
+    subtitle: 'Deducción Social 3D • Noche Simultánea • Chat de Voz',
+    promoText: '¡Descubre la nueva generación de Hombre Lobo en un campamento 3D interactivo con chat de voz en tiempo real!',
+    description: 'Hombre Lobo 3D: Fogata Online revoluciona el clásico juego de deducción social con escenarios 3D en tiempo real. Personaliza tu avatar Chibi, pasea por la fogata, ejecuta acciones nocturnas simultáneas sin aburridas esperas y debate con amigos usando chat de voz de baja latencia.',
+    keywords: ['hombre lobo', 'juegos de mesa', 'deduccion social', 'chat de voz', 'juego de fiesta', 'hombre lobo online', 'mafia 3d'],
+  },
+  'fr-FR': {
+    locale: 'fr-FR',
+    appName: 'Loups-Garous 3D: Feu de Camp',
+    subtitle: 'Déduction Sociale 3D • Nuit Simultanée • Chat Vocal',
+    promoText: 'Plongez dans une arène 3D autour du feu de camp avec chat vocal en direct et phase de nuit simultanée sans temps mort !',
+    description: 'Loups-Garous 3D: Feu de Camp réinvente le célèbre jeu d\'ambiance et de déduction dans un univers 3D interactif. Personnalisez votre avatar Chibi, explorez le campement et vivez des nuits simultanées sans attente grâce à notre système de chat vocal haute fidélité.',
+    keywords: ['loup garou', 'loups garous', 'jeu de deduction', 'chat vocal', 'multijoueur', 'jeu de societe', 'loups garous 3d'],
+  },
+  'de-DE': {
+    locale: 'de-DE',
+    appName: 'Werwölfe 3D: Lagerfeuer Online',
+    subtitle: '3D Social Deduction • Gleichzeitige Nacht • Sprach-Chat',
+    promoText: 'Erlebe das ultimative 3D-Werwolf-Abenteuer am Lagerfeuer mit synchroner Nachtphase und kristallklarem Sprach-Chat!',
+    description: 'Werwölfe 3D: Lagerfeuer Online bringt das klassische Gesellschaftsspiel in ein lebendiges 3D-Lagerfeuer-Erlebnis. Gestalte deinen Chibi-Charakter, bewege dich frei im Camp, spiele simultane Nachtaktionen ohne Wartezeit und diskutiere live per Sprach-Chat mit Spielern weltweit.',
+    keywords: ['werwölfe', 'werwolf online', 'social deduction', 'party spiel', 'sprach chat', '3d werwolf', 'gesellschaftsspiel'],
+  },
+  'pt-BR': {
+    locale: 'pt-BR',
+    appName: 'Lobisomem 3D: Fogueira Online',
+    subtitle: 'Dedução Social 3D • Noite Simultânea • Chat de Voz',
+    promoText: 'Entre na fogueira 3D para partidas eletrizantes de Lobisomem com ações noturnas simultâneas e chat de voz em tempo real!',
+    description: 'Lobisomem 3D: Fogueira Online transforma o jogo clássico de dedução social em uma experiência 3D imersiva. Personalize seu avatar Chibi, explore o acampamento, participe de noites simultâneas com zero tempo de espera e debata ao vivo pelo chat de voz WebRTC.',
+    keywords: ['lobisomem', 'lobisomem online', 'jogo de deducao', 'chat de voz', 'festa 3d', 'jogo de tabuleiro'],
+  },
+  'th-TH': {
+    locale: 'th-TH',
+    appName: 'มนุษย์หมาป่า 3D: แคมป์ไฟออนไลน์',
+    subtitle: 'เกมหมาป่า 3D • คืนพร้อมกัน • ระบบ Voice Chat',
+    promoText: 'สัมผัสประสบการณ์เกมหมาป่ารอบกองไฟ 3D ล้ำสมัย เล่นแอ็กชันกลางคืนพร้อมกัน และพูดคุยผ่านเสียงสดแบบเรียลไทม์!',
+    description: 'มนุษย์หมาป่า 3D: แคมป์ไฟออนไลน์ นำบอร์ดเกมสืบสวนยอดนิยมสู่สมรภูมิแคมป์ไฟ 3D ที่สมจริง ปรับแต่งตัวละคร Chibi สุดน่ารัก เดินสำรวจรอบกองไฟ ดำเนินการกลางคืนพร้อมกันโดยไม่ต้องรอนาน และสื่อสารผ่านระบบ Voice Chat แบบเรียลไทม์กับผู้เล่นทั่วโลก',
+    keywords: ['เกมหมาป่า', 'มนุษย์หมาป่า', 'werewolf 3d', 'บอร์ดเกม', 'voice chat', 'เกมปาร์ตี้', 'หมาป่าออนไลน์'],
+  },
+  'id-ID': {
+    locale: 'id-ID',
+    appName: 'Werewolf 3D: Api Unggun Online',
+    subtitle: 'Deduksi Sosial 3D • Malam Simultan • Voice Chat',
+    promoText: 'Rasakan keseruan Werewolf 3D di area api unggun interaktif dengan aksi malam simultan dan voice chat langsung!',
+    description: 'Werewolf 3D: Api Unggun Online menghadirkan permainan deduksi sosial klasik ke dalam arena 3D yang hidup. Kustomisasi avatar Chibi 3D Anda, jelajahi area kemah, jalankan aksi malam simultan tanpa jeda membosankan, và berdiskusi seru lewat voice chat berkualitas tinggi bersama teman.',
+    keywords: ['werewolf indonesia', 'game werewolf', 'deduksi sosial', 'voice chat', 'game pesta', 'board game 3d'],
+  },
+};
+
+/**
+ * Trả về metadata cho Apple App Store Connect & Google Play Console theo mã quốc gia/ngôn ngữ
+ */
+export function getStoreAppMetadata(localeCode?: string): StoreAppMetadata {
+  let targetCode = localeCode?.trim();
+
+  if (!targetCode && typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+    targetCode = localStorage.getItem('ma_soi_locale_code') || 'vi-VN';
+  }
+
+  if (!targetCode) {
+    targetCode = 'vi-VN';
+  }
+
+  const exact = STORE_METADATA_MAP[targetCode];
+  if (exact) {
+    return exact;
+  }
+
+  const lower = targetCode.toLowerCase();
+  for (const [key, value] of Object.entries(STORE_METADATA_MAP)) {
+    if (key.toLowerCase() === lower) {
+      return value;
+    }
+  }
+
+  const prefix = lower.split(/[-_]/)[0];
+  for (const [key, value] of Object.entries(STORE_METADATA_MAP)) {
+    if (key.toLowerCase().startsWith(prefix)) {
+      return value;
+    }
+  }
+
+  return targetCode.toLowerCase().startsWith('vi')
+    ? STORE_METADATA_MAP['vi-VN']
+    : STORE_METADATA_MAP['en-US'];
+}
