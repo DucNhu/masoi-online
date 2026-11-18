@@ -644,8 +644,13 @@
       }, DURATION * 1000 + 500);
     }
 
-    // Initialize first frame
+    // Initialize first frame and autoplay immediately
     renderScene(0);
+    setTimeout(() => {
+      if (!isPlaying) {
+        togglePlay();
+      }
+    }, 200);
   </script>
 </body>
 </html>
