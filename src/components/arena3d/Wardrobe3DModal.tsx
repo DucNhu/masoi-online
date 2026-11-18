@@ -26,6 +26,7 @@ import {
   Globe,
   User,
   ShoppingBag,
+  Heart,
 } from 'lucide-react';
 
 interface Wardrobe3DModalProps {
@@ -33,6 +34,7 @@ interface Wardrobe3DModalProps {
   onClose: () => void;
   onSaveOutfit: (outfit: PlayerOutfitConfig) => void;
   initialOutfit?: PlayerOutfitConfig;
+  onOpenDonationShop?: () => void;
 }
 
 export const Wardrobe3DModal: React.FC<Wardrobe3DModalProps> = ({
@@ -40,6 +42,7 @@ export const Wardrobe3DModal: React.FC<Wardrobe3DModalProps> = ({
   onClose,
   onSaveOutfit,
   initialOutfit,
+  onOpenDonationShop,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const characterRef = useRef<WolfCharacter | null>(null);
@@ -103,15 +106,41 @@ export const Wardrobe3DModal: React.FC<Wardrobe3DModalProps> = ({
   const [currentEmote, setCurrentEmote] = useState<'idle' | 'walk' | 'howl' | 'point' | 'slumber'>('idle');
   const [shopNotice, setShopNotice] = useState<string | null>(null);
 
-  // Lắng nghe đổi ngôn ngữ từ cửa sổ chính
+  // Lắng nghe đổi ngôn ngữ & update coin từ cửa sổ chính
   useEffect(() => {
     const handleLangChange = (e: Event) => {
       const customEvent = e as CustomEvent<'vi' | 'en'>;
       if (customEvent.detail) setLang(customEvent.detail);
     };
+
+    const handleProfileUpdate = () => {
+      try {
+        const savedCoins = localStorage.getItem('ma_soi_player_coins');
+        if (savedCoins) setCoins(Number(savedCoins));
+      } catch {
+        // ignore
+      }
+    };
+
     window.addEventListener('ma-soi-lang-change', handleLangChange);
-    return () => window.removeEventListener('ma-soi-lang-change', handleLangChange);
+    window.addEventListener('ma-soi-profile-update', handleProfileUpdate);
+    window.addEventListener('storage', handleProfileUpdate);
+
+    return () => {
+      window.removeEventListener('ma-soi-lang-change', handleLangChange);
+      window.removeEventListener('ma-soi-profile-update', handleProfileUpdate);
+      window.removeEventListener('storage', handleProfileUpdate);
+    };
   }, []);
+
+  // Mở Tiệm Tài Trợ & Nạp Coin
+  const handleOpenDonation = () => {
+    if (onOpenDonationShop) {
+      onOpenDonationShop();
+    } else {
+      window.dispatchEvent(new CustomEvent('ma-soi-open-donation'));
+    }
+  };
 
   const toggleLang = () => {
     const nextLang = lang === 'vi' ? 'en' : 'vi';
@@ -450,8 +479,10 @@ export const Wardrobe3DModal: React.FC<Wardrobe3DModalProps> = ({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {/* Badge Số Dư Coin */}
+            {/* Badge Số Dư Coin (Click mở Tiệm Nạp / Tài Trợ) */}
             <div
+              onClick={handleOpenDonation}
+              title={lang === 'en' ? 'Click to open Coin Shop & Sponsor Server 💖' : 'Bấm để mở Tiệm Nạp Coin & Tài Trợ Server 💖'}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -463,13 +494,37 @@ export const Wardrobe3DModal: React.FC<Wardrobe3DModalProps> = ({
                 color: '#fef08a',
                 fontSize: '0.8rem',
                 fontWeight: 800,
+                cursor: 'pointer',
               }}
             >
               <Coins size={14} color="#facc15" />
               <span>{coins.toLocaleString()} 🪙</span>
             </div>
 
-            {/* Nút + 500 Coin Nhanh */}
+            {/* Nút Nạp Coin / Tài Trợ Server 💖 */}
+            <button
+              onClick={handleOpenDonation}
+              className="btn btn-ghost"
+              title={lang === 'en' ? 'Sponsor server & Get Coins 💖' : 'Ủng hộ server & Nạp Coin 💖'}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                background: 'linear-gradient(135deg, rgba(244, 63, 94, 0.25) 0%, rgba(225, 29, 72, 0.3) 100%)',
+                border: '1px solid #f43f5e',
+                borderRadius: '14px',
+                padding: '5px 10px',
+                color: '#fecdd3',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              <Heart size={13} color="#f43f5e" fill="#f43f5e" />
+              <span>{lang === 'en' ? 'Get Coins 💖' : 'Nạp Coin 💖'}</span>
+            </button>
+
+            {/* Nút +500 Coin Tân thủ / Test */}
             <button
               onClick={handleAddCoins}
               className="btn btn-ghost"
@@ -478,18 +533,18 @@ export const Wardrobe3DModal: React.FC<Wardrobe3DModalProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px',
-                background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.3) 0%, rgba(202, 138, 4, 0.3) 100%)',
+                background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.2) 0%, rgba(202, 138, 4, 0.2) 100%)',
                 border: '1px solid #eab308',
                 borderRadius: '14px',
-                padding: '5px 10px',
+                padding: '5px 8px',
                 color: '#fef08a',
-                fontSize: '0.74rem',
+                fontSize: '0.72rem',
                 fontWeight: 700,
                 cursor: 'pointer',
               }}
             >
-              <PlusCircle size={14} color="#fef08a" />
-              <span>{lang === 'en' ? '+500 Coins' : '+ Nạp 500'}</span>
+              <PlusCircle size={13} color="#fef08a" />
+              <span>+500</span>
             </button>
 
             {/* Nút Chuyển Đổi Ngôn Ngữ VI / EN */}

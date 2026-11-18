@@ -35,6 +35,7 @@ export interface HeaderProps {
   onOpenWardrobe?: () => void;
   onOpenCampgrounds3D?: () => void;
   isCampgrounds3DActive?: boolean;
+  onOpenDonationShop?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -51,6 +52,7 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigateToGameMaster,
   onNavigateToLoreOrLogs,
   onOpenWardrobe,
+  onOpenDonationShop,
 }) => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
@@ -296,9 +298,27 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="profile-badge-name hide-on-mobile">{playerName}</span>
             </span>
             <span className="profile-badge-sep hide-on-mobile" style={{ width: '1px', height: '12px', background: 'rgba(255, 255, 255, 0.2)' }} />
-            <span className="profile-badge-coins">
+            <span
+              className="profile-badge-coins has-tooltip tooltip-bottom"
+              data-tooltip={lang === 'vi' ? 'Ủng Hộ Server & Nạp Coin 💖' : 'Sponsor Server & Get Coins 💖'}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onOpenDonationShop) {
+                  onOpenDonationShop();
+                } else {
+                  window.dispatchEvent(new CustomEvent('ma-soi-open-donation'));
+                }
+              }}
+              style={{
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '2px',
+              }}
+            >
               <span>🪙</span>
               <span>{Number(playerCoins || 1500).toLocaleString()}</span>
+              <span style={{ fontSize: '0.78rem', color: '#f43f5e', marginLeft: '1px' }}>💖</span>
             </span>
           </button>
 

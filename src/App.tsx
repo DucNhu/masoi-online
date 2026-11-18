@@ -21,6 +21,7 @@ import { HistoryLogView } from './components/HistoryLogView';
 import { OnlineLobby } from './components/OnlineLobby';
 import { CampfireArena3DView } from './components/arena3d/CampfireArena3DView';
 import { Wardrobe3DModal } from './components/arena3d/Wardrobe3DModal';
+import { DonationShopModal } from './components/DonationShopModal';
 import { soundEffects } from './utils/soundEffects';
 import { Heart, Flame } from 'lucide-react';
 
@@ -59,6 +60,7 @@ export const App: React.FC = () => {
   const [appMode, setAppMode] = useState<'OFFLINE' | 'ONLINE'>('OFFLINE');
   const [isLookupOpen, setIsLookupOpen] = useState<boolean>(false);
   const [isWardrobeOpen, setIsWardrobeOpen] = useState<boolean>(false);
+  const [isDonationShopOpen, setIsDonationShopOpen] = useState<boolean>(false);
   const [playerViewMode, setPlayerViewMode] = useState<'3D' | '2D'>('3D');
 
   // Lưu lại người chết qua đêm để DayDawnView hiển thị
@@ -85,6 +87,13 @@ export const App: React.FC = () => {
       window.removeEventListener('ma-soi-lang-change', handleLangChange);
       window.removeEventListener('storage', handleLangChange);
     };
+  }, []);
+
+  // Lắng nghe sự kiện mở Tiệm Tài Trợ & Nạp Coin từ Header, Wardrobe hoặc các component khác
+  useEffect(() => {
+    const handleOpenDonation = () => setIsDonationShopOpen(true);
+    window.addEventListener('ma-soi-open-donation', handleOpenDonation);
+    return () => window.removeEventListener('ma-soi-open-donation', handleOpenDonation);
   }, []);
 
   // Tự động sync vào LocalStorage mỗi khi gameState thay đổi
@@ -490,6 +499,7 @@ export const App: React.FC = () => {
         onNavigateToPlayers2D={handleNavigateToPlayers2D}
         onNavigateToLoreOrLogs={handleNavigateToLoreOrLogs}
         onOpenWardrobe={() => setIsWardrobeOpen(true)}
+        onOpenDonationShop={() => setIsDonationShopOpen(true)}
       />
 
       {/* Main Content Area based on Active Tab & Mode */}
@@ -750,6 +760,13 @@ export const App: React.FC = () => {
         onSaveOutfit={() => {
           window.dispatchEvent(new CustomEvent('ma-soi-profile-update'));
         }}
+        onOpenDonationShop={() => setIsDonationShopOpen(true)}
+      />
+
+      {/* Donation & Coin Shop Modal (Sprint 44: VietQR Napas 24/7 & Zero-Gambling Compliance) */}
+      <DonationShopModal
+        isOpen={isDonationShopOpen}
+        onClose={() => setIsDonationShopOpen(false)}
       />
     </div>
   );
