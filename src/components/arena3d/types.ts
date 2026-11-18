@@ -5,11 +5,55 @@ export type WolfSkinId =
   | 'WOLF_SHADOW'
   | 'WOLF_GOLD'
   | 'CAMPER_GIRL'
-  | 'KITSUNE_FOX';
+  | 'KITSUNE_FOX'
+  | 'WOLF_CYBER'
+  | 'VAMPIRE_LORD'
+  | 'GHOST_PHANTOM'
+  | 'CUPID_ANGEL'
+  | 'SAMURAI_RONIN'
+  | 'PIRATE_CAPTAIN'
+  | 'GOLDEN_ALPHA';
 
-export type WolfHatId = 'NONE' | 'CONICAL_HAT' | 'WITCH' | 'COWBOY' | 'CROWN' | 'BANDANA';
-export type WolfEyeGlowId = 'RED' | 'YELLOW' | 'CYAN' | 'PURPLE' | 'GREEN';
-export type WolfBackItemId = 'NONE' | 'CAPE' | 'SWORD' | 'POTION' | 'SHIELD';
+export type WolfHatId =
+  | 'NONE'
+  | 'CONICAL_HAT'
+  | 'WITCH'
+  | 'COWBOY'
+  | 'CROWN'
+  | 'BANDANA'
+  | 'HALO'
+  | 'PIRATE_HAT'
+  | 'CAT_EARS'
+  | 'VIKING_HELMET'
+  | 'SANTA_HAT'
+  | 'BERET'
+  | 'STRAW_HAT';
+
+export type WolfEyeGlowId =
+  | 'RED'
+  | 'YELLOW'
+  | 'CYAN'
+  | 'PURPLE'
+  | 'GREEN'
+  | 'PINK_HEART'
+  | 'WHITE_STORM'
+  | 'ORANGE_SUN'
+  | 'VOID_BLACK'
+  | 'GOLD_ROYAL';
+
+export type WolfBackItemId =
+  | 'NONE'
+  | 'CAPE'
+  | 'SWORD'
+  | 'POTION'
+  | 'SHIELD'
+  | 'ANGEL_WINGS'
+  | 'DEVIL_WINGS'
+  | 'CAMPING_BACKPACK'
+  | 'BOW_ARROW'
+  | 'GUITAR'
+  | 'SCYTHE'
+  | 'QUIVER';
 
 export interface PlayerOutfitConfig {
   skinId: WolfSkinId;
@@ -53,7 +97,21 @@ export interface OutfitSkinItem {
   descEn: string;
   icon: string;
   price: number;
-  archetype: 'HUMAN_CAMPER' | 'HUMAN_SEER' | 'HUMAN_HUNTER' | 'HUMAN_WITCH' | 'KITSUNE' | 'WEREWOLF' | 'CAMPER_GIRL';
+  archetype:
+    | 'HUMAN_CAMPER'
+    | 'HUMAN_SEER'
+    | 'HUMAN_HUNTER'
+    | 'HUMAN_WITCH'
+    | 'KITSUNE'
+    | 'WEREWOLF'
+    | 'CAMPER_GIRL'
+    | 'CYBER_WOLF'
+    | 'VAMPIRE'
+    | 'GHOST'
+    | 'CUPID'
+    | 'SAMURAI'
+    | 'PIRATE'
+    | 'GOLDEN_ALPHA';
   hairColor: number;
   skinTone: number;
   jacketColor: number;
@@ -166,6 +224,111 @@ export const OUTFIT_SKINS: OutfitSkinItem[] = [
     jacketColor: 0xdc2626,
     scarfColor: 0xffffff,
   },
+  {
+    id: 'WOLF_CYBER',
+    name: '🤖 Sói Cơ Giáp Cyber',
+    nameEn: '🤖 Cyber Mech Wolf',
+    hex: 0x06b6d4,
+    desc: 'Chiến giáp neon tương lai, tai cơ khí phát sáng và đuôi cáp quang.',
+    descEn: 'Futuristic neon power armor, glowing cyber ears and fiber-optic tail.',
+    icon: '🤖',
+    price: 600,
+    archetype: 'CYBER_WOLF',
+    hairColor: 0x0ea5e9, // Tóc xanh neon công nghệ
+    skinTone: 0xe2e8f0,  // Da titan sáng
+    jacketColor: 0x0f172a, // Giáp đen carbon
+    scarfColor: 0x06b6d4, // Viền neon cyan
+  },
+  {
+    id: 'VAMPIRE_LORD',
+    name: '🧛 Bá Tước Ma Cà Rồng',
+    nameEn: '🧛 Vampire Lord',
+    hex: 0x881337,
+    desc: 'Quý tộc bóng đêm với răng nanh sắc nhọn, áo khoác dạ đen phối đỏ nhung.',
+    descEn: 'Noble creature of the night with sharp fangs and dark velvet coat.',
+    icon: '🧛',
+    price: 650,
+    archetype: 'VAMPIRE',
+    hairColor: 0x18181b, // Tóc mun quý tộc
+    skinTone: 0xf8fafc,  // Da trắng tuyết ma cà rồng
+    jacketColor: 0x4c0519, // Áo bành tô đỏ rượu vang đậm
+    scarfColor: 0x991b1b, // Cà vạt / khăn lụa đỏ huyết
+  },
+  {
+    id: 'GHOST_PHANTOM',
+    name: '👻 Bóng Ma U Linh',
+    nameEn: '👻 Spectral Phantom',
+    hex: 0x67e8f9,
+    desc: 'Linh hồn phiêu dạt trong làn sương lam mờ ảo, áo choàng u linh.',
+    descEn: 'Wandering ethereal spirit glowing with pale cyan mist.',
+    icon: '👻',
+    price: 550,
+    archetype: 'GHOST',
+    hairColor: 0xa5f3fc, // Tóc sương mù lam nhạt
+    skinTone: 0xe0f2fe,  // Da phát sáng mờ ảo
+    jacketColor: 0x0284c7, // Áo u linh lam đậm
+    scarfColor: 0x38bdf8, // Khăn sương khói
+  },
+  {
+    id: 'CUPID_ANGEL',
+    name: '👼 Thiên Thần Tình Yêu',
+    nameEn: '👼 Cupid Angel',
+    hex: 0xf43f5e,
+    desc: 'Áo tunic trắng viền vàng thánh thiện, mái tóc vàng bồng bềnh mang lại niềm tin.',
+    descEn: 'Holy white tunic trimmed with gold, curly golden locks radiating pure hope.',
+    icon: '👼',
+    price: 500,
+    archetype: 'CUPID',
+    hairColor: 0xfef08a, // Tóc vàng óng thiên thần
+    skinTone: 0xffedd5,  // Da sáng mịn
+    jacketColor: 0xffffff, // Áo tunic trắng tinh khôi
+    scarfColor: 0xfbbf24, // Dải ruy băng vàng hoàng gia
+  },
+  {
+    id: 'SAMURAI_RONIN',
+    name: '⚔️ Lãng Khách Samurai',
+    nameEn: '⚔️ Ronin Samurai',
+    hex: 0xb45309,
+    desc: 'Võ phục truyền thống quấn đai chiến binh, tóc búi samurai phong trần quả cảm.',
+    descEn: 'Traditional warrior gi with battle sash, rugged warrior topknot.',
+    icon: '⚔️',
+    price: 700,
+    archetype: 'SAMURAI',
+    hairColor: 0x27272a, // Tóc đen tuyền
+    skinTone: 0xfed7aa,  // Da đồng phong sương
+    jacketColor: 0x1c1917, // Áo gi đen than chiến trận
+    scarfColor: 0xb45309, // Đai kiếm hổ phách
+  },
+  {
+    id: 'PIRATE_CAPTAIN',
+    name: '🏴‍☠️ Thuyền Trưởng Hải Tặc',
+    nameEn: '🏴‍☠️ Pirate Captain',
+    hex: 0x1e3a8a,
+    desc: 'Đại úy hải tặc biển sâu, áo bành tô xanh hải quân viền vàng và phong thái phong trần.',
+    descEn: 'High seas captain in navy greatcoat with gold embroidery.',
+    icon: '🏴‍☠️',
+    price: 580,
+    archetype: 'PIRATE',
+    hairColor: 0x451a03, // Tóc nâu hải tặc
+    skinTone: 0xfed7aa,  // Da rám nắng biển cả
+    jacketColor: 0x172554, // Áo hải quân đại dương
+    scarfColor: 0xb91c1c, // Khăn quàng đỏ cướp biển
+  },
+  {
+    id: 'GOLDEN_ALPHA',
+    name: '👑 Sói Đầu Đàn Hoàng Kim',
+    nameEn: '👑 Golden Alpha Wolf',
+    hex: 0xeab308,
+    desc: 'Thủ lĩnh sói tối cao phủ ánh hào quang hoàng kim rực rỡ, tai sói vàng uy nghiêm.',
+    descEn: 'Supreme alpha werewolf bathed in radiant golden aura with noble golden ears.',
+    icon: '👑',
+    price: 800,
+    archetype: 'GOLDEN_ALPHA',
+    hairColor: 0xfef08a, // Bờm sói vàng kim
+    skinTone: 0xfef9c3,  // Da ánh kim
+    jacketColor: 0xca8a04, // Áo giáp vàng vương giả
+    scarfColor: 0x854d0e, // Khăn quàng hoàng gia
+  },
 ];
 
 export interface OutfitHatItem {
@@ -233,6 +396,69 @@ export const OUTFIT_HATS: OutfitHatItem[] = [
     descEn: 'Crimson martial headband with fluttering ribbon',
     price: 150,
   },
+  {
+    id: 'HALO',
+    name: 'Vòng Hào Quang',
+    nameEn: 'Angelic Halo',
+    icon: '😇',
+    desc: 'Vòng hào quang thiên thần vàng rực lơ lửng trên đỉnh đầu',
+    descEn: 'Golden sacred halo floating peacefully above the head',
+    price: 380,
+  },
+  {
+    id: 'PIRATE_HAT',
+    name: 'Mũ Thuyền Trưởng',
+    nameEn: 'Captain Pirate Hat',
+    icon: '🏴‍☠️',
+    desc: 'Mũ hải tặc ba góc kiêu hãnh cắm lông vũ trắng',
+    descEn: 'Regal tricorn pirate hat with white plumes',
+    price: 320,
+  },
+  {
+    id: 'CAT_EARS',
+    name: 'Băng Đô Tai Mèo',
+    nameEn: 'Cat Ears Headband',
+    icon: '🐱',
+    desc: 'Băng đô đen xinh xắn với đôi tai mèo tam giác bông hồng đáng yêu',
+    descEn: 'Cute black headband with fluffy pink-inner cat ears',
+    price: 220,
+  },
+  {
+    id: 'VIKING_HELMET',
+    name: 'Mũ Sừng Viking',
+    nameEn: 'Viking Horned Helmet',
+    icon: '🛡️',
+    desc: 'Mũ sắt chiến binh phương Bắc với cặp sừng cong dũng mãnh',
+    descEn: 'Ancient Nordic iron helmet with twin curved horns',
+    price: 350,
+  },
+  {
+    id: 'SANTA_HAT',
+    name: 'Mũ Giáng Sinh Noel',
+    nameEn: 'Santa Holiday Hat',
+    icon: '🎅',
+    desc: 'Mũ len đỏ rực rỡ viền lông trắng và quả cầu tuyết tròn xoe',
+    descEn: 'Festive red holiday cap with fluffy white trim and pom-pom',
+    price: 260,
+  },
+  {
+    id: 'BERET',
+    name: 'Mũ Nồi Nghệ Sĩ',
+    nameEn: 'Artist Wool Beret',
+    icon: '🎨',
+    desc: 'Mũ nồi dạ đen nghiêng duyên dáng của thi sĩ rừng đêm',
+    descEn: 'Chic wool beret tilted with poet elegance',
+    price: 180,
+  },
+  {
+    id: 'STRAW_HAT',
+    name: 'Mũ Rơm Dã Ngoại',
+    nameEn: 'Adventure Straw Hat',
+    icon: '👒',
+    desc: 'Mũ rơm đan vàng viền ruy băng đỏ thắm của người đi tìm kho báu',
+    descEn: 'Classic woven straw hat with vivid crimson ribbon band',
+    price: 200,
+  },
 ];
 
 export interface OutfitEyeItem {
@@ -291,6 +517,51 @@ export const OUTFIT_EYES: OutfitEyeItem[] = [
     descEn: 'Vibrant emerald shimmer of ancient forest spirits',
     price: 200,
   },
+  {
+    id: 'PINK_HEART',
+    name: 'Hồng Tình Yêu',
+    nameEn: 'Romantic Pink',
+    hex: 0xf472b6,
+    desc: 'Ánh mắt màu kẹo ngọt ngào tan chảy trái tim người đối diện',
+    descEn: 'Sweet candy pink glow radiating warmth and charm',
+    price: 280,
+  },
+  {
+    id: 'WHITE_STORM',
+    name: 'Bão Tuyết Trắng',
+    nameEn: 'White Blizzard',
+    hex: 0xf8fafc,
+    desc: 'Ánh chớp bão tuyết tinh khôi sắc lạnh thấu tâm can',
+    descEn: 'Pure crystalline white gaze cold as northern blizzard',
+    price: 320,
+  },
+  {
+    id: 'ORANGE_SUN',
+    name: 'Cam Hoàng Hôn',
+    nameEn: 'Sunset Orange',
+    hex: 0xf97316,
+    desc: 'Mặt trời lặn rực rỡ chiếu rọi qua rặng thông già',
+    descEn: 'Blazing twilight orange glow brimming with fiery energy',
+    price: 250,
+  },
+  {
+    id: 'VOID_BLACK',
+    name: 'Lam Hư Không',
+    nameEn: 'Void Indigo',
+    hex: 0x818cf8,
+    desc: 'Ánh mắt hư không vũ trụ tím chàm sâu thẳm vô tận',
+    descEn: 'Deep cosmic indigo gleam drawing minds into the void',
+    price: 360,
+  },
+  {
+    id: 'GOLD_ROYAL',
+    name: 'Hoàng Kim Tối Cao',
+    nameEn: 'Royal Gold',
+    hex: 0xfbbf24,
+    desc: 'Hào quang vàng kim đế vương uy nghiêm chói lọi',
+    descEn: 'Majestic imperial gold brilliance commanding authority',
+    price: 400,
+  },
 ];
 
 export interface OutfitBackItem {
@@ -348,6 +619,69 @@ export const OUTFIT_BACK_ITEMS: OutfitBackItem[] = [
     desc: 'Khiên hộ vệ gỗ sồi viền kim loại kiên cố',
     descEn: 'Sturdy oak and iron shield protecting against wolves',
     price: 300,
+  },
+  {
+    id: 'ANGEL_WINGS',
+    name: 'Cánh Thiên Thần',
+    nameEn: 'Angelic Wings',
+    icon: '🪽',
+    desc: 'Cặp cánh thiên thần lông vũ trắng muốt giương rộng 2 bên lưng phát sáng',
+    descEn: 'Radiant feathered white angel wings fluttering with gentle aura',
+    price: 480,
+  },
+  {
+    id: 'DEVIL_WINGS',
+    name: 'Cánh Ác Ma',
+    nameEn: 'Demonic Wings',
+    icon: '🦇',
+    desc: 'Cặp cánh dơi ác ma nhung tím đen viền gai ma mị sắc sảo',
+    descEn: 'Dark gothic bat wings of the night with sharp devil horns',
+    price: 500,
+  },
+  {
+    id: 'CAMPING_BACKPACK',
+    name: 'Balo Cắm Trại',
+    nameEn: 'Camp Explorer Backpack',
+    icon: '🎒',
+    desc: 'Balo du lịch to bản có cuộn túi ngủ trên đầu và bình nước dã ngoại',
+    descEn: 'Heavy-duty expedition backpack with rolled sleeping bag and flask',
+    price: 320,
+  },
+  {
+    id: 'BOW_ARROW',
+    name: 'Cung Tên Thợ Săn',
+    nameEn: 'Hunter Longbow',
+    icon: '🏹',
+    desc: 'Cung gỗ cong thanh thoát và ống đựng tên da bò cắm lông chim đeo chéo',
+    descEn: 'Curved wooden bow with strapped quiver and feathered arrows',
+    price: 380,
+  },
+  {
+    id: 'GUITAR',
+    name: 'Guitar Lửa Trại',
+    nameEn: 'Campfire Guitar',
+    icon: '🎸',
+    desc: 'Đàn guitar gỗ acoustic ấm áp của người kể chuyện quanh đống lửa',
+    descEn: 'Warm wooden acoustic guitar strapped for campfire singalongs',
+    price: 350,
+  },
+  {
+    id: 'SCYTHE',
+    name: 'Lưỡi Hái Tử Thần',
+    nameEn: 'Grim Reaper Scythe',
+    icon: '💀',
+    desc: 'Lưỡi hái tử thần cán đen dài và lưỡi hái bạc cong vút sắc lạnh',
+    descEn: 'Ominous reaping scythe with long obsidian shaft and silver curved blade',
+    price: 450,
+  },
+  {
+    id: 'QUIVER',
+    name: 'Cuộn Bí Kíp Ninja',
+    nameEn: 'Ninja Secret Scroll',
+    icon: '📜',
+    desc: 'Cuộn bí kíp nhẫn giả khổng lồ quấn đai đỏ sau lưng',
+    descEn: 'Oversized legendary ninja technique scroll bound with crimson cord',
+    price: 280,
   },
 ];
 

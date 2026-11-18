@@ -1,46 +1,51 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-11-18 13:20 (Asia/Ho_Chi_Minh) — Hoàn tất Sprint 44: Hệ Thống Tài Trợ Duy Trì Server, Nạp Coin Web (VietQR Napas 24/7), Quảng Cáo Nhận Thưởng (Rewarded Ads) & Tuân Thủ Pháp Luật 100% (Zero-Gambling Compliance).
-- **Vận hành**: `npm run verify` đạt 100% PASS (0 error, 31 bộ test suite, PWA build thành công). Tự động push lên nhánh `feature/ma-soi-online` và `main` để kích hoạt deploy CI/CD.
+- **Thời gian cập nhật**: 2026-11-18 14:05 (Asia/Ho_Chi_Minh) — Hoàn tất Sprint 45: "Đại Tiệc Thời Trang 3D Chibi & Mở Rộng Kho Vật Phẩm Lên 49+ Items Độc Đáo (14 Skins, 13 Hats, 10 Eyes, 12 Back Items)".
+- **Vận hành**: `npm run verify` đạt 100% PASS (0 error, 32 bộ test suite, PWA build thành công trong 391ms). Tự động push lên nhánh `feature/ma-soi-online` và `main` để kích hoạt deploy CI/CD.
 
-## Sprint 44 — Hệ Thống Tài Trợ, Nạp Coin VietQR & Zero-Gambling Compliance [DONE & 100% VERIFIED]
-- **Tuân Thủ Pháp Luật 100% (Zero-Gambling Compliance)**:
-  - Khẳng định 100% bản chất tự nguyện tài trợ (Donation/Patronage) phục vụ chi phí máy chủ WebRTC Mesh, Hosting Vercel & PWA.
-  - Tuyệt đối không cờ bạc, không cá cược, không có tính năng đổi thưởng ra tiền mặt hoặc tài sản ngoài đời thực (`LEGAL_DISCLAIMER_VI`, `LEGAL_DISCLAIMER_EN`).
-  - Coin và vật phẩm trang phục 3D chỉ có giá trị trang trí thẩm mỹ làm đẹp cho nhân vật trong game.
-- **Cấu hình 4 Gói Tài Trợ & VietQR Napas 24/7 (`src/constants/donationConfig.ts`)**:
-  - Gói `COFFEE`: '☕ Cà Phê Trứng', 10.000 VNĐ, 1.000 Coin, Badge '🥉 Supporter Đồng', Title 'Người Hâm Mộ'.
-  - Gói `PHO`: '🍜 Phở Bò Tái Nạm', 25.000 VNĐ, 3.000 Coin, Badge '🥈 Supporter Bạc', Title 'Nhà Bảo Trợ' (popular).
-  - Gói `PIZZA`: '🍕 Pizza Lửa Trại', 50.000 VNĐ, 7.500 Coin, Badge '🥇 Supporter Vàng', Title 'Hiệp Sĩ Rừng Sâu'.
-  - Gói `VIP_PATRON`: '👑 Vương Giả Làng Sói', 100.000 VNĐ, 20.000 Coin, Badge '💎 Supporter Kim Cương', Title 'Đại Gia Trăng Rằm'.
-  - Hỗ trợ số tiền tùy tâm (Custom Amount) và cấu hình ngân hàng linh hoạt (`BANK_CONFIG` fallback & lưu thiết bị localStorage `ma_soi_bank_config` cho admin/sếp).
-  - Hàm `generateVietQrUrl` sinh mã VietQR Napas 24/7 chuẩn công nghệ.
-- **Giao Diện Tiệm Nạp & Tài Trợ 3D Glassmorphism (`src/components/DonationShopModal.tsx`)**:
-  - Thiết kế chuẩn Werewolf Theme (đen đêm, viền neon vàng gold, hiệu ứng phát sáng mượt mà).
-  - 3 Tab chọn:
-    1. `💖 Ủng Hộ & Nạp Coin`: Chọn 4 gói hoặc nhập tùy tâm, hiển thị VietQR động, copy STK/Nội dung, nút "Tôi Đã Chuyển Khoản Thành Công!" tự động cộng Coin, gán danh hiệu, lưu lịch sử, bắn confetti và phát âm thanh chuông. Khối Admin sửa nhanh STK ngân hàng nhận tiền thật.
-    2. `📺 Xem Quảng Cáo (+300 🪙)`: Bộ đếm 15 giây với progress bar neon, kết thúc mở khóa nhận ngay +300 Coin miễn phí.
-    3. `📜 Điều Khoản Pháp Lý`: Hiển thị song ngữ cam kết phi lợi nhuận, không đổi thưởng, cấm cờ bạc theo luật Việt Nam và chuẩn Store quốc tế.
-- **Tích Hợp Toàn Diện (`Header.tsx`, `Wardrobe3DModal.tsx`, `App.tsx`)**:
-  - `Header.tsx`: Cụm Coin `🪙 1,500 💖` bấm mở trực tiếp `DonationShopModal` với tooltip rõ ràng.
-  - `Wardrobe3DModal.tsx`: Nút nạp coin / ủng hộ server 💖 mở modal, đồng thời giữ nút tân thủ +500 coin test.
-  - `App.tsx`: Quản lý state `isDonationShopOpen`, lắng nghe sự kiện `ma-soi-open-donation`.
-- **Bộ Kiểm Thử Tự Động Sprint 44 (`tests/sprint44MonetizationAndLegal.test.mjs`, `package.json`)**:
-  - Đạt 7/7 test cases PASS (100%):
-    1. TASK-4401: Cấu hình `DONATION_PACKAGES` có đủ 4 gói, giá tiền chuẩn VNĐ và tỷ lệ thưởng hợp lý.
-    2. TASK-4402: Hàm `generateVietQrUrl` sinh đúng định dạng URL VietQR Napas 24/7.
-    3. TASK-4403: Cam kết pháp lý `LEGAL_DISCLAIMER_VI` và `EN` chứa đầy đủ từ khóa chống cờ bạc, không đổi thưởng và phi lợi nhuận.
-    4. TASK-4404: `BANK_CONFIG` hỗ trợ fallback và lưu/đọc cấu hình từ localStorage.
-    5. TASK-4405: File `src/components/DonationShopModal.tsx` tồn tại, chứa đủ 3 tab (VietQR, Rewarded Ad, Legal).
-    6. TASK-4406: `Wardrobe3DModal.tsx` và `Header.tsx` có liên kết mở `DonationShopModal`.
-    7. TASK-4407: `App.tsx` gắn `DonationShopModal` và lắng nghe sự kiện `ma-soi-open-donation`.
-
-## Sprint 43 — Sẵn Sàng Phát Hành Toàn Cầu (App Store & Google Play) & Đa Ngôn Ngữ Web [DONE & 100% VERIFIED]
-- Hoàn tất danh mục 128+ quốc gia i18n, metadata ASO đa ngôn ngữ, key art 3D và tài liệu xuất bản store.
+## Sprint 45 — Đại Tiệc Thời Trang 3D Chibi & Mở Rộng Kho Vật Phẩm 49+ Items [DONE & 100% VERIFIED]
+- **Mở Rộng Kho Vật Phẩm Thời Trang Chibi Lên Chuẩn 49 Items Độc Đáo (`src/components/arena3d/types.ts`)**:
+  - **14 Mẫu Skins Chibi 3D Độc Bản**:
+    1. `WOLF_GRAY` (Phượt Thủ Cắm Trại - 0 Coin)
+    2. `WOLF_SNOW` (Pháp Sư Tiên Tri - 300 Coin)
+    3. `WOLF_GOLD` (Thợ Săn Rừng Thông - 250 Coin)
+    4. `WOLF_SHADOW` (Phù Thủy Giả Kim - 350 Coin)
+    5. `WOLF_BLOOD` (Sói Hồng Nguyệt - 500 Coin)
+    6. `CAMPER_GIRL` (Nữ Sinh Cắm Trại - 200 Coin)
+    7. `KITSUNE_FOX` (Hồ Ly Tinh Linh - 450 Coin)
+    8. `WOLF_CYBER` (Sói Cơ Giáp Cyber - 600 Coin) — Giáp neon cyan công nghệ tương lai, tai cơ khí, đuôi cáp quang.
+    9. `VAMPIRE_LORD` (Bá Tước Ma Cà Rồng - 650 Coin) — Răng nanh sắc nhọn, áo khoác dạ đen phối đỏ rượu vang đậm quý phái.
+    10. `GHOST_PHANTOM` (Bóng Ma U Linh - 550 Coin) — Linh hồn phiêu dạt trong làn sương lam mờ ảo, áo choàng u linh.
+    11. `CUPID_ANGEL` (Thiên Thần Tình Yêu - 500 Coin) — Áo tunic trắng viền vàng thánh thiện, mái tóc vàng bồng bềnh.
+    12. `SAMURAI_RONIN` (Lãng Khách Samurai - 700 Coin) — Võ phục truyền thống quấn đai chiến binh, tóc búi topknot samurai.
+    13. `PIRATE_CAPTAIN` (Thuyền Trưởng Hải Tặc - 580 Coin) — Áo bành tô đại dương viền vàng, bịt mắt da cướp biển phong trần.
+    14. `GOLDEN_ALPHA` (Sói Đầu Đàn Hoàng Kim - 800 Coin) — Hào quang hoàng kim rực rỡ, nanh vàng và tai sói uy nghiêm.
+  - **13 Mẫu Mũ Thời Trang Độc Đáo**:
+    - Cũ (6): `NONE`, `CONICAL_HAT`, `WITCH`, `COWBOY`, `CROWN`, `BANDANA`.
+    - Mới (7): `HALO` (Vòng Hào Quang lơ lửng y=0.42), `PIRATE_HAT` (Mũ hải tặc ba góc viền vàng + lông vũ trắng), `CAT_EARS` (Băng đô đen 2 tai mèo tam giác bông hồng nhí), `VIKING_HELMET` (Mũ sắt bán nguyệt nạm đinh có cặp sừng cong dũng mãnh), `SANTA_HAT` (Mũ len đỏ chóp rủ viền lông trắng xốp và quả cầu tuyết), `BERET` (Mũ nồi dạ đen nghiêng duyên dáng), `STRAW_HAT` (Mũ rơm dã ngoại đan vàng viền ruy băng đỏ thắm).
+  - **10 Màu Mắt Phát Sáng Huyền Ảo**:
+    - Cũ (5): `RED`, `YELLOW`, `CYAN`, `PURPLE`, `GREEN`.
+    - Mới (5): `PINK_HEART` (Hồng Tình Yêu #f472b6), `WHITE_STORM` (Bão Tuyết Trắng #f8fafc), `ORANGE_SUN` (Cam Hoàng Hôn #f97316), `VOID_BLACK` (Lam Hư Không #818cf8), `GOLD_ROYAL` (Hoàng Kim Tối Cao #fbbf24).
+  - **12 Món Phụ Kiện Lưng Sống Động**:
+    - Cũ (5): `NONE`, `CAPE`, `SWORD`, `POTION`, `SHIELD`.
+    - Mới (7): `ANGEL_WINGS` (Cặp cánh thiên thần lông vũ trắng muốt phát sáng), `DEVIL_WINGS` (Cặp cánh dơi ác ma nhung tím đen viền gai ma mị), `CAMPING_BACKPACK` (Balo du lịch to bản có cuộn túi ngủ trên đầu và bình nước dã ngoại bên hông), `BOW_ARROW` (Cung gỗ cong thanh thoát và ống đựng tên da bò cắm lông chim), `GUITAR` (Đàn guitar gỗ acoustic ấm áp của nghệ sĩ lửa trại), `SCYTHE` (Lưỡi hái tử thần cán đen dài và lưỡi hái bạc cong vút sắc lạnh), `QUIVER` (Cuộn bí kíp nhẫn giả khổng lồ quấn đai đỏ).
+- **Dựng Hình 3D Chibi Sống Động Với Three.js (`src/components/arena3d/WolfMeshBuilder.ts`)**:
+  - Triển khai toàn bộ hình khối bo tròn Chibi, tỉ lệ đáng yêu cho 7 mũ mới, 7 phụ kiện lưng mới, các đặc trưng archetype (`CYBER_WOLF`, `VAMPIRE`, `CUPID`, `SAMURAI`, `PIRATE`, `GOLDEN_ALPHA`).
+  - Nâng cấp thuật toán `getTopClearanceY` tính toán khoảng trống an toàn chống va chạm xuyên bảng tên nổi 3D (`HALO` 0.65, `VIKING_HELMET` 0.62, `PIRATE_HAT` 0.58, v.v.).
+- **Bộ Kiểm Thử Tự Động Sprint 45 (`tests/sprint45ExpandedWardrobeItems.test.mjs`, `package.json`)**:
+  - Đạt 8/8 test cases PASS (100%):
+    1. Kiểm tra số lượng danh mục: 14 skins, 13 hats, 10 eyes, 12 back items (tổng đúng 49 items duy nhất).
+    2. Kiểm tra toàn vẹn thuộc tính & mô tả song ngữ VI/EN cho toàn bộ 49 items.
+    3. WolfMeshBuilder dựng mesh mượt mà với toàn bộ 7 Skin mới.
+    4. WolfMeshBuilder dựng mesh mượt mà với toàn bộ 7 Hat mới.
+    5. WolfMeshBuilder dựng mesh mượt mà với toàn bộ 7 Back Items mới.
+    6. WolfMeshBuilder dựng mesh với toàn bộ 5 màu Mắt mới.
+    7. Tính toán TopClearanceY an toàn cho bảng tên nổi 3D với các mũ mới.
+    8. Chuyển đổi Animation ('idle', 'walk', 'howl', 'point', 'slumber') và GhostMode hoàn hảo.
 
 ## 1. Kiểm thử Toàn Diện
-- `npm run test:sprint44`: 7/7 tests PASS.
-- `npm run verify`: oxlint 0 error, 85/85 skills PASS, 31/31 test suites PASS, build PWA PASS (343ms).
+- `npm run test:sprint45`: 8/8 tests PASS.
+- `npm run verify`: oxlint 0 error, 85/85 skills PASS, 32/32 test suites PASS, build PWA PASS (391ms).
 
 ## 2. Hành Động Tiếp Theo (Single Next Action)
 - Đẩy commit mới lên nhánh `feature/ma-soi-online` và `main` theo quy tắc Continuous Deploy, kích hoạt GitHub Pages và Vercel deploy.
