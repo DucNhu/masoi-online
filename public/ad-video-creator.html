@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Ma Sói Online — TikTok/Reels Ad Video Studio</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.4), 0 0 50px rgba(139, 92, 246, 0.2); }
+      50% { box-shadow: 0 0 40px rgba(239, 68, 68, 0.8), 0 0 80px rgba(239, 68, 68, 0.5); }
+    }
+    .neon-border {
+      animation: pulse-glow 3s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4 select-none font-sans">
+
+  <div class="max-w-4xl w-full flex flex-col lg:flex-row gap-6 items-center justify-center">
+    
+    <!-- Phone Frame (TikTok / Reels 9:16) -->
+    <div class="relative w-[340px] h-[600px] bg-black rounded-[38px] p-3 shadow-2xl border-4 border-slate-800 flex flex-col items-center justify-between overflow-hidden neon-border">
+      
+      <!-- Dynamic Island / Speaker notch -->
+      <div class="absolute top-4 w-28 h-5 bg-slate-900 rounded-full z-30 flex items-center justify-end px-3">
+        <div class="w-2.5 h-2.5 bg-blue-900/60 rounded-full"></div>
+      </div>
+
+      <!-- Video Canvas -->
+      <div class="relative w-full h-full rounded-[28px] overflow-hidden bg-gradient-to-b from-indigo-950 via-slate-950 to-stone-950">
+        <canvas id="adCanvas" width="360" height="640" class="w-full h-full object-cover block"></canvas>
+        
+        <!-- TikTok UI Overlay Simulator -->
+        <div class="absolute right-3 bottom-20 flex flex-col items-center gap-4 z-20 pointer-events-none">
+          <div class="flex flex-col items-center">
+            <div class="w-10 h-10 rounded-full bg-red-600/90 flex items-center justify-center text-lg shadow-lg">🐺</div>
+            <span class="text-[10px] font-bold text-white mt-1 shadow-black">Ma Sói</span>
+          </div>
+          <div class="flex flex-col items-center">
+            <div class="w-9 h-9 rounded-full bg-slate-800/80 backdrop-blur flex items-center justify-center text-sm">❤️</div>
+            <span class="text-[10px] font-semibold text-white">84.2K</span>
+          </div>
+          <div class="flex flex-col items-center">
+            <div class="w-9 h-9 rounded-full bg-slate-800/80 backdrop-blur flex items-center justify-center text-sm">💬</div>
+            <span class="text-[10px] font-semibold text-white">3.1K</span>
+          </div>
+          <div class="flex flex-col items-center">
+            <div class="w-9 h-9 rounded-full bg-slate-800/80 backdrop-blur flex items-center justify-center text-sm">🔗</div>
+            <span class="text-[10px] font-semibold text-white">Share</span>
+          </div>
+        </div>
+
+        <!-- Captions / CTA Overlay bottom -->
+        <div class="absolute left-4 right-16 bottom-5 z-20 pointer-events-none">
+          <p class="text-xs font-bold text-amber-400 drop-shadow">@masoi_online</p>
+          <p id="captionText" class="text-xs text-white/95 line-clamp-2 drop-shadow font-medium mt-0.5">
+            Đi cafe mà quên mang bài Ma Sói? Quét mã vào chiến ngay! 🔥
+          </p>
+          <div class="mt-2 flex items-center gap-1.5 bg-red-600/90 text-white text-[11px] font-bold px-2.5 py-1 rounded-full w-max shadow-md animate-bounce">
+            <span>🎮</span> <span>Chơi Miễn Phí Tại masoi.online</span>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="absolute bottom-0 left-0 right-0 h-1 bg-slate-800 z-30">
+          <div id="videoProgress" class="h-full bg-red-500 w-0 transition-all duration-100"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Control Panel & Studio Director -->
+    <div class="w-full lg:w-96 flex flex-col gap-4 bg-slate-900/90 border border-slate-800 p-5 rounded-2xl shadow-xl">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">🎬</span>
+          <h2 class="text-lg font-bold text-white">Trình Tạo Video Quảng Cáo</h2>
+        </div>
+        <p class="text-xs text-slate-400 mt-1">Sản xuất video TikTok / Reels định dạng 9:16 có âm thanh sống động và xuất file MP4/WebM.</p>
+      </div>
+
+      <!-- Script Selector -->
+      <div class="space-y-1.5">
+        <label class="text-xs font-semibold text-slate-300">Chọn Kịch Bản Quảng Cáo:</label>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="btnScript1" onclick="selectScript(1)" class="px-3 py-2 text-xs font-bold rounded-xl border border-red-500/60 bg-red-950/40 text-red-300 hover:bg-red-900/50 transition">
+            1. Cú Lật Mặt Thợ Săn
+          </button>
+          <button id="btnScript2" onclick="selectScript(2)" class="px-3 py-2 text-xs font-bold rounded-xl border border-slate-700 bg-slate-800/60 text-slate-400 hover:bg-slate-800 transition">
+            2. Cứu Tinh Trà Sữa
+          </button>
+        </div>
+      </div>
+
+      <!-- Current Scene Display -->
+      <div class="bg-slate-950/80 border border-slate-800/80 p-3 rounded-xl">
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-slate-400">Pha Hiện Tại:</span>
+          <span id="sceneBadge" class="px-2 py-0.5 rounded-full bg-red-600/30 text-red-400 font-bold font-mono">00:00 / 00:20</span>
+        </div>
+        <p id="sceneDesc" class="text-xs text-amber-200/90 mt-1.5 font-medium leading-relaxed">
+          Đang chuẩn bị cảnh...
+        </p>
+      </div>
+
+      <!-- Playback Controls -->
+      <div class="flex items-center gap-2 pt-1">
+        <button id="btnPlayPause" onclick="togglePlay()" class="flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-red-900/30 transition text-sm">
+          <span id="playIcon">▶️</span> <span id="playText">Phát Video</span>
+        </button>
+        <button onclick="restartVideo()" class="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition text-sm" title="Phát lại từ đầu">
+          🔄
+        </button>
+      </div>
+
+      <!-- Audio & Recording Section -->
+      <div class="pt-3 border-t border-slate-800 space-y-2.5">
+        <div class="flex items-center justify-between text-xs">
+          <label class="flex items-center gap-2 text-slate-300 cursor-pointer">
+            <input type="checkbox" id="chkAudio" checked class="rounded accent-red-600" />
+            <span>Âm Thanh Kịch Tính (SFX + BGM)</span>
+          </label>
+        </div>
+
+        <!-- Export Video Button -->
+        <button id="btnExport" onclick="recordAndDownload()" class="w-full py-2.5 bg-gradient-to-r from-amber-600 to-red-600 hover:from-amber-500 hover:to-red-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-amber-900/20 transition text-sm">
+          <span>📹</span> <span id="exportText">Quay & Tải Video (WebM / MP4)</span>
+        </button>
+        <p id="recordStatus" class="text-[11px] text-center text-slate-400"></p>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('adCanvas');
+    const ctx = canvas.getContext('2d');
+    const progressEl = document.getElementById('videoProgress');
+    const sceneBadge = document.getElementById('sceneBadge');
+    const sceneDesc = document.getElementById('sceneDesc');
+    const captionText = document.getElementById('captionText');
+    const playIcon = document.getElementById('playIcon');
+    const playText = document.getElementById('playText');
+    const chkAudio = document.getElementById('chkAudio');
+    const recordStatus = document.getElementById('recordStatus');
+    const btnExport = document.getElementById('btnExport');
+    const exportText = document.getElementById('exportText');
+
+    let currentScriptId = 1;
+    let isPlaying = false;
+    let currentTime = 0;
+    const DURATION = 20; // 20s
+    let lastTimestamp = null;
+    let animFrame = null;
+    let audioCtx = null;
+    let soundPlayed = {};
+
+    // Scripts definitions
+    const scripts = {
+      1: {
+        title: "Cú Lật Mặt Thợ Săn",
+        scenes: [
+          { start: 0, end: 4, label: "01. Hook Gây Tò Mò", desc: "Tranh luận nảy lửa: 'Tao thề tao là Dân Làng!'", caption: "Khi bạn thề sống thề chết là Dân Ngoan Đạo..." },
+          { start: 4, end: 9, label: "02. Đêm Xuống & Quản Trò", desc: "Trăng máu lên, Quản trò AI gọi Sói mở mắt...", caption: "Quản trò AI: 'Đêm nay người bị loại là...'" },
+          { start: 9, end: 15, label: "03. Thợ Săn Ghim Đạn", desc: "Thợ Săn lật bài bắn trả, Ma Sói lộ nguyên hình!", caption: "Thợ Săn ghim viên đạn vào chính kẻ thề thốt nhất!" },
+          { start: 15, end: 20, label: "04. CTA Kêu Gọi", desc: "Vào masoi.online chiến cùng bạn bè ngay không cần tải app!", caption: "Chơi Ma Sói 3D online miễn phí trên điện thoại tại masoi.online!" }
+        ]
+      },
+      2: {
+        title: "Cứu Tinh Buổi Trà Sữa",
+        scenes: [
+          { start: 0, end: 5, label: "01. Tình Huống Quen Thuộc", desc: "Đi cafe 8 người bấm điện thoại chán nản...", caption: "Tụ tập trà sữa mà đứa nào cũng dán mắt vào máy?" },
+          { start: 5, end: 10, label: "02. Quét Mã 5 Giây", desc: "Mở điện thoại quét mã phòng 3D không cần cài app!", caption: "Quét mã 5s - 10 người vào chung phòng đấu lửa trại!" },
+          { start: 10, end: 15, label: "03. Tranh Luận Nảy Lửa", desc: "Tự động phân bài, chống nhìn trộm, quản trò AI nói tiếng Việt!", caption: "Không ai phải hy sinh làm Quản Trò buồn chán nữa!" },
+          { start: 15, end: 20, label: "04. CTA Tụ Tập Bạn Bè", desc: "Lập lều chiến ngay cùng hội bạn tại masoi.online!", caption: "Cứu tinh cho mọi buổi tụ tập — Thử ngay hôm nay!" }
+        ]
+      }
+    };
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playSynthSound(type) {
+      if (!chkAudio.checked || !audioCtx) return;
+      const t = audioCtx.currentTime;
+
+      if (type === 'whoosh') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, t);
+        osc.frequency.exponentialRampToValueAtTime(80, t + 0.4);
+        gain.gain.setValueAtTime(0.3, t);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(t);
+        osc.stop(t + 0.4);
+      } else if (type === 'wolfHowl') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, t);
+        osc.frequency.linearRampToValueAtTime(380, t + 0.6);
+        osc.frequency.exponentialRampToValueAtTime(140, t + 1.8);
+        gain.gain.setValueAtTime(0.05, t);
+        gain.gain.linearRampToValueAtTime(0.2, t + 0.5);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 1.8);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(t);
+        osc.stop(t + 1.8);
+      } else if (type === 'gunshot') {
+        // Noise burst
+        const bufferSize = audioCtx.sampleRate * 0.5;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(0.8, t);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+        noise.connect(gain);
+        gain.connect(audioCtx.destination);
+        noise.start(t);
+        noise.stop(t + 0.4);
+      } else if (type === 'chime') {
+        [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0.15, t + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.08 + 0.6);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(t + idx * 0.08);
+          osc.stop(t + idx * 0.08 + 0.6);
+        });
+      }
+    }
+
+    function selectScript(id) {
+      currentScriptId = id;
+      document.getElementById('btnScript1').className = id === 1 
+        ? "px-3 py-2 text-xs font-bold rounded-xl border border-red-500/60 bg-red-950/40 text-red-300 transition"
+        : "px-3 py-2 text-xs font-bold rounded-xl border border-slate-700 bg-slate-800/60 text-slate-400 hover:bg-slate-800 transition";
+      document.getElementById('btnScript2').className = id === 2 
+        ? "px-3 py-2 text-xs font-bold rounded-xl border border-amber-500/60 bg-amber-950/40 text-amber-300 transition"
+        : "px-3 py-2 text-xs font-bold rounded-xl border border-slate-700 bg-slate-800/60 text-slate-400 hover:bg-slate-800 transition";
+      restartVideo();
+    }
+
+    function togglePlay() {
+      initAudio();
+      isPlaying = !isPlaying;
+      if (isPlaying) {
+        lastTimestamp = performance.now();
+        playIcon.textContent = "⏸️";
+        playText.textContent = "Tạm Dừng";
+        loop();
+      } else {
+        playIcon.textContent = "▶️";
+        playText.textContent = "Tiếp Tục";
+      }
+    }
+
+    function restartVideo() {
+      currentTime = 0;
+      soundPlayed = {};
+      renderScene(0);
+      if (!isPlaying) {
+        togglePlay();
+      }
+    }
+
+    function loop(now) {
+      if (!isPlaying) return;
+      if (now && lastTimestamp) {
+        const delta = (now - lastTimestamp) / 1000;
+        currentTime += delta;
+      }
+      lastTimestamp = now || performance.now();
+
+      if (currentTime >= DURATION) {
+        currentTime = 0;
+        soundPlayed = {};
+      }
+
+      renderScene(currentTime);
+      animFrame = requestAnimationFrame(loop);
+    }
+
+    // Render Canvas
+    function renderScene(time) {
+      // Progress & Badge
+      const pct = (time / DURATION) * 100;
+      progressEl.style.width = pct + '%';
+
+      const s = Math.floor(time);
+      const ms = Math.floor((time % 1) * 10);
+      sceneBadge.textContent = `00:${s.toString().padStart(2, '0')}.${ms} / 00:${DURATION}`;
+
+      const script = scripts[currentScriptId];
+      const activeScene = script.scenes.find(sc => time >= sc.start && time < sc.end) || script.scenes[0];
+      sceneDesc.textContent = activeScene.desc;
+      captionText.textContent = activeScene.caption;
+
+      // Handle Audio Triggers
+      if (time >= 0.1 && !soundPlayed['whoosh1']) {
+        playSynthSound('whoosh');
+        soundPlayed['whoosh1'] = true;
+      }
+      if (time >= 4.0 && !soundPlayed['wolf']) {
+        playSynthSound('wolfHowl');
+        soundPlayed['wolf'] = true;
+      }
+      if (time >= 9.5 && !soundPlayed['gun']) {
+        playSynthSound('gunshot');
+        soundPlayed['gun'] = true;
+      }
+      if (time >= 15.0 && !soundPlayed['chime']) {
+        playSynthSound('chime');
+        soundPlayed['chime'] = true;
+      }
+
+      // Drawing to 360x640 canvas
+      ctx.clearRect(0, 0, 360, 640);
+
+      // Background Gradient based on scene
+      let bgGrad;
+      if (time < 4) {
+        // Tension / Campfire
+        bgGrad = ctx.createRadialGradient(180, 400, 30, 180, 400, 300);
+        bgGrad.addColorStop(0, '#78350f');
+        bgGrad.addColorStop(0.5, '#1e1b4b');
+        bgGrad.addColorStop(1, '#09090b');
+      } else if (time < 15) {
+        // Midnight blood moon
+        bgGrad = ctx.createRadialGradient(180, 150, 20, 180, 300, 350);
+        bgGrad.addColorStop(0, '#881337');
+        bgGrad.addColorStop(0.4, '#31102f');
+        bgGrad.addColorStop(1, '#050508');
+      } else {
+        // Dawn / Victory
+        bgGrad = ctx.createLinearGradient(0, 0, 0, 640);
+        bgGrad.addColorStop(0, '#431407');
+        bgGrad.addColorStop(0.4, '#1c1917');
+        bgGrad.addColorStop(1, '#09090b');
+      }
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, 360, 640);
+
+      // Animated Campfire Glow / Particles
+      const flicker = Math.sin(time * 15) * 8;
+      ctx.fillStyle = 'rgba(249, 115, 22, 0.25)';
+      ctx.beginPath();
+      ctx.arc(180, 450, 120 + flicker, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Moon in background
+      if (time >= 4 && time < 16) {
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.9)';
+        ctx.beginPath();
+        ctx.arc(180, 140, 50, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Moon glow
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.2)';
+        ctx.beginPath();
+        ctx.arc(180, 140, 80 + Math.sin(time * 5) * 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Main Visual Elements per scene
+      if (currentScriptId === 1) {
+        renderScript1Visuals(time);
+      } else {
+        renderScript2Visuals(time);
+      }
+
+      // Draw Top Branding
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(0, 0, 360, 60);
+
+      ctx.font = 'bold 15px sans-serif';
+      ctx.fillStyle = '#ef4444';
+      ctx.textAlign = 'left';
+      ctx.fillText('🐺 MA SÓI ONLINE', 20, 36);
+
+      ctx.font = '10px sans-serif';
+      ctx.fillStyle = '#fef08a';
+      ctx.fillText('3D CAMPFIRE ARENA', 180, 36);
+      ctx.restore();
+    }
+
+    function renderScript1Visuals(time) {
+      const shake = (time >= 9.5 && time < 10.5) ? (Math.random() - 0.5) * 14 : 0;
+
+      ctx.save();
+      ctx.translate(shake, shake);
+
+      if (time < 4) {
+        // Scene 1: Accusation
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.fillText('"TAO LÀ DÂN LÀNG!"', 180, 200);
+
+        ctx.font = '14px sans-serif';
+        ctx.fillStyle = '#f87171';
+        ctx.fillText('Lời thề thốt trước giờ bỏ phiếu...', 180, 230);
+
+        // Card Face down floating
+        drawCard(180, 350, '❓', 'THẺ BÍ MẬT', '#475569');
+      } else if (time < 9) {
+        // Scene 2: Night falls
+        ctx.font = 'bold 22px sans-serif';
+        ctx.fillStyle = '#f87171';
+        ctx.textAlign = 'center';
+        ctx.fillText('ĐÊM ĐÃ XUỐNG...', 180, 220);
+
+        ctx.font = '13px sans-serif';
+        ctx.fillStyle = '#cbd5e1';
+        ctx.fillText('Quản trò AI: "Ai sẽ là nạn nhân?"', 180, 250);
+
+        // Werewolf Eyes glowing
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(155, 340, 6, 0, Math.PI * 2);
+        ctx.arc(205, 340, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 15;
+      } else if (time < 15) {
+        // Scene 3: Hunter shot & Wolf Revealed
+        ctx.font = 'bold 26px sans-serif';
+        ctx.fillStyle = '#ef4444';
+        ctx.textAlign = 'center';
+        ctx.fillText('💥 PHÁT SÚNG THỢ SĂN!', 180, 190);
+
+        drawCard(180, 350, '🐺', 'MA SÓI!', '#991b1b', true);
+
+        ctx.font = 'bold 15px sans-serif';
+        ctx.fillStyle = '#fef08a';
+        ctx.fillText('"ĐÃ BẢO NÓ LÀ SÓI RỒI MÀ!"', 180, 490);
+      } else {
+        // Scene 4: CTA
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillStyle = '#facc15';
+        ctx.textAlign = 'center';
+        ctx.fillText('CHƠI NGAY MIỄN PHÍ!', 180, 180);
+
+        ctx.font = '14px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('Không cần tải app — Mở web chơi liền', 180, 215);
+
+        // 3D Campfire symbol
+        ctx.font = '60px sans-serif';
+        ctx.fillText('🔥', 180, 320);
+
+        // Big CTA Button on Canvas
+        ctx.fillStyle = '#dc2626';
+        roundRect(ctx, 60, 380, 240, 52, 14);
+        ctx.fill();
+
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('LẬP PHÒNG CHIẾN ➔', 180, 412);
+
+        ctx.font = '12px sans-serif';
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText('Link: https://masoi.online', 180, 470);
+      }
+      ctx.restore();
+    }
+
+    function renderScript2Visuals(time) {
+      if (time < 5) {
+        ctx.font = 'bold 22px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.fillText('ĐI CAFE CẢ NHÓM...', 180, 200);
+
+        ctx.font = '14px sans-serif';
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText('...mà đứa nào cũng im lặng bấm máy?', 180, 230);
+
+        ctx.font = '64px sans-serif';
+        ctx.fillText('📱☕', 180, 350);
+      } else if (time < 10) {
+        ctx.font = 'bold 22px sans-serif';
+        ctx.fillStyle = '#38bdf8';
+        ctx.textAlign = 'center';
+        ctx.fillText('QUÉT MÃ VÀO CHIẾN!', 180, 190);
+
+        // QR Mockup
+        ctx.fillStyle = '#ffffff';
+        roundRect(ctx, 110, 240, 140, 140, 12);
+        ctx.fill();
+
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 20px monospace';
+        ctx.fillText('QR CODE', 180, 320);
+
+        ctx.font = '13px sans-serif';
+        ctx.fillStyle = '#fef08a';
+        ctx.fillText('5 Giây vào chung Đấu trường 3D', 180, 420);
+      } else if (time < 15) {
+        ctx.font = 'bold 22px sans-serif';
+        ctx.fillStyle = '#a855f7';
+        ctx.textAlign = 'center';
+        ctx.fillText('QUẢN TRÒ AI TỰ ĐỘNG', 180, 190);
+
+        ctx.font = '13px sans-serif';
+        ctx.fillStyle = '#e2e8f0';
+        ctx.fillText('Không ai phải hy sinh ngồi ngoài!', 180, 225);
+
+        drawCard(180, 350, '🔮', 'TIÊN TRI', '#581c87', true);
+      } else {
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillStyle = '#4ade80';
+        ctx.textAlign = 'center';
+        ctx.fillText('TỤ TẬP LÀ PHẢI VUI!', 180, 180);
+
+        ctx.font = '14px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('Thử ngay Ma Sói Online & Offline', 180, 215);
+
+        ctx.font = '54px sans-serif';
+        ctx.fillText('🎉🏕️', 180, 310);
+
+        ctx.fillStyle = '#16a34a';
+        roundRect(ctx, 60, 380, 240, 52, 14);
+        ctx.fill();
+
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('VÀO PHÒNG NGAY ➔', 180, 412);
+      }
+    }
+
+    function drawCard(x, y, icon, title, color, glow = false) {
+      ctx.save();
+      if (glow) {
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 25;
+      }
+      ctx.fillStyle = color;
+      roundRect(ctx, x - 70, y - 100, 140, 200, 12);
+      ctx.fill();
+
+      ctx.strokeStyle = '#fef08a';
+      ctx.lineWidth = 3;
+      roundRect(ctx, x - 64, y - 94, 128, 188, 8);
+      ctx.stroke();
+
+      ctx.font = '50px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(icon, x, y - 5);
+
+      ctx.font = 'bold 15px sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(title, x, y + 55);
+
+      ctx.restore();
+    }
+
+    function roundRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    // MediaRecorder Video Export
+    let mediaRecorder = null;
+    let recordedChunks = [];
+
+    function recordAndDownload() {
+      initAudio();
+      restartVideo();
+
+      const stream = canvas.captureStream(30); // 30 FPS
+      
+      // If Web Audio is supported, mix audio stream
+      if (audioCtx) {
+        const dest = audioCtx.createMediaStreamDestination();
+        // connect master
+        // (audio will play along)
+      }
+
+      const options = { mimeType: 'video/webm;codecs=vp9' };
+      try {
+        mediaRecorder = new MediaRecorder(stream, options);
+      } catch (e) {
+        mediaRecorder = new MediaRecorder(stream);
+      }
+
+      recordedChunks = [];
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `MaSoi_TikTok_Ad_Script_${currentScriptId}.webm`;
+        a.click();
+        URL.revokeObjectURL(url);
+        btnExport.disabled = false;
+        exportText.textContent = "Quay & Tải Video (WebM / MP4)";
+        recordStatus.textContent = "✅ Đã tải file video về máy thành công!";
+      };
+
+      mediaRecorder.start();
+      btnExport.disabled = true;
+      exportText.textContent = "🔴 Đang quay video (20 giây)...";
+      recordStatus.textContent = "Vui lòng giữ tab này cho đến khi video quay hết 20 giây...";
+
+      // Stop after 20s
+      setTimeout(() => {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+          mediaRecorder.stop();
+        }
+      }, DURATION * 1000 + 500);
+    }
+
+    // Initialize first frame
+    renderScene(0);
+  </script>
+</body>
+</html>

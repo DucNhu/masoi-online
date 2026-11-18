@@ -11,10 +11,14 @@
 export interface DonationPackage {
   id: string;
   name: string;
+  nameEn: string;
   priceVND: number;
+  priceUSD: number;
   coins: number;
   bonusBadge: string;
+  bonusBadgeEn: string;
   bonusTitle: string;
+  bonusTitleEn: string;
   icon: string;
   popular?: boolean;
   descriptionVi: string;
@@ -29,16 +33,24 @@ export interface BankConfig {
   defaultMemoPrefix: string; // Tiền tố nội dung chuyển khoản
 }
 
+export interface GlobalPaymentConfig {
+  buyMeACoffeeUrl: string;
+  paypalMeUrl: string;
+  kofiUrl: string;
+  customNote?: string;
+}
+
 export interface DonationHistoryItem {
   id: string;
   packageId?: string;
   packageName: string;
   amountVND: number;
+  amountUSD?: number;
   coinsReceived: number;
   bonusTitle?: string;
   bonusBadge?: string;
   timestamp: number;
-  method: 'VIETQR' | 'REWARDED_AD' | 'CUSTOM_DONATION';
+  method: 'VIETQR' | 'REWARDED_AD' | 'CUSTOM_DONATION' | 'GLOBAL_SPONSOR' | 'BUYMEACOFFEE' | 'PAYPAL' | 'KOFI';
 }
 
 /**
@@ -48,10 +60,14 @@ export const DONATION_PACKAGES: DonationPackage[] = [
   {
     id: 'COFFEE',
     name: '☕ Cà Phê Trứng',
+    nameEn: '☕ Hot Coffee',
     priceVND: 10000,
+    priceUSD: 1,
     coins: 1000,
     bonusBadge: '🥉 Supporter Đồng',
+    bonusBadgeEn: '🥉 Bronze Supporter',
     bonusTitle: 'Người Hâm Mộ',
+    bonusTitleEn: 'Camp Fan',
     icon: '☕',
     descriptionVi: 'Mời đội ngũ phát triển một ly cà phê ấm lòng để thức đêm code game.',
     descriptionEn: 'Treat the dev team to an egg coffee for late-night coding sessions.',
@@ -59,10 +75,14 @@ export const DONATION_PACKAGES: DonationPackage[] = [
   {
     id: 'PHO',
     name: '🍜 Phở Bò Tái Nạm',
+    nameEn: '🍜 Campfire Ramen',
     priceVND: 25000,
+    priceUSD: 3,
     coins: 3000,
     bonusBadge: '🥈 Supporter Bạc',
+    bonusBadgeEn: '🥈 Silver Supporter',
     bonusTitle: 'Nhà Bảo Trợ',
+    bonusTitleEn: 'Village Patron',
     icon: '🍜',
     popular: true,
     descriptionVi: 'Bát phở nóng hổi tiếp sức duy trì server WebRTC Mesh mượt mà 24/7.',
@@ -71,10 +91,14 @@ export const DONATION_PACKAGES: DonationPackage[] = [
   {
     id: 'PIZZA',
     name: '🍕 Pizza Lửa Trại',
+    nameEn: '🍕 Bonfire Pizza',
     priceVND: 50000,
+    priceUSD: 5,
     coins: 7500,
     bonusBadge: '🥇 Supporter Vàng',
+    bonusBadgeEn: '🥇 Gold Supporter',
     bonusTitle: 'Hiệp Sĩ Rừng Sâu',
+    bonusTitleEn: 'Forest Knight',
     icon: '🍕',
     descriptionVi: 'Bữa tiệc pizza quanh đống lửa trại, tài trợ chi phí băng thông âm thanh 3D.',
     descriptionEn: 'Campfire pizza party supporting 3D spatial audio bandwidth.',
@@ -82,10 +106,14 @@ export const DONATION_PACKAGES: DonationPackage[] = [
   {
     id: 'VIP_PATRON',
     name: '👑 Vương Giả Làng Sói',
+    nameEn: '👑 Grand Werewolf Patron',
     priceVND: 100000,
+    priceUSD: 10,
     coins: 20000,
     bonusBadge: '💎 Supporter Kim Cương',
+    bonusBadgeEn: '💎 Diamond Patron',
     bonusTitle: 'Đại Gia Trăng Rằm',
+    bonusTitleEn: 'Moonlight VIP',
     icon: '👑',
     descriptionVi: 'Đại ân nhân của Làng Sói, tài trợ hạ tầng máy chủ và bảo trì hệ thống dài hạn.',
     descriptionEn: 'Grand Patron of Werewolf Village, securing long-term server infrastructure.',
@@ -161,6 +189,56 @@ export function saveBankConfig(config: Partial<BankConfig>): BankConfig {
   try {
     localStorage.setItem(BANK_STORAGE_KEY, JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent('ma-soi-bank-config-update', { detail: updated }));
+  } catch {
+    // ignore
+  }
+  return updated;
+}
+
+/**
+ * Cấu hình Cổng Thanh Toán & Tài Trợ Quốc Tế (Global Web Distribution)
+ */
+export const DEFAULT_GLOBAL_PAYMENT_CONFIG: GlobalPaymentConfig = {
+  buyMeACoffeeUrl: 'https://buymeacoffee.com/ducnhu',
+  paypalMeUrl: 'https://paypal.me/ducnhu',
+  kofiUrl: 'https://ko-fi.com/ducnhu',
+};
+
+export const GLOBAL_PAYMENT_STORAGE_KEY = 'ma_soi_global_payment_config';
+
+/**
+ * Lấy cấu hình thanh toán quốc tế (Ưu tiên localStorage, fallback mặc định)
+ */
+export function getGlobalPaymentConfig(): GlobalPaymentConfig {
+  try {
+    const raw = localStorage.getItem(GLOBAL_PAYMENT_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        return {
+          ...DEFAULT_GLOBAL_PAYMENT_CONFIG,
+          ...parsed,
+        };
+      }
+    }
+  } catch {
+    // fallback
+  }
+  return { ...DEFAULT_GLOBAL_PAYMENT_CONFIG };
+}
+
+/**
+ * Lưu cấu hình thanh toán quốc tế vào localStorage
+ */
+export function saveGlobalPaymentConfig(cfg: Partial<GlobalPaymentConfig>): GlobalPaymentConfig {
+  const current = getGlobalPaymentConfig();
+  const updated: GlobalPaymentConfig = {
+    ...current,
+    ...cfg,
+  };
+  try {
+    localStorage.setItem(GLOBAL_PAYMENT_STORAGE_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent('ma-soi-global-payment-config-update', { detail: updated }));
   } catch {
     // ignore
   }

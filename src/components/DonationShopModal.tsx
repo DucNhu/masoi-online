@@ -10,16 +10,10 @@ import {
   ExternalLink,
   Settings,
   Sparkles,
-  Award,
-  AlertCircle,
   Play,
-  RotateCcw,
   CheckCircle2,
-  DollarSign,
-  Coffee,
   Coins,
-  ChevronRight,
-  Flame,
+  Globe,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import {
@@ -38,6 +32,9 @@ import {
   PLAYER_BADGE_KEY,
   DONATION_HISTORY_KEY,
   DonationHistoryItem,
+  GlobalPaymentConfig,
+  getGlobalPaymentConfig,
+  saveGlobalPaymentConfig,
 } from '../constants/donationConfig';
 import { soundEffects } from '../utils/soundEffects';
 
@@ -74,7 +71,7 @@ export const DonationShopModal: React.FC<DonationShopModalProps> = ({
     }
   });
 
-  const [playerTitle, setPlayerTitle] = useState<string>(() => {
+  const [_playerTitle, setPlayerTitle] = useState<string>(() => {
     try {
       return localStorage.getItem(PLAYER_TITLE_KEY) || (lang === 'en' ? 'Night Hunter' : 'Thợ Săn Đêm');
     } catch {
@@ -82,7 +79,7 @@ export const DonationShopModal: React.FC<DonationShopModalProps> = ({
     }
   });
 
-  const [playerBadge, setPlayerBadge] = useState<string>(() => {
+  const [_playerBadge, setPlayerBadge] = useState<string>(() => {
     try {
       return localStorage.getItem(PLAYER_BADGE_KEY) || '';
     } catch {
@@ -105,12 +102,29 @@ export const DonationShopModal: React.FC<DonationShopModalProps> = ({
   const [editAccountNo, setEditAccountNo] = useState<string>(bankConfig.accountNo);
   const [editAccountName, setEditAccountName] = useState<string>(bankConfig.accountName);
 
+  // Kênh thanh toán: VIETQR hoặc GLOBAL
+  const [paymentMethod, setPaymentMethod] = useState<'VIETQR' | 'GLOBAL'>(() => {
+    try {
+      const saved = localStorage.getItem('ma_soi_lang');
+      return saved === 'en' ? 'GLOBAL' : 'VIETQR';
+    } catch {
+      return 'VIETQR';
+    }
+  });
+
+  // Cổng thanh toán quốc tế (BuyMeACoffee, PayPal.Me, Ko-fi)
+  const [globalPaymentConfig, setGlobalPaymentConfig] = useState<GlobalPaymentConfig>(() => getGlobalPaymentConfig());
+  const [editBuyMeACoffee, setEditBuyMeACoffee] = useState<string>(globalPaymentConfig.buyMeACoffeeUrl);
+  const [editPaypalMe, setEditPaypalMe] = useState<string>(globalPaymentConfig.paypalMeUrl);
+  const [editKofi, setEditKofi] = useState<string>(globalPaymentConfig.kofiUrl);
+
   // Gói tài trợ đang chọn
   const [selectedPackage, setSelectedPackage] = useState<DonationPackage>(
     DONATION_PACKAGES.find((p) => p.popular) || DONATION_PACKAGES[0]
   );
   const [isCustomAmount, setIsCustomAmount] = useState<boolean>(false);
   const [customVND, setCustomVND] = useState<number>(30000);
+  const [customUSD, setCustomUSD] = useState<number>(5);
 
   // Trạng thái copy thông tin
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -175,8 +189,9 @@ export const DonationShopModal: React.FC<DonationShopModalProps> = ({
 
   // Tính số tiền và coin thực tế theo lựa chọn
   const currentAmountVND = isCustomAmount ? customVND : selectedPackage.priceVND;
+  const currentAmountUSD = isCustomAmount ? customUSD : selectedPackage.priceUSD;
   const currentCoinsGain = isCustomAmount
-    ? Math.max(100, Math.floor(customVND / 10))
+    ? (paymentMethod === 'GLOBAL' ? Math.max(1000, customUSD * 1500) : Math.max(100, Math.floor(customVND / 10)))
     : selectedPackage.coins;
 
   // Memo nội dung chuyển khoản độc nhất
@@ -232,7 +247,25 @@ export const DonationShopModal: React.FC<DonationShopModalProps> = ({
     setTimeout(() => setSuccessNotice(null), 3500);
   };
 
-  // Xác nhận chuyển khoản thành công
+  // Lưu cấu hình thanh toán quốc tế admin
+  const handleSaveGlobalAdmin = () => {
+    const updated = saveGlobalPaymentConfig({
+      buyMeACoffeeUrl: editBuyMeACoffee,
+      paypalMeUrl: editPaypalMe,
+      kofiUrl: editKofi,
+    });
+    setGlobalPaymentConfig(updated);
+    setShowAdminSettings(false);
+    soundEffects.triggerHaptic('medium');
+    setSuccessNotice(
+      lang === 'en'
+        ? '✅ Global sponsor URLs updated successfully!'
+        : '✅ Đã lưu cấu hình cổng thanh toán quốc tế!'
+    );
+    setTimeout(() => setSuccessNotice(null), 3500);
+  };
+
+  // Xác nhận chuyển khoản VietQR thành công
   const handleConfirmTransfer = () => {
     const newCoins = playerCoins + currentCoinsGain;
     const newTitle = isCustomAmount ? 'Nhà Hảo Tâm Làng Sói' : selectedPackage.bonusTitle;
@@ -288,6 +321,70 @@ export const DonationShopModal: React.FC<DonationShopModalProps> = ({
       lang === 'en'
         ? `🎉 Thank you! +${currentCoinsGain.toLocaleString()} Coins added. Title "${newTitle}" unlocked!`
         : `🎉 Cảm ơn bạn đã tài trợ! Nhận ngay +${currentCoinsGain.toLocaleString()} Coin và danh hiệu "${newTitle}"!`
+    );
+  };
+
+  // Xác nhận tài trợ quốc tế thành công & Nhận quà (Claim Perks)
+  const handleConfirmGlobalTransfer = () => {
+    const newCoins = playerCoins + currentCoinsGain;
+    const newTitle = isCustomAmount
+      ? (lang === 'en' ? 'Global Patron' : 'Nhà Hảo Tâm Quốc Tế')
+      : (lang === 'en' ? selectedPackage.bonusTitleEn : selectedPackage.bonusTitle);
+    const newBadge = isCustomAmount
+      ? (lang === 'en' ? '💖 Global Supporter' : '💖 Sponsor Quốc Tế')
+      : (lang === 'en' ? selectedPackage.bonusBadgeEn : selectedPackage.bonusBadge);
+
+    try {
+      localStorage.setItem(PLAYER_COINS_KEY, String(newCoins));
+      localStorage.setItem(PLAYER_TITLE_KEY, newTitle);
+      localStorage.setItem(PLAYER_BADGE_KEY, newBadge);
+
+      // Lưu lịch sử giao dịch
+      const rawHistory = localStorage.getItem(DONATION_HISTORY_KEY);
+      const historyList: DonationHistoryItem[] = rawHistory ? JSON.parse(rawHistory) : [];
+      const newHistoryItem: DonationHistoryItem = {
+        id: 'GLOBAL_' + Date.now(),
+        packageId: isCustomAmount ? undefined : selectedPackage.id,
+        packageName: isCustomAmount
+          ? (lang === 'en' ? 'Custom Global Sponsor' : 'Ủng Hộ Quốc Tế Tùy Chọn')
+          : (lang === 'en' ? selectedPackage.nameEn : selectedPackage.name),
+        amountVND: currentAmountVND,
+        amountUSD: currentAmountUSD,
+        coinsReceived: currentCoinsGain,
+        bonusTitle: newTitle,
+        bonusBadge: newBadge,
+        timestamp: Date.now(),
+        method: 'GLOBAL_SPONSOR',
+      };
+      historyList.unshift(newHistoryItem);
+      localStorage.setItem(DONATION_HISTORY_KEY, JSON.stringify(historyList.slice(0, 50)));
+
+      window.dispatchEvent(new CustomEvent('ma-soi-profile-update'));
+    } catch {
+      // ignore
+    }
+
+    setPlayerCoins(newCoins);
+    setPlayerTitle(newTitle);
+    setPlayerBadge(newBadge);
+
+    soundEffects.triggerHaptic('heavy');
+    soundEffects.playBell();
+    try {
+      confetti({
+        particleCount: 100,
+        spread: 85,
+        origin: { y: 0.55 },
+        colors: ['#38bdf8', '#facc15', '#f43f5e', '#a855f7'],
+      });
+    } catch {
+      // fallback
+    }
+
+    setSuccessNotice(
+      lang === 'en'
+        ? `🎉 Thank you for your global sponsorship! +${currentCoinsGain.toLocaleString()} Coins added. Title "${newTitle}" unlocked!`
+        : `🎉 Cảm ơn bạn đã tài trợ quốc tế! Nhận ngay +${currentCoinsGain.toLocaleString()} Coin và danh hiệu "${newTitle}"!`
     );
   };
 
@@ -626,7 +723,7 @@ export const DonationShopModal: React.FC<DonationShopModalProps> = ({
         )}
 
         {/* ========================================== */}
-        {/* TAB 1: VIETQR NAPAS DONATION & COIN RECHARGE*/}
+        {/* TAB 1: DONATION & COIN RECHARGE (VIETQR / GLOBAL) */}
         {/* ========================================== */}
         {activeTab === 'DONATE' && (
           <div
@@ -639,6 +736,76 @@ export const DonationShopModal: React.FC<DonationShopModalProps> = ({
               gap: '14px',
             }}
           >
+            {/* Bộ chuyển đổi kênh thanh toán: VietQR vs Toàn Cầu (Global) */}
+            <div
+              style={{
+                display: 'flex',
+                gap: '8px',
+                background: 'rgba(0, 0, 0, 0.45)',
+                padding: '4px',
+                borderRadius: '14px',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setPaymentMethod('VIETQR');
+                  soundEffects.triggerHaptic('light');
+                }}
+                style={{
+                  flex: 1,
+                  padding: '8px 12px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: paymentMethod === 'VIETQR' ? 'rgba(250, 204, 21, 0.22)' : 'transparent',
+                  color: paymentMethod === 'VIETQR' ? '#fef08a' : '#94a3b8',
+                  fontWeight: paymentMethod === 'VIETQR' ? 800 : 600,
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  borderBottom: paymentMethod === 'VIETQR' ? '2.5px solid #facc15' : '2.5px solid transparent',
+                  boxShadow: paymentMethod === 'VIETQR' ? '0 0 12px rgba(250, 204, 21, 0.25)' : 'none',
+                  transition: 'all 0.18s ease',
+                }}
+              >
+                <QrCode size={15} color={paymentMethod === 'VIETQR' ? '#facc15' : '#94a3b8'} />
+                <span>{lang === 'en' ? '⚡ VietQR Napas (VNĐ)' : '⚡ VietQR Napas 24/7 (VNĐ)'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setPaymentMethod('GLOBAL');
+                  soundEffects.triggerHaptic('light');
+                }}
+                style={{
+                  flex: 1,
+                  padding: '8px 12px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: paymentMethod === 'GLOBAL' ? 'rgba(56, 189, 248, 0.22)' : 'transparent',
+                  color: paymentMethod === 'GLOBAL' ? '#38bdf8' : '#94a3b8',
+                  fontWeight: paymentMethod === 'GLOBAL' ? 800 : 600,
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  borderBottom: paymentMethod === 'GLOBAL' ? '2.5px solid #38bdf8' : '2.5px solid transparent',
+                  boxShadow: paymentMethod === 'GLOBAL' ? '0 0 12px rgba(56, 189, 248, 0.25)' : 'none',
+                  transition: 'all 0.18s ease',
+                }}
+              >
+                <Globe size={15} color={paymentMethod === 'GLOBAL' ? '#38bdf8' : '#94a3b8'} />
+                <span>{lang === 'en' ? '🌍 Global (PayPal / Coffee / Ko-fi)' : '🌍 Quốc Tế (USD • PayPal / Coffee)'}</span>
+              </button>
+            </div>
+
             {/* Lựa chọn gói tài trợ 4 mức */}
             <div>
               <div
@@ -652,7 +819,7 @@ export const DonationShopModal: React.FC<DonationShopModalProps> = ({
                   justifyContent: 'space-between',
                 }}
               >
-                <span>{lang === 'en' ? '1. SELECT DONATION TIER:' : '1. CHỌN GÓI TÀI TRỢ YÊU THÍCH:'}</span>
+                <span>{lang === 'en' ? '1. SELECT SPONSOR TIER:' : '1. CHỌN GÓI TÀI TRỢ YÊU THÍCH:'}</span>
                 <span style={{ fontSize: '0.72rem', color: '#facc15' }}>
                   {lang === 'en' ? 'Bonus Titles & Badges included 🎁' : 'Tặng kèm Danh hiệu & Huy hiệu 🎁'}
                 </span>
@@ -667,9 +834,16 @@ export const DonationShopModal: React.FC<DonationShopModalProps> = ({
               >
                 {DONATION_PACKAGES.map((pkg) => {
                   const isSelected = !isCustomAmount && selectedPackage.id === pkg.id;
+                  const displayName = lang === 'en' || paymentMethod === 'GLOBAL' ? pkg.nameEn : pkg.name;
+                  const displayBonusTitle = lang === 'en' || paymentMethod === 'GLOBAL' ? pkg.bonusTitleEn : pkg.bonusTitle;
+                  const displayPrice = paymentMethod === 'GLOBAL'
+                    ? `$${pkg.priceUSD} USD`
+                    : `${pkg.priceVND.toLocaleString()} đ`;
+
                   return (
                     <button
                       key={pkg.id}
+                      type="button"
                       onClick={() => {
                         setSelectedPackage(pkg);
                         setIsCustomAmount(false);
@@ -680,16 +854,20 @@ export const DonationShopModal: React.FC<DonationShopModalProps> = ({
                         padding: '10px 8px',
                         borderRadius: '14px',
                         border: isSelected
-                          ? '1.8px solid #facc15'
+                          ? (paymentMethod === 'GLOBAL' ? '1.8px solid #38bdf8' : '1.8px solid #facc15')
                           : '1px solid rgba(255, 255, 255, 0.12)',
                         background: isSelected
-                          ? 'linear-gradient(145deg, rgba(250, 204, 21, 0.18) 0%, rgba(202, 138, 4, 0.1) 100%)'
+                          ? (paymentMethod === 'GLOBAL'
+                              ? 'linear-gradient(145deg, rgba(56, 189, 248, 0.2) 0%, rgba(3, 105, 161, 0.15) 100%)'
+                              : 'linear-gradient(145deg, rgba(250, 204, 21, 0.18) 0%, rgba(202, 138, 4, 0.1) 100%)')
                           : 'rgba(255, 255, 255, 0.04)',
                         cursor: 'pointer',
                         textAlign: 'center',
                         color: '#f8fafc',
                         transition: 'all 0.18s ease',
-                        boxShadow: isSelected ? '0 0 15px rgba(250, 204, 21, 0.25)' : 'none',
+                        boxShadow: isSelected
+                          ? (paymentMethod === 'GLOBAL' ? '0 0 15px rgba(56, 189, 248, 0.3)' : '0 0 15px rgba(250, 204, 21, 0.25)')
+                          : 'none',
                       }}
                     >
                       {pkg.popular && (
@@ -712,10 +890,10 @@ export const DonationShopModal: React.FC<DonationShopModalProps> = ({
                       )}
                       <div style={{ fontSize: '1.4rem', marginBottom: '2px' }}>{pkg.icon}</div>
                       <div style={{ fontWeight: 800, fontSize: '0.78rem', color: '#fef08a' }}>
-                        {pkg.name}
+                        {displayName}
                       </div>
                       <div style={{ fontWeight: 900, fontSize: '0.88rem', color: '#38bdf8', marginTop: '2px' }}>
-                        {pkg.priceVND.toLocaleString()} đ
+                        {displayPrice}
                       </div>
                       <div style={{ fontSize: '0.7rem', color: '#facc15', fontWeight: 700, marginTop: '2px' }}>
                         +{pkg.coins.toLocaleString()} 🪙
@@ -729,7 +907,7 @@ export const DonationShopModal: React.FC<DonationShopModalProps> = ({
                           paddingTop: '3px',
                         }}
                       >
-                        {pkg.bonusTitle}
+                        {displayBonusTitle}
                       </div>
                     </button>
                   );
@@ -739,14 +917,21 @@ export const DonationShopModal: React.FC<DonationShopModalProps> = ({
               {/* Nút nhập số tiền tùy tâm */}
               <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <button
+                  type="button"
                   onClick={() => {
                     setIsCustomAmount(!isCustomAmount);
                     soundEffects.triggerHaptic('light');
                   }}
                   style={{
-                    background: isCustomAmount ? 'rgba(250, 204, 21, 0.2)' : 'rgba(255, 255, 255, 0.06)',
-                    border: isCustomAmount ? '1px solid #facc15' : '1px solid rgba(255, 255, 255, 0.15)',
-                    color: isCustomAmount ? '#fef08a' : '#cbd5e1',
+                    background: isCustomAmount
+                      ? (paymentMethod === 'GLOBAL' ? 'rgba(56, 189, 248, 0.25)' : 'rgba(250, 204, 21, 0.2)')
+                      : 'rgba(255, 255, 255, 0.06)',
+                    border: isCustomAmount
+                      ? (paymentMethod === 'GLOBAL' ? '1px solid #38bdf8' : '1px solid #facc15')
+                      : '1px solid rgba(255, 255, 255, 0.15)',
+                    color: isCustomAmount
+                      ? (paymentMethod === 'GLOBAL' ? '#38bdf8' : '#fef08a')
+                      : '#cbd5e1',
                     borderRadius: '10px',
                     padding: '6px 12px',
                     fontSize: '0.75rem',
@@ -757,7 +942,33 @@ export const DonationShopModal: React.FC<DonationShopModalProps> = ({
                   {lang === 'en' ? '✏️ Custom Amount' : '✏️ Nhập Số Tiền Tùy Tâm'}
                 </button>
 
-                {isCustomAmount && (
+                {isCustomAmount && paymentMethod === 'GLOBAL' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
+                    <span style={{ fontSize: '0.85rem', color: '#38bdf8', fontWeight: 800 }}>$</span>
+                    <input
+                      type="number"
+                      step={1}
+                      min={1}
+                      max={500}
+                      value={customUSD}
+                      onChange={(e) => setCustomUSD(Math.max(1, Number(e.target.value)))}
+                      style={{
+                        flex: 1,
+                        background: 'rgba(0, 0, 0, 0.4)',
+                        border: '1px solid rgba(56, 189, 248, 0.5)',
+                        borderRadius: '8px',
+                        padding: '5px 10px',
+                        color: '#38bdf8',
+                        fontWeight: 800,
+                        fontSize: '0.85rem',
+                        outline: 'none',
+                      }}
+                    />
+                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>USD</span>
+                  </div>
+                )}
+
+                {isCustomAmount && paymentMethod === 'VIETQR' && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
                     <input
                       type="number"
@@ -784,166 +995,368 @@ export const DonationShopModal: React.FC<DonationShopModalProps> = ({
               </div>
             </div>
 
-            {/* Khung hiển thị mã QR VietQR Napas 24/7 & Thông tin chuyển khoản */}
-            <div
-              style={{
-                background: 'rgba(0, 0, 0, 0.45)',
-                border: '1.2px solid rgba(250, 204, 21, 0.3)',
-                borderRadius: '16px',
-                padding: '14px',
-                display: 'grid',
-                gridTemplateColumns: '170px 1fr',
-                gap: '14px',
-                alignItems: 'center',
-              }}
-            >
-              {/* Cột QR Code */}
+            {/* ======================================================= */}
+            {/* KÊNH 1: GLOBAL PAYMENT (BUYMEACOFFEE, PAYPAL, KO-FI)     */}
+            {/* ======================================================= */}
+            {paymentMethod === 'GLOBAL' && (
               <div
                 style={{
+                  background: 'linear-gradient(160deg, rgba(14, 165, 233, 0.12) 0%, rgba(15, 23, 42, 0.7) 100%)',
+                  border: '1.2px solid rgba(56, 189, 248, 0.4)',
+                  borderRadius: '16px',
+                  padding: '14px',
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'center',
-                  background: '#ffffff',
-                  padding: '8px',
-                  borderRadius: '12px',
-                  boxShadow: '0 0 16px rgba(0,0,0,0.4)',
+                  gap: '12px',
                 }}
               >
-                <img
-                  src={vietQrUrl}
-                  alt="VietQR Napas 24/7"
-                  style={{
-                    width: '100%',
-                    height: 'auto',
-                    borderRadius: '8px',
-                    display: 'block',
-                  }}
-                  loading="lazy"
-                />
-                <div
-                  style={{
-                    fontSize: '0.65rem',
-                    color: '#0f172a',
-                    fontWeight: 800,
-                    marginTop: '4px',
-                    textAlign: 'center',
-                  }}
-                >
-                  ⚡ Quét Mọi App Ngân Hàng
-                </div>
-              </div>
-
-              {/* Cột Thông tin chuyển khoản */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.78rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: '#94a3b8' }}>{lang === 'en' ? 'Bank:' : 'Ngân hàng:'}</span>
-                  <span style={{ fontWeight: 800, color: '#38bdf8' }}>{bankConfig.bankName}</span>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: '#94a3b8' }}>{lang === 'en' ? 'Account No:' : 'Số Tài Khoản:'}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontWeight: 900, color: '#fef08a', letterSpacing: '0.04em' }}>
-                      {bankConfig.accountNo}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Globe size={18} color="#38bdf8" />
+                    <span style={{ fontWeight: 800, fontSize: '0.85rem', color: '#e0f2fe' }}>
+                      {lang === 'en' ? 'Instant Global Sponsor Gateways:' : 'Cổng Tài Trợ Quốc Tế 1-Chạm:'}
                     </span>
-                    <button
-                      onClick={() => handleCopy(bankConfig.accountNo, 'accountNo')}
-                      title="Copy STK"
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.1)',
-                        border: 'none',
-                        borderRadius: '6px',
-                        padding: '3px 6px',
-                        color: copiedKey === 'accountNo' ? '#4ade80' : '#cbd5e1',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                      }}
-                    >
-                      {copiedKey === 'accountNo' ? <Check size={12} /> : <Copy size={12} />}
-                    </button>
                   </div>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: '#94a3b8' }}>{lang === 'en' ? 'Account Name:' : 'Chủ Tài Khoản:'}</span>
-                  <span style={{ fontWeight: 800, color: '#f8fafc' }}>{bankConfig.accountName}</span>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: '#94a3b8' }}>{lang === 'en' ? 'Amount:' : 'Số Tiền:'}</span>
-                  <span style={{ fontWeight: 900, color: '#f43f5e', fontSize: '0.92rem' }}>
-                    {currentAmountVND.toLocaleString()} VNĐ
+                  <span style={{ fontSize: '0.85rem', fontWeight: 900, color: '#38bdf8' }}>
+                    ${currentAmountUSD} USD
                   </span>
                 </div>
 
+                {/* 3 Cổng thanh toán quốc tế: BuyMeACoffee, PayPal.Me, Ko-fi */}
                 <div
                   style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    background: 'rgba(250, 204, 21, 0.08)',
-                    padding: '4px 8px',
-                    borderRadius: '8px',
-                    border: '1px dashed rgba(250, 204, 21, 0.3)',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                    gap: '10px',
                   }}
                 >
-                  <span style={{ color: '#fef08a', fontSize: '0.72rem' }}>
-                    {lang === 'en' ? 'Memo:' : 'Nội Dung:'}
-                  </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontWeight: 900, color: '#facc15', fontSize: '0.75rem' }}>
-                      {currentMemo}
-                    </span>
-                    <button
-                      onClick={() => handleCopy(currentMemo, 'memo')}
-                      title="Copy Nội Dung"
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.1)',
-                        border: 'none',
-                        borderRadius: '6px',
-                        padding: '3px 6px',
-                        color: copiedKey === 'memo' ? '#4ade80' : '#cbd5e1',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                      }}
-                    >
-                      {copiedKey === 'memo' ? <Check size={12} /> : <Copy size={12} />}
-                    </button>
-                  </div>
+                  {/* 1. Buy Me a Coffee */}
+                  <a
+                    href={globalPaymentConfig.buyMeACoffeeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => soundEffects.triggerHaptic('medium')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px 12px',
+                      borderRadius: '12px',
+                      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                      color: '#0f172a',
+                      textDecoration: 'none',
+                      fontWeight: 800,
+                      fontSize: '0.82rem',
+                      boxShadow: '0 0 14px rgba(245, 158, 11, 0.35)',
+                      transition: 'transform 0.15s, box-shadow 0.15s',
+                    }}
+                  >
+                    <span style={{ fontSize: '1.4rem' }}>☕</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 900, color: '#ffffff' }}>Buy Me a Coffee</div>
+                      <div style={{ fontSize: '0.65rem', color: '#fef3c7' }}>Cards, Apple & Google Pay</div>
+                    </div>
+                    <ExternalLink size={14} color="#ffffff" />
+                  </a>
+
+                  {/* 2. PayPal.Me */}
+                  <a
+                    href={`${globalPaymentConfig.paypalMeUrl}/${currentAmountUSD}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => soundEffects.triggerHaptic('medium')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px 12px',
+                      borderRadius: '12px',
+                      background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                      color: '#ffffff',
+                      textDecoration: 'none',
+                      fontWeight: 800,
+                      fontSize: '0.82rem',
+                      boxShadow: '0 0 14px rgba(2, 132, 199, 0.35)',
+                      transition: 'transform 0.15s, box-shadow 0.15s',
+                    }}
+                  >
+                    <span style={{ fontSize: '1.4rem' }}>🅿️</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 900, color: '#ffffff' }}>PayPal.Me (${currentAmountUSD})</div>
+                      <div style={{ fontSize: '0.65rem', color: '#e0f2fe' }}>1-Click Balance or Card</div>
+                    </div>
+                    <ExternalLink size={14} color="#ffffff" />
+                  </a>
+
+                  {/* 3. Ko-fi */}
+                  <a
+                    href={globalPaymentConfig.kofiUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => soundEffects.triggerHaptic('medium')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px 12px',
+                      borderRadius: '12px',
+                      background: 'linear-gradient(135deg, #e11d48 0%, #be123c 100%)',
+                      color: '#ffffff',
+                      textDecoration: 'none',
+                      fontWeight: 800,
+                      fontSize: '0.82rem',
+                      boxShadow: '0 0 14px rgba(225, 29, 72, 0.35)',
+                      transition: 'transform 0.15s, box-shadow 0.15s',
+                    }}
+                  >
+                    <span style={{ fontSize: '1.4rem' }}>❤️</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 900, color: '#ffffff' }}>Ko-fi Supporter</div>
+                      <div style={{ fontSize: '0.65rem', color: '#ffe4e6' }}>0% Platform Fee Support</div>
+                    </div>
+                    <ExternalLink size={14} color="#ffffff" />
+                  </a>
                 </div>
 
-                {/* Nút hành động chính */}
-                <button
-                  onClick={handleConfirmTransfer}
+                {/* Hướng dẫn ghi chú tên nhân vật để quản trò trao đặc quyền */}
+                <div
                   style={{
-                    marginTop: '6px',
+                    background: 'rgba(0, 0, 0, 0.35)',
                     padding: '8px 12px',
                     borderRadius: '10px',
+                    border: '1px dashed rgba(56, 189, 248, 0.35)',
+                    fontSize: '0.74rem',
+                    color: '#cbd5e1',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '8px',
+                  }}
+                >
+                  <div>
+                    💡 {lang === 'en'
+                      ? 'Tip: Please enter your in-game name in the payment note:'
+                      : 'Mẹo: Vui lòng ghi tên nhân vật vào lời nhắn khi thanh toán:'}{' '}
+                    <span style={{ fontWeight: 900, color: '#facc15' }}>{playerName}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(playerName, 'playerName')}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '3px 8px',
+                      color: copiedKey === 'playerName' ? '#4ade80' : '#cbd5e1',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '0.7rem',
+                    }}
+                  >
+                    {copiedKey === 'playerName' ? <Check size={12} /> : <Copy size={12} />}
+                    <span>{copiedKey === 'playerName' ? 'Copied' : 'Copy'}</span>
+                  </button>
+                </div>
+
+                {/* Nút xác nhận sau khi donate trên web quốc tế */}
+                <button
+                  type="button"
+                  onClick={handleConfirmGlobalTransfer}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: '12px',
                     border: 'none',
                     background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                     color: '#ffffff',
                     fontWeight: 900,
-                    fontSize: '0.82rem',
+                    fontSize: '0.85rem',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '6px',
-                    boxShadow: '0 0 12px rgba(16, 185, 129, 0.4)',
+                    gap: '8px',
+                    boxShadow: '0 0 16px rgba(16, 185, 129, 0.45)',
                     transition: 'transform 0.1s',
                   }}
                   onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.98)')}
                   onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
                 >
-                  <CheckCircle2 size={16} />
-                  <span>{lang === 'en' ? 'I Have Completed Transfer!' : 'Tôi Đã Chuyển Khoản Thành Công!'}</span>
+                  <Sparkles size={18} color="#fef08a" />
+                  <span>
+                    {lang === 'en'
+                      ? 'Confirm Global Sponsor / Claim Perks'
+                      : 'Xác Nhận Đã Tài Trợ Quốc Tế / Nhận Quà Ngay 🎁'}
+                  </span>
                 </button>
               </div>
-            </div>
+            )}
 
-            {/* Toggle cấu hình STK dành cho Admin / Sếp */}
+            {/* ======================================================= */}
+            {/* KÊNH 2: VIETQR NAPAS 24/7                                */}
+            {/* ======================================================= */}
+            {paymentMethod === 'VIETQR' && (
+              <div
+                style={{
+                  background: 'rgba(0, 0, 0, 0.45)',
+                  border: '1.2px solid rgba(250, 204, 21, 0.3)',
+                  borderRadius: '16px',
+                  padding: '14px',
+                  display: 'grid',
+                  gridTemplateColumns: '170px 1fr',
+                  gap: '14px',
+                  alignItems: 'center',
+                }}
+              >
+                {/* Cột QR Code */}
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    background: '#ffffff',
+                    padding: '8px',
+                    borderRadius: '12px',
+                    boxShadow: '0 0 16px rgba(0,0,0,0.4)',
+                  }}
+                >
+                  <img
+                    src={vietQrUrl}
+                    alt="VietQR Napas 24/7"
+                    style={{
+                      width: '100%',
+                      height: 'auto',
+                      borderRadius: '8px',
+                      display: 'block',
+                    }}
+                    loading="lazy"
+                  />
+                  <div
+                    style={{
+                      fontSize: '0.65rem',
+                      color: '#0f172a',
+                      fontWeight: 800,
+                      marginTop: '4px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    ⚡ Quét Mọi App Ngân Hàng
+                  </div>
+                </div>
+
+                {/* Cột Thông tin chuyển khoản */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.78rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: '#94a3b8' }}>{lang === 'en' ? 'Bank:' : 'Ngân hàng:'}</span>
+                    <span style={{ fontWeight: 800, color: '#38bdf8' }}>{bankConfig.bankName}</span>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: '#94a3b8' }}>{lang === 'en' ? 'Account No:' : 'Số Tài Khoản:'}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontWeight: 900, color: '#fef08a', letterSpacing: '0.04em' }}>
+                        {bankConfig.accountNo}
+                      </span>
+                      <button
+                        onClick={() => handleCopy(bankConfig.accountNo, 'accountNo')}
+                        title="Copy STK"
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          border: 'none',
+                          borderRadius: '6px',
+                          padding: '3px 6px',
+                          color: copiedKey === 'accountNo' ? '#4ade80' : '#cbd5e1',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                      >
+                        {copiedKey === 'accountNo' ? <Check size={12} /> : <Copy size={12} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: '#94a3b8' }}>{lang === 'en' ? 'Account Name:' : 'Chủ Tài Khoản:'}</span>
+                    <span style={{ fontWeight: 800, color: '#f8fafc' }}>{bankConfig.accountName}</span>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: '#94a3b8' }}>{lang === 'en' ? 'Amount:' : 'Số Tiền:'}</span>
+                    <span style={{ fontWeight: 900, color: '#f43f5e', fontSize: '0.92rem' }}>
+                      {currentAmountVND.toLocaleString()} VNĐ
+                    </span>
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      background: 'rgba(250, 204, 21, 0.08)',
+                      padding: '4px 8px',
+                      borderRadius: '8px',
+                      border: '1px dashed rgba(250, 204, 21, 0.3)',
+                    }}
+                  >
+                    <span style={{ color: '#fef08a', fontSize: '0.72rem' }}>
+                      {lang === 'en' ? 'Memo:' : 'Nội Dung:'}
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontWeight: 900, color: '#facc15', fontSize: '0.75rem' }}>
+                        {currentMemo}
+                      </span>
+                      <button
+                        onClick={() => handleCopy(currentMemo, 'memo')}
+                        title="Copy Nội Dung"
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          border: 'none',
+                          borderRadius: '6px',
+                          padding: '3px 6px',
+                          color: copiedKey === 'memo' ? '#4ade80' : '#cbd5e1',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                      >
+                        {copiedKey === 'memo' ? <Check size={12} /> : <Copy size={12} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Nút hành động chính */}
+                  <button
+                    onClick={handleConfirmTransfer}
+                    style={{
+                      marginTop: '6px',
+                      padding: '8px 12px',
+                      borderRadius: '10px',
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      color: '#ffffff',
+                      fontWeight: 900,
+                      fontSize: '0.82rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      boxShadow: '0 0 12px rgba(16, 185, 129, 0.4)',
+                      transition: 'transform 0.1s',
+                    }}
+                    onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.98)')}
+                    onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+                  >
+                    <CheckCircle2 size={16} />
+                    <span>{lang === 'en' ? 'I Have Completed Transfer!' : 'Tôi Đã Chuyển Khoản Thành Công!'}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Toggle cấu hình STK & Link Quốc Tế dành cho Admin / Sếp */}
             <div style={{ marginTop: '2px' }}>
               <button
                 onClick={() => setShowAdminSettings(!showAdminSettings)}
@@ -961,8 +1374,8 @@ export const DonationShopModal: React.FC<DonationShopModalProps> = ({
                 <Settings size={12} />
                 <span>
                   {showAdminSettings
-                    ? (lang === 'en' ? 'Hide Bank Configuration' : 'Ẩn Cấu Hình STK Nhận Tiền')
-                    : (lang === 'en' ? '⚙️ Admin: Change Receiving Bank Account' : '⚙️ Admin: Cấu Hình STK Nhận Tiền Thật')}
+                    ? (lang === 'en' ? 'Hide Gateway Configuration' : 'Ẩn Cấu Hình Cổng Thanh Toán')
+                    : (lang === 'en' ? '⚙️ Admin: Configure Bank & Global Payment URLs' : '⚙️ Admin: Cấu Hình STK Ngân Hàng & Link Quốc Tế')}
                 </span>
               </button>
 
@@ -970,51 +1383,70 @@ export const DonationShopModal: React.FC<DonationShopModalProps> = ({
                 <div
                   style={{
                     marginTop: '8px',
-                    padding: '10px',
+                    padding: '12px',
                     borderRadius: '12px',
-                    background: 'rgba(0, 0, 0, 0.4)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '8px',
+                    gap: '12px',
                   }}
                 >
-                  <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
-                    {lang === 'en'
-                      ? 'Configure receiving account saved to localStorage on this device:'
-                      : 'Cấu hình tài khoản nhận ủng hộ thật (lưu trên thiết bị này):'}
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                    <div>
-                      <label style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Ngân Hàng:</label>
-                      <select
-                        value={editBankId}
-                        onChange={(e) => setEditBankId(e.target.value)}
-                        style={{
-                          width: '100%',
-                          background: 'rgba(30, 41, 59, 0.9)',
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
-                          color: '#f8fafc',
-                          padding: '4px 6px',
-                          borderRadius: '6px',
-                          fontSize: '0.75rem',
-                        }}
-                      >
-                        {SUPPORTED_BANKS.map((b) => (
-                          <option key={b.id} value={b.id}>
-                            {b.id} - {b.name}
-                          </option>
-                        ))}
-                      </select>
+                  {/* Nhóm 1: STK Ngân Hàng Nội Địa */}
+                  <div>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#facc15', marginBottom: '6px' }}>
+                      ⚡ {lang === 'en' ? 'VietQR Domestic Bank Account:' : 'Cấu hình STK Ngân Hàng VietQR (Napas 24/7):'}
                     </div>
 
-                    <div>
-                      <label style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Số Tài Khoản:</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                      <div>
+                        <label style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Ngân Hàng:</label>
+                        <select
+                          value={editBankId}
+                          onChange={(e) => setEditBankId(e.target.value)}
+                          style={{
+                            width: '100%',
+                            background: 'rgba(30, 41, 59, 0.9)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            color: '#f8fafc',
+                            padding: '4px 6px',
+                            borderRadius: '6px',
+                            fontSize: '0.75rem',
+                          }}
+                        >
+                          {SUPPORTED_BANKS.map((b) => (
+                            <option key={b.id} value={b.id}>
+                              {b.id} - {b.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Số Tài Khoản:</label>
+                        <input
+                          type="text"
+                          value={editAccountNo}
+                          onChange={(e) => setEditAccountNo(e.target.value)}
+                          style={{
+                            width: '100%',
+                            background: 'rgba(30, 41, 59, 0.9)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            color: '#f8fafc',
+                            padding: '4px 6px',
+                            borderRadius: '6px',
+                            fontSize: '0.75rem',
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: '6px' }}>
+                      <label style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Tên Chủ Tài Khoản:</label>
                       <input
                         type="text"
-                        value={editAccountNo}
-                        onChange={(e) => setEditAccountNo(e.target.value)}
+                        value={editAccountName}
+                        onChange={(e) => setEditAccountName(e.target.value.toUpperCase())}
                         style={{
                           width: '100%',
                           background: 'rgba(30, 41, 59, 0.9)',
@@ -1026,42 +1458,111 @@ export const DonationShopModal: React.FC<DonationShopModalProps> = ({
                         }}
                       />
                     </div>
-                  </div>
 
-                  <div>
-                    <label style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Tên Chủ Tài Khoản:</label>
-                    <input
-                      type="text"
-                      value={editAccountName}
-                      onChange={(e) => setEditAccountName(e.target.value.toUpperCase())}
+                    <button
+                      onClick={handleSaveBankAdmin}
                       style={{
-                        width: '100%',
-                        background: 'rgba(30, 41, 59, 0.9)',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        color: '#f8fafc',
-                        padding: '4px 6px',
-                        borderRadius: '6px',
-                        fontSize: '0.75rem',
+                        marginTop: '6px',
+                        float: 'right',
+                        background: 'rgba(250, 204, 21, 0.2)',
+                        border: '1px solid #facc15',
+                        color: '#fef08a',
+                        padding: '4px 12px',
+                        borderRadius: '8px',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
                       }}
-                    />
+                    >
+                      {lang === 'en' ? 'Save Bank Account' : 'Lưu STK Ngân Hàng'}
+                    </button>
+                    <div style={{ clear: 'both' }} />
                   </div>
 
-                  <button
-                    onClick={handleSaveBankAdmin}
-                    style={{
-                      alignSelf: 'flex-end',
-                      background: 'rgba(56, 189, 248, 0.2)',
-                      border: '1px solid #38bdf8',
-                      color: '#38bdf8',
-                      padding: '4px 12px',
-                      borderRadius: '8px',
-                      fontSize: '0.74rem',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {lang === 'en' ? 'Save Account' : 'Lưu Tài Khoản'}
-                  </button>
+                  {/* Nhóm 2: Link Cổng Thanh Toán Quốc Tế */}
+                  <div style={{ paddingTop: '8px', borderTop: '1px dashed rgba(255, 255, 255, 0.15)' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#38bdf8', marginBottom: '6px' }}>
+                      🌍 {lang === 'en' ? 'International Gateways (BuyMeACoffee / PayPal / Ko-fi):' : 'Cấu hình Link Cổng Quốc Tế (BuyMeACoffee / PayPal / Ko-fi):'}
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '6px' }}>
+                      <div>
+                        <label style={{ fontSize: '0.68rem', color: '#94a3b8' }}>☕ Buy Me a Coffee URL:</label>
+                        <input
+                          type="text"
+                          value={editBuyMeACoffee}
+                          onChange={(e) => setEditBuyMeACoffee(e.target.value)}
+                          placeholder="https://buymeacoffee.com/username"
+                          style={{
+                            width: '100%',
+                            background: 'rgba(30, 41, 59, 0.9)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            color: '#f8fafc',
+                            padding: '4px 6px',
+                            borderRadius: '6px',
+                            fontSize: '0.75rem',
+                          }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '0.68rem', color: '#94a3b8' }}>🅿️ PayPal.Me URL:</label>
+                        <input
+                          type="text"
+                          value={editPaypalMe}
+                          onChange={(e) => setEditPaypalMe(e.target.value)}
+                          placeholder="https://paypal.me/username"
+                          style={{
+                            width: '100%',
+                            background: 'rgba(30, 41, 59, 0.9)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            color: '#f8fafc',
+                            padding: '4px 6px',
+                            borderRadius: '6px',
+                            fontSize: '0.75rem',
+                          }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '0.68rem', color: '#94a3b8' }}>❤️ Ko-fi URL:</label>
+                        <input
+                          type="text"
+                          value={editKofi}
+                          onChange={(e) => setEditKofi(e.target.value)}
+                          placeholder="https://ko-fi.com/username"
+                          style={{
+                            width: '100%',
+                            background: 'rgba(30, 41, 59, 0.9)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            color: '#f8fafc',
+                            padding: '4px 6px',
+                            borderRadius: '6px',
+                            fontSize: '0.75rem',
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleSaveGlobalAdmin}
+                      style={{
+                        marginTop: '8px',
+                        float: 'right',
+                        background: 'rgba(56, 189, 248, 0.2)',
+                        border: '1px solid #38bdf8',
+                        color: '#38bdf8',
+                        padding: '4px 12px',
+                        borderRadius: '8px',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {lang === 'en' ? 'Save Global Gateways' : 'Lưu Cổng Quốc Tế'}
+                    </button>
+                    <div style={{ clear: 'both' }} />
+                  </div>
                 </div>
               )}
             </div>
