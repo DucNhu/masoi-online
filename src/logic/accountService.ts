@@ -402,9 +402,36 @@ export function isSupabaseConfigured(): boolean {
 }
 
 export function createDefaultBackend(): AccountBackend {
-  const url = readEnv('VITE_SUPABASE_URL') || DEFAULT_SUPABASE_URL;
-  const key = readEnv('VITE_SUPABASE_ANON_KEY') || DEFAULT_SUPABASE_ANON_KEY;
-  if (url && key) return new SupabaseAccountBackend(url, key);
+  const url = readEnv('VITE_SUPABASE_URL');
+  const key = readEnv('VITE_SUPABASE_ANON_KEY');
+  if (url && key) {
+    const supabaseBackend = new SupabaseAccountBackend(url, key);
+    const localFallback = new LocalAccountBackend(localStorageStore());
+    return {
+      async enter(username, sessionId, device) {
+        const res = await supabaseBackend.enter(username, sessionId, device);
+        if (res.status === 'error') {
+          // Lỗi mạng hoặc Supabase tạm dừng/chưa sẵn sàng -> Tự động fallback sang LocalAccountBackend
+          return localFallback.enter(username, sessionId, device);
+        }
+        return res;
+      },
+      async heartbeat(username, sessionId) {
+        try {
+          return await supabaseBackend.heartbeat(username, sessionId);
+        } catch {
+          return localFallback.heartbeat(username, sessionId);
+        }
+      },
+      async leave(username, sessionId, keepalive) {
+        try {
+          return await supabaseBackend.leave(username, sessionId, keepalive);
+        } catch {
+          return localFallback.leave(username, sessionId);
+        }
+      },
+    };
+  }
   // Chưa cấu hình Supabase: chạy local (chỉ có hiệu lực trong trình duyệt này)
   return new LocalAccountBackend(localStorageStore());
 }

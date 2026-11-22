@@ -1,7 +1,12 @@
 # Active Session State — Ma Sói Game Studio
 
-- **Thời gian cập nhật**: 2026-11-18 14:35 (Asia/Ho_Chi_Minh) — Hoàn tất Sprint 46: "Phát Hành Web Game Toàn Cầu (Global Web Distribution & International Monetization via BuyMeACoffee / PayPal / Ko-fi)".
-- **Vận hành**: `npm run verify` đạt 100% PASS (0 error, 33 bộ test suite, PWA build thành công trong 392ms). Tự động push lên nhánh `feature/ma-soi-online` và `main` để kích hoạt deploy CI/CD.
+- **Thời gian cập nhật**: 2026-11-22 22:25 (Asia/Ho_Chi_Minh) — Đã kích hoạt Production Vercel chính thức thành công: `https://masoi-online.vercel.app`.
+- **Vận hành**: `npm run verify` đạt 100% PASS (0 error, 33 bộ test suite, PWA build thành công). Đã kết nối repo `DucNhu/masoi-online` vào tài khoản Vercel `duc-61dc`.
+
+## Vercel Production Deployment [COMPLETED & LIVE]
+- **Tên miền chính thức trên Vercel**: `https://masoi-online.vercel.app`
+- **Dashboard quản lý**: `https://vercel.com/duc-61dc/masoi-online`
+- **Cơ chế tự động hóa**: Đã liên kết với tài khoản Vercel `duc-61dc`, tự động build và cập nhật production mỗi khi có commit mới.
 
 ## Sprint 46 — Phát Hành Web Game Toàn Cầu & Kiếm Tiền Quốc Tế [DONE & 100% VERIFIED]
 - **Cấu hình Đơn Giá & Gói Quyên Góp Quốc Tế Chuẩn USD (`src/constants/donationConfig.ts`)**:
